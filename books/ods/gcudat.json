@@ -1,0 +1,9 @@
+{
+  "gcudat": 1,
+  "kind": "books",
+  "name": "ods",
+  "title": "Open Data Structures (Python edition)",
+  "license": "CC BY 2.5",
+  "attribution": "Pat Morin",
+  "index": "book.json"
+}
