@@ -27,6 +27,66 @@ const ODS = process.argv[2] || path.resolve(here, '../../ods/latex');
 const OUT = process.argv[3] || path.resolve(here, '../books/ods');
 const PYDIR = path.resolve(ODS, '../python/ods');   // ../ods/python/ods/*.py
 
+// ── Figure rendering (Ipe .ipe → PNG via iperender + LaTeX) ──────────────
+// OPTIONAL. ODS figures are Ipe vector sources whose labels are typeset
+// through LaTeX, so rendering needs: iperender (the Ipe CLI) + a LaTeX distro
+// (pdflatex) + ods.sty/ods-colors.sty on TEXINPUTS. If the tools aren't found
+// the converter still runs and leaves a [figure: name] placeholder. Override
+// the auto-located tools via IPERENDER / MIKTEX_BIN env vars; PNG dpi via
+// FIG_DPI. Rendered PNGs are cached on disk (../.cache/ods-figs) so re-runs
+// don't re-LaTeX every figure.
+const HOME = process.env.USERPROFILE || process.env.HOME || '';
+function _glob1(dir, re) {
+  try { const n = fs.readdirSync(dir).find((x) => re.test(x)); return n ? path.join(dir, n) : null; }
+  catch { return null; }
+}
+function findIperender() {
+  if (process.env.IPERENDER && fs.existsSync(process.env.IPERENDER)) return process.env.IPERENDER;
+  const ipePkg = _glob1(path.join(HOME, 'AppData/Local/Microsoft/WinGet/Packages'), /^OtfriedCheong\.Ipe/);
+  const ver = ipePkg && _glob1(ipePkg, /^ipe-/);
+  const exe = ver && path.join(ver, 'bin/iperender.exe');
+  return exe && fs.existsSync(exe) ? exe : null;
+}
+function findMiktexBin() {
+  if (process.env.MIKTEX_BIN && fs.existsSync(process.env.MIKTEX_BIN)) return process.env.MIKTEX_BIN;
+  const p = path.join(HOME, 'AppData/Local/Programs/MiKTeX/miktex/bin/x64');
+  return fs.existsSync(path.join(p, 'pdflatex.exe')) ? p : null;
+}
+const IPERENDER = findIperender();
+const MIKTEX_BIN = findMiktexBin();
+const FIG_DPI = process.env.FIG_DPI || '150';
+const FIGCACHE = path.resolve(here, '../.cache/ods-figs');
+const FIG_TMPLX = path.join(FIGCACHE, '_latex');
+const FIGURES_ON = !!(IPERENDER && MIKTEX_BIN);
+const figEnv = FIGURES_ON ? {
+  ...process.env,
+  PATH: [MIKTEX_BIN, path.dirname(IPERENDER), process.env.PATH].filter(Boolean).join(path.delimiter),
+  IPELATEXDIR: FIG_TMPLX,                  // where iperender runs latex
+  TEXINPUTS: ODS + path.delimiter,         // so pdflatex finds ods(-colors).sty
+} : null;
+const _figCache = new Map();
+const _figStats = { rendered: 0, cached: 0, failed: 0 };
+// name (from <img src="figs/name">) → data:image/png URL, or null if it can't
+// be rendered (missing .ipe, no toolchain, or latex error).
+function renderFigure(name) {
+  if (_figCache.has(name)) return _figCache.get(name);
+  let result = null;
+  const ipe = path.join(ODS, 'figs', name + '.ipe');
+  if (FIGURES_ON && fs.existsSync(ipe)) {
+    const png = path.join(FIGCACHE, name + '.png');
+    try {
+      if (!fs.existsSync(png)) {
+        fs.mkdirSync(FIG_TMPLX, { recursive: true });
+        execFileSync(IPERENDER, ['-png', '-resolution', FIG_DPI, ipe, png], { env: figEnv, stdio: 'pipe' });
+        _figStats.rendered++;
+      } else { _figStats.cached++; }
+      result = 'data:image/png;base64,' + fs.readFileSync(png).toString('base64');
+    } catch { _figStats.failed++; result = null; }
+  }
+  _figCache.set(name, result);
+  return result;
+}
+
 // Chapter order from ods.tex's \include list (the -lang suffix is the build's
 // generated variant; the base file is <name>.tex).
 const CHAPTERS = [
@@ -155,6 +215,17 @@ function convertChapter(name) {
       ? `<pre class="listing"><code class="language-python">${esc(l.code)}</code></pre>`
       : `<pre class="listing-stub"><code>[listing: ${esc(l ? l.label : '?')}]</code></pre>`;
   });
+  // figures: <img src="figs/NAME"> → rendered PNG data URL (or placeholder).
+  // Inlined because the reader renders chapters in a sandboxed iframe that
+  // can't reach VFS-relative image paths (same as the epub ingest path).
+  html = html.replace(/<img([^>]*)>/g, (m, attrs) => {
+    const sm = attrs.match(/src="figs\/([^"]+)"/);
+    if (!sm) return m;
+    const data = renderFigure(sm[1]);
+    return data
+      ? '<img class="figure"' + attrs.replace(/src="figs\/[^"]+"/, `src="${data}"`) + '>'
+      : `<span class="figure-stub">[figure: ${esc(sm[1])}]</span>`;
+  });
   return { id: name, title, html };
 }
 
@@ -183,6 +254,8 @@ function main() {
   fs.writeFileSync(path.join(OUT, 'book.json'), JSON.stringify(book, null, 2));
   console.log(`\nWrote ${chapters.length} chapters + book.json to ${OUT}`);
   console.log(`Code listings: ${_stats.resolved} resolved → Python, ${_stats.stub} stubbed (unresolved label/class)`);
+  if (FIGURES_ON) console.log(`Figures: ${_figStats.rendered} rendered + ${_figStats.cached} cached → PNG, ${_figStats.failed} failed`);
+  else console.log('Figures: DISABLED (iperender/pdflatex not found) — left as placeholders. Set IPERENDER / MIKTEX_BIN.');
 }
 
 main();
