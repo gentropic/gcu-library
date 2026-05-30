@@ -1,0 +1,437 @@
+<h1 id="scapegoat-trees">Scapegoat Trees</h1>
+<p>In this chapter, we study a binary search tree data structure, the
+<code>ScapegoatTree</code>. This structure is based on the common wisdom that, when
+something goes wrong, the first thing people tend to do is find someone
+to blame (the <em>scapegoat</em>). Once blame is firmly established, we
+can leave the scapegoat to fix the problem.</p>
+<p>A <code>ScapegoatTree</code> keeps itself balanced by <em>partial rebuilding
+operations</em>. During a partial rebuilding operation, an entire
+subtree is deconstructed and rebuilt into a perfectly balanced subtree.
+There are many ways of rebuilding a subtree rooted at node <code>u</code>
+into a perfectly balanced tree. One of the simplest is to traverse
+<code>u</code>’s subtree, gathering all its nodes into an array, <code>a</code>,
+and then to recursively build a balanced subtree using <code>a</code>. If we
+let <span class="math inline">\(<code>m</code>=<code>a.length</code>/2\)</span>, then the
+element <code>a[m]</code> becomes the root of the new subtree, <span
+class="math inline">\(<code>a</code>[0],\ldots,<code>a</code>[<code>m</code>-1]\)</span>
+get stored recursively in the left subtree and <span
+class="math inline">\(<code>a</code>[<code>m</code>+1],\ldots,<code>a</code>[<code>a.length</code>-1]\)</span>
+get stored recursively in the right subtree.
+<code>[listing: ods/ScapegoatTree.rebuild(u).packIntoArray(u,a,i).buildBalanced(a,i,ns)]</code>
+A call to <code>rebuild(u)</code> takes <span
+class="math inline">\(O(<code>size(u)</code>)\)</span> time. The resulting subtree
+has minimum height; there is no tree of smaller height that has
+<code>size(u)</code> nodes.</p>
+<h2 id="code19-a-binary-search-tree-with-partial-rebuilding"><code>ScapegoatTree</code>:
+A Binary Search Tree with Partial Rebuilding</h2>
+<p>A <code>ScapegoatTree</code> is a <code>BinarySearchTree</code> that, in addition to keeping track of
+the number, <code>n</code>, of nodes in the tree also keeps a counter,
+<code>q</code>, that maintains an upper-bound on the number of nodes.
+<code>[listing: ods/ScapegoatTree.q]</code> At all times, <code>n</code> and
+<code>q</code> obey the following inequalities: <span
+class="math display">\[<code>q</code>/2 \le  <code>n</code> \le
+<code>q</code>  \enspace .\]</span> In addition, a <code>ScapegoatTree</code> has
+logarithmic height; at all times, the height of the scapegoat tree does
+not exceed <span class="math display">\[\begin{equation}
+     \log_{3/2} <code>q</code> \le \log_{3/2} 2<code>n</code> &lt; \log_{3/2}
+<code>n</code> + 2\enspace .
+     \eqlabel{scapegoat-height}
+\end{equation}\]</span> Even with this constraint, a <code>ScapegoatTree</code> can look
+surprisingly unbalanced. The tree in has <span
+class="math inline">\(<code>q</code>=<code>n</code>=10\)</span> and height <span
+class="math inline">\(5&lt;\log_{3/2}10 \approx 5.679\)</span>.</p>
+<figure>
+<div class="center">
+<img src="figs/scapegoat-insert-1" />
+</div>
+<figcaption>A <code>ScapegoatTree</code> with 10 nodes and height 5.</figcaption>
+</figure>
+<p>Implementing the <code>find(x)</code> operation in a <code>ScapegoatTree</code> is done using
+the standard algorithm for searching in a <code>BinarySearchTree</code> (see ). This takes
+time proportional to the height of the tree which, by is <span
+class="math inline">\(O(\log <code>n</code>)\)</span>.</p>
+<p>To implement the <code>add(x)</code> operation, we first increment <code>n</code>
+and <code>q</code> and then use the usual algorithm for adding <code>x</code> to
+a binary search tree; we search for <code>x</code> and then add a new leaf
+<code>u</code> with <span
+class="math inline">\(<code>u.x</code>=<code>x</code>\)</span>. At this point, we
+may get lucky and the depth of <code>u</code> might not exceed <span
+class="math inline">\(\log_{3/2}<code>q</code>\)</span>. If so, then we
+leave well enough alone and don’t do anything else.</p>
+<p>Unfortunately, it will sometimes happen that <span
+class="math inline">\(<code>depth(u)</code> &gt; \log_{3/2}
+<code>q</code>\)</span>. In this case, we need to reduce the height. This
+isn’t a big job; there is only one node, namely <code>u</code>, whose depth
+exceeds <span class="math inline">\(\log_{3/2}
+<code>q</code>\)</span>. To fix <code>u</code>, we walk from <code>u</code> back up
+to the root looking for a <em>scapegoat</em>, <code>w</code>. The scapegoat,
+<code>w</code>, is a very unbalanced node. It has the property that <span
+class="math display">\[\begin{equation}
+   \frac{<code>size(w.child)</code>}{<code>size(w)</code>} &gt; \frac{2}{3} \enspace ,
+   \eqlabel{scapegoat}
+\end{equation}\]</span> where <code>w.child</code> is the child of <code>w</code> on
+the path from the root to <code>u</code>. We’ll very shortly prove that a
+scapegoat exists. For now, we can take it for granted. Once we’ve found
+the scapegoat <code>w</code>, we completely destroy the subtree rooted at
+<code>w</code> and rebuild it into a perfectly balanced binary search tree.
+We know, from , that, even before the addition of <code>u</code>,
+<code>w</code>’s subtree was not a complete binary tree. Therefore, when we
+rebuild <code>w</code>, the height decreases by at least 1 so that the
+height of the <code>ScapegoatTree</code> is once again at most <span
+class="math inline">\(\log_{3/2}<code>q</code>\)</span>.</p>
+<p><code>[listing: ods/ScapegoatTree.add(x)]</code></p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/scapegoat-insert-3"
+alt="image" /></td>
+<td style="text-align: center;"><img src="figs/scapegoat-insert-4"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Inserting 3.5 into a <code>ScapegoatTree</code> increases its height to 6,
+which violates since <span class="math inline">\(6 &gt; \log_{3/2} 11
+\approx 5.914\)</span>. A scapegoat is found at the node containing
+5.</figcaption>
+</figure>
+<p>If we ignore the cost of finding the scapegoat <code>w</code> and
+rebuilding the subtree rooted at <code>w</code>, then the running time of
+<code>add(x)</code> is dominated by the initial search, which takes <span
+class="math inline">\(O(\log <code>q</code>) = O(\log <code>n</code>)\)</span>
+time. We will account for the cost of finding the scapegoat and
+rebuilding using amortized analysis in the next section.</p>
+<p>The implementation of <code>remove(x)</code> in a <code>ScapegoatTree</code> is very simple. We
+search for <code>x</code> and remove it using the usual algorithm for
+removing a node from a <code>BinarySearchTree</code>. (Note that this can never increase
+the height of the tree.) Next, we decrement <code>n</code>, but leave
+<code>q</code> unchanged. Finally, we check if <span
+class="math inline">\(<code>q</code> &gt; 2<code>n</code>\)</span> and, if so,
+then we <em>rebuild the entire tree</em> into a perfectly balanced
+binary search tree and set <span
+class="math inline">\(<code>q</code>=<code>n</code>\)</span>.
+<code>[listing: ods/ScapegoatTree.remove(x)]</code> Again, if we ignore
+the cost of rebuilding, the running time of the <code>remove(x)</code> operation is
+proportional to the height of the tree, and is therefore <span
+class="math inline">\(O(\log <code>n</code>)\)</span>.</p>
+<h3 id="analysis-of-correctness-and-running-time">Analysis of
+Correctness and Running-Time</h3>
+<p>In this section, we analyze the correctness and amortized running
+time of operations on a <code>ScapegoatTree</code>. We first prove the correctness by
+showing that, when the <code>add(x)</code> operation results in a node that
+violates Condition , then we can always find a scapegoat:</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>Let <code>u</code> be a node of depth
+<span class="math inline">\(h&gt;\log_{3/2} <code>q</code>\)</span> in a
+<code>ScapegoatTree</code>. Then there exists a node <span
+class="math inline">\(<code>w</code>\)</span> on the path from <code>u</code> to
+the root such that <span
+class="math display">\[\frac{<code>size(w)</code>}{<code>size(parent(w))</code>} &gt; 2/3 \enspace
+.\]</span></em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> Suppose, for the sake of contradiction, that this is
+not the case, and <span
+class="math display">\[\frac{<code>size(w)</code>}{<code>size(parent(w))</code>} \le 2/3 \enspace
+.\]</span> for all nodes <code>w</code> on the path from <code>u</code> to the
+root. Denote the path from the root to <code>u</code> as <span
+class="math inline">\(<code>r</code>=<code>u</code>_0,\ldots,<code>u</code>_h=<code>u</code>\)</span>.
+Then, we have <span
+class="math inline">\(<code>size(u</code>_0<code>)</code>=<code>n</code>\)</span>,
+<span
+class="math inline">\(<code>size(u</code>_1<code>)</code>\le\frac{2}{3}<code>n</code>\)</span>,
+<span
+class="math inline">\(<code>size(u</code>_2<code>)</code>\le\frac{4}{9}<code>n</code>\)</span>
+and, more generally, <span
+class="math display">\[<code>size(u</code>_i<code>)</code>\le\left(\frac{2}{3}\right)^i<code>n</code>
+\enspace .\]</span> But this gives a contradiction, since <span
+class="math inline">\(<code>size(u)</code>\ge 1\)</span>, hence <span
+class="math display">\[1 \le <code>size(u)</code> \le
+\left(\frac{2}{3}\right)^h<code>n</code>
+   &lt; \left(\frac{2}{3}\right)^{\log_{3/2} <code>q</code>}<code>n</code>
+   \le \left(\frac{2}{3}\right)^{\log_{3/2} <code>n</code>}<code>n</code>
+   = \left(\frac{1}{<code>n</code>}\right) <code>n</code>
+   = 1 \enspace . \qedhere\]</span> ◻</p>
+</div>
+<p>Next, we analyze the parts of the running time that are not yet
+accounted for. There are two parts: The cost of calls to <code>size(u)</code>
+when searching for scapegoat nodes, and the cost of calls to <code>rebuild(w)</code>
+when we find a scapegoat <code>w</code>. The cost of calls to <code>size(u)</code>
+can be related to the cost of calls to <code>rebuild(w)</code>, as follows:</p>
+<div class="lem">
+<p><strong>Lemma 1.2</strong>. <em>During a call to <code>add(x)</code> in a
+<code>ScapegoatTree</code>, the cost of finding the scapegoat <code>w</code> and
+rebuilding the subtree rooted at <code>w</code> is <span
+class="math inline">\(O(<code>size(w)</code>)\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> The cost of rebuilding the scapegoat node
+<code>w</code>, once we find it, is <span
+class="math inline">\(O(<code>size(w)</code>)\)</span>. When searching for the
+scapegoat node, we call <code>size(u)</code> on a sequence of nodes <span
+class="math inline">\(<code>u</code>_0,\ldots,<code>u</code>_k\)</span> until
+we find the scapegoat <span
+class="math inline">\(<code>u</code>_k=<code>w</code>\)</span>. However, since
+<span class="math inline">\(<code>u</code>_k\)</span> is the first node in
+this sequence that is a scapegoat, we know that <span
+class="math display">\[<code>size(u</code>_{i}<code>)</code> &lt;
+\frac{2}{3}<code>size(u</code>_{i+1}<code>)</code>\]</span> for all <span
+class="math inline">\(i\in\{0,\ldots,k-2\}\)</span>. Therefore, the cost
+of all calls to <code>size(u)</code> is <span
+class="math display">\[\begin{eqnarray*}
+O\left( \sum_{i=0}^k <code>size(u</code>_{k-i}<code>)</code> \right)
+&amp;=&amp; O\left(
+  <code>size(u</code>_k<code>)</code>
+  + \sum_{i=0}^{k-1} <code>size(u</code>_{k-i-1}<code>)</code>
+  \right) \\
+&amp;=&amp; O\left(
+  <code>size(u</code>_k<code>)</code>
+  + \sum_{i=0}^{k-1}
+\left(\frac{2}{3}\right)^i<code>size(u</code>_{k}<code>)</code>
+  \right) \\
+&amp;=&amp; O\left(
+  <code>size(u</code>_k<code>)</code>\left(1+
+   \sum_{i=0}^{k-1} \left(\frac{2}{3}\right)^i
+  \right)\right) \\
+&amp;=&amp; O(<code>size(u</code>_k<code>)</code>) = O(<code>size(w)</code>) \enspace ,
+\end{eqnarray*}\]</span> where the last line follows from the fact that
+the sum is a geometrically decreasing series. ◻</p>
+</div>
+<p>All that remains is to prove an upper-bound on the cost of all calls
+to <code>rebuild(u)</code> during a sequence of <span
+class="math inline">\(m\)</span> operations:</p>
+<div class="lem">
+<p><strong>Lemma 1.3</strong>. <em>Starting with an empty <code>ScapegoatTree</code>
+any sequence of <span class="math inline">\(m\)</span> <code>add(x)</code> and
+<code>remove(x)</code> operations causes at most <span
+class="math inline">\(O(m\log m)\)</span> time to be used by <code>rebuild(u)</code>
+operations.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> To prove this, we will use a <em>credit scheme</em>.
+We imagine that each node stores a number of credits. Each credit can
+pay for some constant, <span class="math inline">\(c\)</span>, units of
+time spent rebuilding. The scheme gives out a total of <span
+class="math inline">\(O(m\log m)\)</span> credits and every call to
+<code>rebuild(u)</code> is paid for with credits stored at <code>u</code>.</p>
+<p>During an insertion or deletion, we give one credit to each node on
+the path to the inserted node, or deleted node, <code>u</code>. In this way
+we hand out at most <span class="math inline">\(\log_{3/2}<code>q</code>\le
+\log_{3/2}m\)</span> credits per operation. During a deletion we also
+store an additional credit “on the side.” Thus, in total we give out at
+most <span class="math inline">\(O(m\log m)\)</span> credits. All that
+remains is to show that these credits are sufficient to pay for all
+calls to <code>rebuild(u)</code>.</p>
+<p>If we call <code>rebuild(u)</code> during an insertion, it is because <code>u</code>
+is a scapegoat. Suppose, without loss of generality, that <span
+class="math display">\[\frac{<code>size(u.left)</code>}{<code>size(u)</code>} &gt; \frac{2}{3}
+\enspace .\]</span> Using the fact that <span
+class="math display">\[<code>size(u)</code> = 1 + <code>size(u.left)</code> +
+<code>size(u.right)</code>\]</span> we deduce that <span
+class="math display">\[\frac{1}{2}<code>size(u.left)</code> &gt;
+<code>size(u.right)</code>  \enspace\]</span> and therefore <span
+class="math display">\[<code>size(u.left)</code> - <code>size(u.right)</code> &gt;
+\frac{1}{2}<code>size(u.left)</code> &gt;
+    \frac{1}{3}<code>size(u)</code>  \enspace .\]</span> Now, the last time a
+subtree containing <code>u</code> was rebuilt (or when <code>u</code> was
+inserted, if a subtree containing <code>u</code> was never rebuilt), we had
+<span class="math display">\[<code>size(u.left)</code> - <code>size(u.right)</code> \le 1 \enspace
+.\]</span> Therefore, the number of <code>add(x)</code> or <code>remove(x)</code>
+operations that have affected <code>u.left</code> or <code>u.right</code> since then is
+at least <span class="math display">\[\frac{1}{3}<code>size(u)</code> - 1
+\enspace .\]</span> and there are therefore at least this many credits
+stored at <code>u</code> that are available to pay for the <span
+class="math inline">\(O(<code>size(u)</code>)\)</span> time it takes to call
+<code>rebuild(u)</code>.</p>
+<p>If we call <code>rebuild(u)</code> during a deletion, it is because <span
+class="math inline">\(<code>q</code> &gt; 2<code>n</code>\)</span>. In this
+case, we have <span class="math inline">\(<code>q</code>-<code>n</code>&gt;
+<code>n</code>\)</span> credits stored “on the side,” and we use these to
+pay for the <span class="math inline">\(O(<code>n</code>)\)</span> time it
+takes to rebuild the root. This completes the proof. ◻</p>
+</div>
+<h3 id="summary">Summary</h3>
+<p>The following theorem summarizes the performance of the <code>ScapegoatTree</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>A <code>ScapegoatTree</code> implements the
+<code>SSet</code> interface. Ignoring the cost of <code>rebuild(u)</code> operations, a
+<code>ScapegoatTree</code> supports the operations <code>add(x)</code>, <code>remove(x)</code>, and
+<code>find(x)</code> in <span class="math inline">\(O(\log <code>n</code>)\)</span>
+time per operation.</em></p>
+<p><em>Furthermore, beginning with an empty <code>ScapegoatTree</code>, any sequence of
+<span class="math inline">\(m\)</span> <code>add(x)</code> and <code>remove(x)</code>
+operations results in a total of <span class="math inline">\(O(m\log
+m)\)</span> time spent during all calls to <code>rebuild(u)</code>.</em></p>
+</div>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>The term <em>scapegoat tree</em> is due to Galperin and Rivest <span
+class="citation" data-cites="gr93"></span>, who define and analyze these
+trees. However, the same structure was discovered earlier by Andersson
+<span class="citation" data-cites="a89 a99"></span>, who called them
+<em>general balanced trees</em> since they can have any shape as long as
+their height is small.</p>
+<p>Experimenting with the <code>ScapegoatTree</code> implementation will reveal that it
+is often considerably slower than the other <code>SSet</code> implementations
+in this book. This may be somewhat surprising, since height bound of
+<span class="math display">\[\log_{3/2}<code>q</code> \approx 1.709\log
+<code>n</code> + O(1)\]</span> is better than the expected length of a
+search path in a <code>Skiplist</code> and not too far from that of a <code>Treap</code>.
+The implementation could be optimized by storing the sizes of subtrees
+explicitly at each node or by reusing already computed subtree sizes
+(Exercises <a href="#exc:scapegoat-quicksize" data-reference-type="ref"
+data-reference="exc:scapegoat-quicksize">[exc:scapegoat-quicksize]</a>
+and <a href="#exc:scapegoat-explicitsize" data-reference-type="ref"
+data-reference="exc:scapegoat-explicitsize">[exc:scapegoat-explicitsize]</a>).
+Even with these optimizations, there will always be sequences of
+<code>add(x)</code> and <code>delete(x)</code> operation for which a <code>ScapegoatTree</code> takes
+longer than other <code>SSet</code> implementations.</p>
+<p>This gap in performance is due to the fact that, unlike the other
+<code>SSet</code> implementations discussed in this book, a <code>ScapegoatTree</code> can
+spend a lot of time restructuring itself. asks you to prove that there
+are sequences of <code>n</code> operations in which a <code>ScapegoatTree</code> will
+spend on the order of <span class="math inline">\(<code>n</code>\log
+<code>n</code>\)</span> time in calls to <code>rebuild(u)</code>. This is in contrast
+to other <code>SSet</code> implementations discussed in this book, which only
+make <span class="math inline">\(O(<code>n</code>)\)</span> structural
+changes during a sequence of <code>n</code> operations. This is,
+unfortunately, a necessary consequence of the fact that a <code>ScapegoatTree</code>
+does all its restructuring by calls to <code>rebuild(u)</code> <span
+class="citation" data-cites="d90"></span>.</p>
+<p>Despite their lack of performance, there are applications in which a
+<code>ScapegoatTree</code> could be the right choice. This would occur any time there
+is additional data associated with nodes that cannot be updated in
+constant time when a rotation is performed, but that can be updated
+during a <code>rebuild(u)</code> operation. In such cases, the <code>ScapegoatTree</code> and
+related structures based on partial rebuilding may work. An example of
+such an application is outlined in .</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Illustrate the addition of the
+values 1.5 and then 1.6 on the <code>ScapegoatTree</code> in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Illustrate what happens when the
+sequence <span class="math inline">\(1,5,2,4,3\)</span> is added to an
+empty <code>ScapegoatTree</code>, and show where the credits described in the proof of
+go, and how they are used during this sequence of additions.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Show that, if we start with an
+empty <code>ScapegoatTree</code> and call <code>add(x)</code> for <span
+class="math inline">\(<code>x</code>=1,2,3,\ldots,<code>n</code>\)</span>,
+then the total time spent during calls to <code>rebuild(u)</code> is at least <span
+class="math inline">\(c<code>n</code>\log <code>n</code>\)</span> for some
+constant <span class="math inline">\(c&gt;0\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>The <code>ScapegoatTree</code>, as described in
+this chapter, guarantees that the length of the search path does not
+exceed <span
+class="math inline">\(\log_{3/2}<code>q</code>\)</span>.</em></p>
+<ol>
+<li><p><em>Design, analyze, and implement a modified version of
+<code>ScapegoatTree</code> where the length of the search path does not exceed <span
+class="math inline">\(\log_{<code>b</code>} <code>q</code>\)</span>, where
+<code>b</code> is a parameter with <span
+class="math inline">\(1&lt;<code>b</code>&lt;2\)</span>.</em></p></li>
+<li><p><em>What does your analysis and/or your experiments say about the
+amortized cost of <code>find(x)</code>, <code>add(x)</code> and <code>remove(x)</code> as a function
+of <code>n</code> and <code>b</code>?</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Modify the <code>add(x)</code> method of
+the <code>ScapegoatTree</code> so that it does not waste any time recomputing the sizes
+of subtrees that have already been computed. This is possible because,
+by the time the method wants to compute <code>size(w)</code>, it has already
+computed one of <code>size(w.left)</code> or <code>size(w.right)</code>. Compare the performance of
+your modified implementation with the implementation given
+here.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Implement a second version of the
+<code>ScapegoatTree</code> data structure that explicitly stores and maintains the
+sizes of the subtree rooted at each node. Compare the performance of the
+resulting implementation with that of the original <code>ScapegoatTree</code>
+implementation as well as the implementation from .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Reimplement the <code>rebuild(u)</code> method
+discussed at the beginning of this chapter so that it does not require
+the use of an array to store the nodes of the subtree being rebuilt.
+Instead, it should use recursion to first connect the nodes into a
+linked list and then convert this linked list into a perfectly balanced
+binary tree. (There are very elegant recursive implementations of both
+steps.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Analyze and implement a
+<code>WeightBalancedTree</code>. This is a tree in which each node <code>u</code>, except the
+root, maintains the <em>balance invariant</em> that <span
+class="math inline">\(<code>size(u)</code> \le (2/3)<code>size(u.parent)</code>\)</span>. The
+<code>add(x)</code> and <code>remove(x)</code> operations are identical to the standard
+<code>BinarySearchTree</code> operations, except that any time the balance invariant is
+violated at a node <code>u</code>, the subtree rooted at <code>u.parent</code> is
+rebuilt. Your analysis should show that operations on a <code>WeightBalancedTree</code> run
+in <span class="math inline">\(O(\log<code>n</code>)\)</span> amortized
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Analyze and implement a
+<code>CountdownTree</code>. In a <code>CountdownTree</code> each node <code>u</code> keeps a
+<em>timer</em> <code>u.t</code>. The <code>add(x)</code> and <code>remove(x)</code> operations
+are exactly the same as in a standard <code>BinarySearchTree</code> except that, whenever
+one of these operations affects <code>u</code>’s subtree, <code>u.t</code> is
+decremented. When <span class="math inline">\(<code>u.t</code>=0\)</span> the
+entire subtree rooted at <code>u</code> is rebuilt into a perfectly
+balanced binary search tree. When a node <code>u</code> is involved in a
+rebuilding operation (either because <code>u</code> is rebuilt or one of
+<code>u</code>’s ancestors is rebuilt) <code>u.t</code> is reset to <span
+class="math inline">\(<code>size(u)</code>/3\)</span>.</em></p>
+<p><em>Your analysis should show that operations on a <code>CountdownTree</code> run in
+<span class="math inline">\(O(\log <code>n</code>)\)</span> amortized time.
+(Hint: First show that each node <code>u</code> satisfies some version of a
+balance invariant.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>Analyze and implement a
+<code>DynamiteTree</code>. In a <code>DynamiteTree</code> each node <code>u</code> keeps tracks of the
+size of the subtree rooted at <code>u</code> in a variable <code>u.size</code>. The
+<code>add(x)</code> and <code>remove(x)</code> operations are exactly the same as in a
+standard <code>BinarySearchTree</code> except that, whenever one of these operations
+affects a node <code>u</code>’s subtree, <code>u</code> <em>explodes</em> with
+probability <span class="math inline">\(1/<code>u.size</code>\)</span>. When
+<code>u</code> explodes, its entire subtree is rebuilt into a perfectly
+balanced binary search tree.</em></p>
+<p><em>Your analysis should show that operations on a <code>DynamiteTree</code> run in
+<span class="math inline">\(O(\log <code>n</code>)\)</span> expected
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Design and implement a
+<code>Sequence</code> data structure that maintains a sequence (list) of elements.
+It supports these operations:</em></p>
+<ul>
+<li><p><em><code>addAfter(e)</code>: Add a new element after the element <code>e</code>
+in the sequence. Return the newly added element. (If <code>e</code> is
+null, the new element is added at the beginning of the
+sequence.)</em></p></li>
+<li><p><em><code>remove(e)</code>: Remove <code>e</code> from the
+sequence.</em></p></li>
+<li><p><em><code>testBefore(e1,e2)</code>: return <code>true</code> if and only if <code>e1</code>
+comes before <code>e2</code> in the sequence.</em></p></li>
+</ul>
+<p><em>The first two operations should run in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> amortized time. The
+third operation should run in constant time.</em></p>
+<p><em>The <code>Sequence</code> data structure can be implemented by storing the
+elements in something like a <code>ScapegoatTree</code>, in the same order that they
+occur in the sequence. To implement <code>testBefore(e1,e2)</code> in constant time, each
+element <code>e</code> is labelled with an integer that encodes the path
+from the root to <code>e</code>. In this way, <code>testBefore(e1,e2)</code> can be
+implemented by comparing the labels of <code>e1</code> and
+<code>e2</code>.</em></p>
+</div>

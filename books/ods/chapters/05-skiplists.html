@@ -1,0 +1,663 @@
+<h1 id="skiplists">Skiplists</h1>
+<p>In this chapter, we discuss a beautiful data structure: the skiplist,
+which has a variety of applications. Using a skiplist we can implement a
+<code>List</code> that has <span class="math inline">\(O(\log n)\)</span> time
+implementations of <code>get(i)</code>, <code>set(i,x)</code>, <code>add(i,x)</code>, and <code>remove(i)</code>. We
+can also implement an <code>SSet</code> in which all operations run in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time.</p>
+<p>The efficiency of skiplists relies on their use of randomization.
+When a new element is added to a skiplist, the skiplist uses random coin
+tosses to determine the height of the new element. The performance of
+skiplists is expressed in terms of expected running times and path
+lengths. This expectation is taken over the random coin tosses used by
+the skiplist. In the implementation, the random coin tosses used by a
+skiplist are simulated using a pseudo-random number (or bit)
+generator.</p>
+<h2 id="the-basic-structure">The Basic Structure</h2>
+<p>Conceptually, a skiplist is a sequence of singly-linked lists <span
+class="math inline">\(L_0,\ldots,L_h\)</span>. Each list <span
+class="math inline">\(L_r\)</span> contains a subset of the items in
+<span class="math inline">\(L_{r-1}\)</span>. We start with the input
+list <span class="math inline">\(L_0\)</span> that contains <code>n</code>
+items and construct <span class="math inline">\(L_1\)</span> from <span
+class="math inline">\(L_0\)</span>, <span
+class="math inline">\(L_2\)</span> from <span
+class="math inline">\(L_1\)</span>, and so on. The items in <span
+class="math inline">\(L_r\)</span> are obtained by tossing a coin for
+each element, <code>x</code>, in <span
+class="math inline">\(L_{r-1}\)</span> and including <code>x</code> in <span
+class="math inline">\(L_r\)</span> if the coin turns up as heads. This
+process ends when we create a list <span
+class="math inline">\(L_r\)</span> that is empty. An example of a
+skiplist is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/skiplist" />
+</div>
+<figcaption>A skiplist containing seven elements.</figcaption>
+</figure>
+<p>For an element, <code>x</code>, in a skiplist, we call the
+<em>height</em> of <code>x</code> the largest value <span
+class="math inline">\(r\)</span> such that <code>x</code> appears in <span
+class="math inline">\(L_r\)</span>. Thus, for example, elements that
+only appear in <span class="math inline">\(L_0\)</span> have height
+<span class="math inline">\(0\)</span>. If we spend a few moments
+thinking about it, we notice that the height of <code>x</code> corresponds
+to the following experiment: Toss a coin repeatedly until it comes up as
+tails. How many times did it come up as heads? The answer, not
+surprisingly, is that the expected height of a node is 1. (We expect to
+toss the coin twice before getting tails, but we don’t count the last
+toss.) The <em>height</em> of a skiplist is the height of its tallest
+node.</p>
+<p>At the head of every list is a special node, called the
+<em>sentinel</em>, that acts as a dummy node for the list. The key
+property of skiplists is that there is a short path, called the
+<em>search path</em>, from the sentinel in <span
+class="math inline">\(L_h\)</span> to every node in <span
+class="math inline">\(L_0\)</span>. Remembering how to construct a
+search path for a node, <code>u</code>, is easy (see ) : Start at the top
+left corner of your skiplist (the sentinel in <span
+class="math inline">\(L_h\)</span>) and always go right unless that
+would overshoot <code>u</code>, in which case you should take a step down
+into the list below.</p>
+<p>More precisely, to construct the search path for the node <code>u</code>
+in <span class="math inline">\(L_0\)</span>, we start at the sentinel,
+<code>w</code>, in <span class="math inline">\(L_h\)</span>. Next, we
+examine <code>w.next</code>. If <code>w.next</code> contains an item that appears before
+<code>u</code> in <span class="math inline">\(L_0\)</span>, then we set
+<span class="math inline">\(<code>w</code>=<code>w.next</code>\)</span>. Otherwise,
+we move down and continue the search at the occurrence of <code>w</code> in
+the list <span class="math inline">\(L_{h-1}\)</span>. We continue this
+way until we reach the predecessor of <code>u</code> in <span
+class="math inline">\(L_0\)</span>.</p>
+<figure>
+<div class="center">
+<img src="figs/skiplist-searchpath" />
+</div>
+<figcaption>The search path for the node containing <span
+class="math inline">\(4\)</span> in a skiplist.</figcaption>
+</figure>
+<p>The following result, which we will prove in , shows that the search
+path is quite short:</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>The expected length of the search
+path for any node, <code>u</code>, in <span
+class="math inline">\(L_0\)</span> is at most <span
+class="math inline">\(2\log <code>n</code> + O(1) = O(\log
+<code>n</code>)\)</span>.</em></p>
+</div>
+<p>A space-efficient way to implement a skiplist is to define a
+<code>Node</code>, <code>u</code>, as consisting of a data value, <code>x</code>, and
+an array, <code>next</code>, of pointers, where <code>u.next[i]</code> points to
+<code>u</code>’s successor in the list <span
+class="math inline">\(L_{<code>i</code>}\)</span>. In this way, the data,
+<code>x</code>, in a node is referenced only once, even though <code>x</code>
+may appear in several lists.</p>
+<p>The next two sections of this chapter discuss two different
+applications of skiplists. In each of these applications, <span
+class="math inline">\(L_0\)</span> stores the main structure (a list of
+elements or a sorted set of elements). The primary difference between
+these structures is in how a search path is navigated; in particular,
+they differ in how they decide if a search path should go down into
+<span class="math inline">\(L_{r-1}\)</span> or go right within <span
+class="math inline">\(L_r\)</span>.</p>
+<h2 id="code39-an-efficient-code40"><code>SkiplistSSet</code>: An Efficient
+<code>SSet</code></h2>
+<p>A <code>SkiplistSSet</code> uses a skiplist structure to implement the <code>SSet</code>
+interface. When used in this way, the list <span
+class="math inline">\(L_0\)</span> stores the elements of the <code>SSet</code>
+in sorted order. The <code>find(x)</code> method works by following the search
+path for the smallest value <code>y</code> such that <span
+class="math inline">\(<code>y</code>\ge<code>x</code>\)</span>:</p>
+<p><code>[listing: ods/SkiplistSSet.find(x).findPredNode(x)]</code></p>
+<p>Following the search path for <code>y</code> is easy: when situated at
+some node, <code>u</code>, in <span
+class="math inline">\(L_{<code>r</code>}\)</span>, we look right to
+<code>u.next[r].x</code>. If <span
+class="math inline">\(<code>x</code>&gt;<code>u.next[r].x</code>\)</span>, then we take a
+step to the right in <span
+class="math inline">\(L_{<code>r</code>}\)</span>; otherwise, we move down
+into <span class="math inline">\(L_{<code>r</code>-1}\)</span>. Each step
+(right or down) in this search takes only constant time; thus, by , the
+expected running time of <code>find(x)</code> is <span
+class="math inline">\(O(\log <code>n</code>)\)</span>.</p>
+<p>Before we can add an element to a <code>SkipListSSet</code>, we need a method to
+simulate tossing coins to determine the height, <code>k</code>, of a new
+node. We do so by picking a random integer, <code>z</code>, and counting the
+number of trailing <span class="math inline">\(1\)</span>s in the binary
+representation of <code>z</code>:<a href="#fn1" class="footnote-ref"
+id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p><code>[listing: ods/SkiplistSSet.pickHeight()]</code></p>
+<p>To implement the <code>add(x)</code> method in a <code>SkiplistSSet</code> we search for
+<code>x</code> and then splice <code>x</code> into a few lists <span
+class="math inline">\(L_0\)</span>,…,<span
+class="math inline">\(L_{<code>k</code>}\)</span>, where <code>k</code> is
+selected using the <code>pickHeight()</code> method. The easiest way to do this is to
+use an array, <code>stack</code>, that keeps track of the nodes at which the
+search path goes down from some list <span
+class="math inline">\(L_{<code>r</code>}\)</span> into <span
+class="math inline">\(L_{<code>r</code>-1}\)</span>. More precisely,
+<code>stack[r]</code> is the node in <span
+class="math inline">\(L_{<code>r</code>}\)</span> where the search path
+proceeded down into <span
+class="math inline">\(L_{<code>r</code>-1}\)</span>. The nodes that we
+modify to insert <code>x</code> are precisely the nodes <span
+class="math inline">\(<code>stack[0]</code>,\ldots,<code>stack[k]</code>\)</span>. The
+following code implements this algorithm for <code>add(x)</code>: <span
+id="pg:skiplist-add" data-label="pg:skiplist-add"></span>
+<code>[listing: ods/SkiplistSSet.add(x)]</code></p>
+<figure>
+<div class="center">
+<img src="figs/skiplist-add" />
+</div>
+<figcaption>Adding the node containing <span
+class="math inline">\(3.5\)</span> to a skiplist. The nodes stored in
+<code>stack</code> are highlighted.</figcaption>
+</figure>
+<p>Removing an element, <code>x</code>, is done in a similar way, except
+that there is no need for <code>stack</code> to keep track of the search path.
+The removal can be done as we are following the search path. We search
+for <code>x</code> and each time the search moves downward from a node
+<code>u</code>, we check if <span
+class="math inline">\(<code>u.next.x</code>=<code>x</code>\)</span> and if so, we
+splice <code>u</code> out of the list:
+<code>[listing: ods/SkiplistSSet.remove(x)]</code></p>
+<figure>
+<div class="center">
+<img src="figs/skiplist-remove" />
+</div>
+<figcaption>Removing the node containing <span
+class="math inline">\(3\)</span> from a skiplist.</figcaption>
+</figure>
+<h3 id="summary">Summary</h3>
+<p>The following theorem summarizes the performance of skiplists when
+used to implement sorted sets:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em><code>SkiplistSSet</code> implements the
+<code>SSet</code> interface. A <code>SkiplistSSet</code> supports the operations <code>add(x)</code>,
+<code>remove(x)</code>, and <code>find(x)</code> in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> expected time per operation.</em></p>
+</div>
+<h2 id="code97-an-efficient-random-access-code98"><code>SkiplistList</code>: An
+Efficient Random-Access <code>List</code></h2>
+<p>A <code>SkiplistList</code> implements the <code>List</code> interface using a skiplist
+structure. In a <code>SkiplistList</code>, <span class="math inline">\(L_0\)</span>
+contains the elements of the list in the order in which they appear in
+the list. As in a <code>SkiplistSSet</code>, elements can be added, removed, and
+accessed in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> time.</p>
+<p>For this to be possible, we need a way to follow the search path for
+the <code>i</code>th element in <span class="math inline">\(L_0\)</span>.
+The easiest way to do this is to define the notion of the
+<em>length</em> of an edge in some list, <span
+class="math inline">\(L_{<code>r</code>}\)</span>. We define the length of
+every edge in <span class="math inline">\(L_{0}\)</span> as 1. The
+length of an edge, <code>e</code>, in <span
+class="math inline">\(L_{<code>r</code>}\)</span>, <span
+class="math inline">\(<code>r</code>&gt;0\)</span>, is defined as the sum
+of the lengths of the edges below <code>e</code> in <span
+class="math inline">\(L_{<code>r</code>-1}\)</span>. Equivalently, the
+length of <code>e</code> is the number of edges in <span
+class="math inline">\(L_0\)</span> below <code>e</code>. See for an example
+of a skiplist with the lengths of its edges shown. Since the edges of
+skiplists are stored in arrays, the lengths can be stored the same
+way:</p>
+<figure>
+<div class="center">
+<img src="figs/skiplist-lengths" />
+</div>
+<figcaption>The lengths of the edges in a skiplist.</figcaption>
+</figure>
+<p>The useful property of this definition of length is that, if we are
+currently at a node that is at position <code>j</code> in <span
+class="math inline">\(L_0\)</span> and we follow an edge of length <span
+class="math inline">\(\ell\)</span>, then we move to a node whose
+position, in <span class="math inline">\(L_0\)</span>, is <span
+class="math inline">\(<code>j</code>+\ell\)</span>. In this way, while
+following a search path, we can keep track of the position, <code>j</code>,
+of the current node in <span class="math inline">\(L_0\)</span>. When at
+a node, <code>u</code>, in <span
+class="math inline">\(L_{<code>r</code>}\)</span>, we go right if
+<code>j</code> plus the length of the edge <code>u.next[r]</code> is less than
+<code>i</code>. Otherwise, we go down into <span
+class="math inline">\(L_{<code>r</code>-1}\)</span>.</p>
+<p><code>[listing: ods/SkiplistList.findPred(i)]</code>
+<code>[listing: ods/SkiplistList.get(i).set(i,x)]</code></p>
+<p>Since the hardest part of the operations <code>get(i)</code> and <code>set(i,x)</code>
+is finding the <code>i</code>th node in <span
+class="math inline">\(L_0\)</span>, these operations run in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> time.</p>
+<p>Adding an element to a <code>SkiplistList</code> at a position, <code>i</code>, is
+fairly simple. Unlike in a <code>SkiplistSSet</code>, we are sure that a new node will
+actually be added, so we can do the addition at the same time as we
+search for the new node’s location. We first pick the height,
+<code>k</code>, of the newly inserted node, <code>w</code>, and then follow
+the search path for <code>i</code>. Any time the search path moves down
+from <span class="math inline">\(L_{<code>r</code>}\)</span> with <span
+class="math inline">\(<code>r</code>\le <code>k</code>\)</span>, we splice
+<code>w</code> into <span class="math inline">\(L_{<code>r</code>}\)</span>.
+The only extra care needed is to ensure that the lengths of edges are
+updated properly. See .</p>
+<figure>
+<div class="center">
+<img src="figs/skiplist-addix" />
+</div>
+<figcaption>Adding an element to a <code>SkiplistList</code>.</figcaption>
+</figure>
+<p>Note that, each time the search path goes down at a node,
+<code>u</code>, in <span class="math inline">\(L_{<code>r</code>}\)</span>,
+the length of the edge <code>u.next[r]</code> increases by one, since we are adding
+an element below that edge at position <code>i</code>. Splicing the node
+<code>w</code> between two nodes, <code>u</code> and <code>z</code>, works as
+shown in . While following the search path we are already keeping track
+of the position, <code>j</code>, of <code>u</code> in <span
+class="math inline">\(L_0\)</span>. Therefore, we know that the length
+of the edge from <code>u</code> to <code>w</code> is <span
+class="math inline">\(<code>i</code>-<code>j</code>\)</span>. We can also
+deduce the length of the edge from <code>w</code> to <code>z</code> from the
+length, <span class="math inline">\(\ell\)</span>, of the edge from
+<code>u</code> to <code>z</code>. Therefore, we can splice in <code>w</code> and
+update the lengths of the edges in constant time.</p>
+<figure>
+<div class="center">
+<img src="figs/skiplist-lengths-splice" />
+</div>
+<figcaption>Updating the lengths of edges while splicing a node
+<code>w</code> into a skiplist.</figcaption>
+</figure>
+<p>This sounds more complicated than it is, for the code is actually
+quite simple:</p>
+<p><code>[listing: ods/SkiplistList.add(i,x)]</code>
+<code>[listing: ods/SkiplistList.add(i,w)]</code></p>
+<p>By now, the implementation of the <code>remove(i)</code> operation in a
+<code>SkiplistList</code> should be obvious. We follow the search path for the node at
+position <code>i</code>. Each time the search path takes a step down from a
+node, <code>u</code>, at level <code>r</code> we decrement the length of the
+edge leaving <code>u</code> at that level. We also check if <code>u.next[r]</code> is
+the element of rank <code>i</code> and, if so, splice it out of the list at
+that level. An example is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/skiplist-removei" />
+</div>
+<figcaption>Removing an element from a <code>SkiplistList</code>.</figcaption>
+</figure>
+<p><code>[listing: ods/SkiplistList.remove(i)]</code></p>
+<h3 id="summary-1">Summary</h3>
+<p>The following theorem summarizes the performance of the <code>SkiplistList</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>A <code>SkiplistList</code> implements the
+<code>List</code> interface. A <code>SkiplistList</code> supports the operations
+<code>get(i)</code>, <code>set(i,x)</code>, <code>add(i,x)</code>, and <code>remove(i)</code> in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time per
+operation.</em></p>
+</div>
+<h2 id="analysis-of-skiplists">Analysis of Skiplists</h2>
+<p>In this section, we analyze the expected height, size, and length of
+the search path in a skiplist. This section requires a background in
+basic probability. Several proofs are based on the following basic
+observation about coin tosses.</p>
+<div class="lem">
+<p><strong>Lemma 1.2</strong>. <em>Let <span
+class="math inline">\(T\)</span> be the number of times a fair coin is
+tossed up to and including the first time the coin comes up heads. Then
+<span class="math inline">\(\E[T]=2\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> Suppose we stop tossing the coin the first time it
+comes up heads. Define the indicator variable <span
+class="math display">\[I_{i} = \left\{\begin{array}{ll}
+     0 &amp; \mbox{if the coin is tossed less than $i$ times} \\
+     1 &amp; \mbox{if the coin is tossed $i$ or more times}
+     \end{array}\right.\]</span> Note that <span
+class="math inline">\(I_i=1\)</span> if and only if the first <span
+class="math inline">\(i-1\)</span> coin tosses are tails, so <span
+class="math inline">\(\E[I_i]=\Pr\{I_i=1\}=1/2^{i-1}\)</span>. Observe
+that <span class="math inline">\(T\)</span>, the total number of coin
+tosses, can be written as <span
+class="math inline">\(T=\sum_{i=1}^{\infty} I_i\)</span>. Therefore,
+<span class="math display">\[\begin{align*}
+    \E[T] &amp; =  \E\left[\sum_{i=1}^\infty I_i\right] \\
+     &amp; =  \sum_{i=1}^\infty \E\left[I_i\right] \\
+     &amp; =  \sum_{i=1}^\infty 1/2^{i-1} \\
+     &amp; =  1 + 1/2 + 1/4 + 1/8 + \cdots \\
+     &amp; =  2 \enspace .   \qedhere
+\end{align*}\]</span> ◻</p>
+</div>
+<p>The next two lemmata tell us that skiplists have linear size:</p>
+<div class="lem">
+<p><strong>Lemma 1.3</strong>. <em>The expected number of nodes in a
+skiplist containing <span class="math inline">\(<code>n</code>\)</span>
+elements, not including occurrences of the sentinel, is <span
+class="math inline">\(2<code>n</code>\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> The probability that any particular element,
+<code>x</code>, is included in list <span
+class="math inline">\(L_{<code>r</code>}\)</span> is <span
+class="math inline">\(1/2^{<code>r</code>}\)</span>, so the expected number
+of nodes in <span class="math inline">\(L_{<code>r</code>}\)</span> is
+<span class="math inline">\(<code>n</code>/2^{<code>r</code>}\)</span>.<a
+href="#fn2" class="footnote-ref" id="fnref2"
+role="doc-noteref"><sup>2</sup></a> Therefore, the total expected number
+of nodes in all lists is <span
+class="math display">\[\sum_{<code>r</code>=0}^\infty
+<code>n</code>/2^{<code>r</code>} = <code>n</code>(1+1/2+1/4+1/8+\cdots) =
+2<code>n</code> \enspace . \qedhere\]</span> ◻</p>
+</div>
+<div class="lem">
+<p><strong>Lemma 1.4</strong>. <em>The expected height of a skiplist
+containing <code>n</code> elements is at most <span
+class="math inline">\(\log <code>n</code> + 2\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> For each <span
+class="math inline">\(<code>r</code>\in\{1,2,3,\ldots,\infty\}\)</span>,
+define the indicator random variable <span
+class="math display">\[I_{<code>r</code>} = \left\{\begin{array}{ll}
+     0 &amp; \mbox{if $L_{<code>r</code>}$ is empty} \\
+     1 &amp; \mbox{if $L_{<code>r</code>}$ is non-empty}
+     \end{array}\right.\]</span> The height, <code>h</code>, of the
+skiplist is then given by <span class="math display">\[<code>h</code> =
+\sum_{r=1}^\infty I_{<code>r</code>} \enspace .\]</span> Note that <span
+class="math inline">\(I_{<code>r</code>}\)</span> is never more than the
+length, <span class="math inline">\(|L_{<code>r</code>}|\)</span>, of <span
+class="math inline">\(L_{<code>r</code>}\)</span>, so <span
+class="math display">\[\E[I_{<code>r</code>}] \le \E[|L_{<code>r</code>}|] =
+<code>n</code>/2^{<code>r</code>} \enspace .\]</span> Therefore, we have <span
+class="math display">\[\begin{align*}
+       \E[<code>h</code>] &amp;= \E\left[\sum_{r=1}^\infty
+I_{<code>r</code>}\right] \\
+        &amp;= \sum_{<code>r</code>=1}^{\infty} E[I_{<code>r</code>}] \\
+        &amp;= \sum_{<code>r</code>=1}^{\lfloor\log <code>n</code>\rfloor}
+E[I_{<code>r</code>}]
+                 + \sum_{r=\lfloor\log <code>n</code>\rfloor+1}^{\infty}
+E[I_{<code>r</code>}]  \\
+        &amp;\le \sum_{<code>r</code>=1}^{\lfloor\log <code>n</code>\rfloor} 1
+                 + \sum_{r=\lfloor\log <code>n</code>\rfloor+1}^{\infty}
+<code>n</code>/2^{<code>r</code>} \\
+        &amp;\le \log <code>n</code>
+                 + \sum_{<code>r</code>=0}^\infty 1/2^{<code>r</code>} \\
+        &amp;= \log <code>n</code> + 2 \enspace . \qedhere
+\end{align*}\]</span> ◻</p>
+</div>
+<div class="lem">
+<p><strong>Lemma 1.5</strong>. <em>The expected number of nodes in a
+skiplist containing <span class="math inline">\(<code>n</code>\)</span>
+elements, including all occurrences of the sentinel, is <span
+class="math inline">\(2<code>n</code>+O(\log
+<code>n</code>)\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> By , the expected number of nodes, not including the
+sentinel, is <span class="math inline">\(2<code>n</code>\)</span>. The
+number of occurrences of the sentinel is equal to the height, <span
+class="math inline">\(<code>h</code>\)</span>, of the skiplist so, by the
+expected number of occurrences of the sentinel is at most <span
+class="math inline">\(\log <code>n</code>+2 = O(\log
+<code>n</code>)\)</span>. ◻</p>
+</div>
+<div class="lem">
+<p><strong>Lemma 1.6</strong>. <em>The expected length of a search path
+in a skiplist is at most <span class="math inline">\(2\log <code>n</code> +
+O(1)\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> The easiest way to see this is to consider the
+<em>reverse search path</em> for a node, <code>x</code>. This path starts
+at the predecessor of <code>x</code> in <span
+class="math inline">\(L_0\)</span>. At any point in time, if the path
+can go up a level, then it does. If it cannot go up a level then it goes
+left. Thinking about this for a few moments will convince us that the
+reverse search path for <code>x</code> is identical to the search path for
+<code>x</code>, except that it is reversed.</p>
+<p>The number of nodes that the reverse search path visits at a
+particular level, <code>r</code>, is related to the following experiment:
+Toss a coin. If the coin comes up as heads, then move up and stop.
+Otherwise, move left and repeat the experiment. The number of coin
+tosses before the heads represents the number of steps to the left that
+a reverse search path takes at a particular level.<a href="#fn3"
+class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>
+tells us that the expected number of coin tosses before the first heads
+is 1.</p>
+<p>Let <span class="math inline">\(S_{<code>r</code>}\)</span> denote the
+number of steps the forward search path takes at level <span
+class="math inline">\(<code>r</code>\)</span> that go to the right. We have
+just argued that <span class="math inline">\(\E[S_{<code>r</code>}]\le
+  1\)</span>. Furthermore, <span
+class="math inline">\(S_{<code>r</code>}\le |L_{<code>r</code>}|\)</span>,
+since we can’t take more steps in <span
+class="math inline">\(L_{<code>r</code>}\)</span> than the length of <span
+class="math inline">\(L_{<code>r</code>}\)</span>, so <span
+class="math display">\[\E[S_{<code>r</code>}] \le \E[|L_{<code>r</code>}|] =
+<code>n</code>/2^{<code>r</code>} \enspace .\]</span> We can now finish as in
+the proof of . Let <span class="math inline">\(S\)</span> be the length
+of the search path for some node, <code>u</code>, in a skiplist, and let
+<span class="math inline">\(<code>h</code>\)</span> be the height of the
+skiplist. Then <span class="math display">\[\begin{align*}
+      \E[S]
+         &amp;= \E\left[ <code>h</code> + \sum_{<code>r</code>=0}^\infty
+S_{<code>r</code>} \right] \\
+         &amp;= \E[<code>h</code>] + \sum_{<code>r</code>=0}^\infty
+\E[S_{<code>r</code>}]  \\
+         &amp;= \E[<code>h</code>] + \sum_{<code>r</code>=0}^{\lfloor\log
+<code>n</code>\rfloor} \E[S_{<code>r</code>}]
+              + \sum_{<code>r</code>=\lfloor\log
+<code>n</code>\rfloor+1}^\infty \E[S_{<code>r</code>}] \\
+         &amp;\le \E[<code>h</code>] + \sum_{<code>r</code>=0}^{\lfloor\log
+<code>n</code>\rfloor} 1
+              + \sum_{r=\lfloor\log <code>n</code>\rfloor+1}^\infty
+<code>n</code>/2^{<code>r</code>} \\
+         &amp;\le \E[<code>h</code>] + \sum_{<code>r</code>=0}^{\lfloor\log
+<code>n</code>\rfloor} 1
+              + \sum_{<code>r</code>=0}^{\infty} 1/2^{<code>r</code>} \\
+         &amp;\le \E[<code>h</code>] + \sum_{<code>r</code>=0}^{\lfloor\log
+<code>n</code>\rfloor} 1
+              + \sum_{<code>r</code>=0}^{\infty} 1/2^{<code>r</code>} \\
+         &amp;\le \E[<code>h</code>] + \log <code>n</code> + 3 \\
+         &amp;\le 2\log <code>n</code> + 5  \enspace . \qedhere
+\end{align*}\]</span> ◻</p>
+</div>
+<p>The following theorem summarizes the results in this section:</p>
+<div class="thm">
+<p><strong>Theorem 1.3</strong>. <em>A skiplist containing <span
+class="math inline">\(<code>n</code>\)</span> elements has expected size
+<span class="math inline">\(O(<code>n</code>)\)</span> and the expected
+length of the search path for any particular element is at most <span
+class="math inline">\(2\log <code>n</code> + O(1)\)</span>.</em></p>
+</div>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>Skiplists were introduced by Pugh <span class="citation"
+data-cites="p91"></span> who also presented a number of applications and
+extensions of skiplists <span class="citation" data-cites="p89"></span>.
+Since then they have been studied extensively. Several researchers have
+done very precise analyses of the expected length and variance of the
+length of the search path for the <code>i</code>th element in a skiplist
+<span class="citation" data-cites="kp94 kmp95 pmp92"></span>.
+Deterministic versions <span class="citation"
+data-cites="mps92"></span>, biased versions <span class="citation"
+data-cites="bbg02 esss01"></span>, and self-adjusting versions <span
+class="citation" data-cites="bdl08"></span> of skiplists have all been
+developed. Skiplist implementations have been written for various
+languages and frameworks and have been used in open-source database
+systems <span class="citation" data-cites="skipdb redis"></span>. A
+variant of skiplists is used in the HP-UX operating system kernel’s
+process management structures <span class="citation"
+data-cites="hpux"></span>.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Illustrate the search paths for
+2.5 and 5.5 on the skiplist in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Illustrate the addition of the
+values 0.5 (with a height of 1) and then 3.5 (with a height of 2) to the
+skiplist in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Illustrate the removal of the
+values 1 and then 3 from the skiplist in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>Illustrate the execution of
+<code>remove(2)</code> on the <code>SkiplistList</code> in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Illustrate the execution of
+<code>add(3,x)</code> on the <code>SkiplistList</code> in . Assume that <code>pickHeight()</code> selects a
+height of 4 for the newly created node.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Show that, during an <code>add(x)</code>
+or a <code>remove(x)</code> operation, the expected number of pointers in a
+<code>SkiplistSet</code> that get changed is constant.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Suppose that, instead of promoting
+an element from <span class="math inline">\(L_{i-1}\)</span> into <span
+class="math inline">\(L_i\)</span> based on a coin toss, we promote it
+with some probability <span class="math inline">\(p\)</span>, <span
+class="math inline">\(0 &lt;
+  p &lt; 1\)</span>.</em></p>
+<ol>
+<li><p><em>Show that, with this modification, the expected length of a
+search path is at most <span class="math inline">\((1/p)\log_{1/p}
+<code>n</code> + O(1)\)</span>.</em></p></li>
+<li><p><em>What is the value of <span class="math inline">\(p\)</span>
+that minimizes the preceding expression?</em></p></li>
+<li><p><em>What is the expected height of the skiplist?</em></p></li>
+<li><p><em>What is the expected number of nodes in the
+skiplist?</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>The <code>find(x)</code> method in a
+<code>SkiplistSet</code> sometimes performs <em>redundant comparisons</em>; these
+occur when <code>x</code> is compared to the same value more than once.
+They can occur when, for some node, <code>u</code>, <span
+class="math inline">\(<code>u.next[r]</code> = <code>u.next[r-1]</code>\)</span>. Show how these
+redundant comparisons happen and modify <code>find(x)</code> so that they are
+avoided. Analyze the expected number of comparisons done by your
+modified <code>find(x)</code> method.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Design and implement a version of
+a skiplist that implements the <code>SSet</code> interface, but also allows
+fast access to elements by rank. That is, it also supports the function
+<code>get(i)</code>, which returns the element whose rank is <code>i</code> in
+<span class="math inline">\(O(\log <code>n</code>)\)</span> expected time.
+(The rank of an element <code>x</code> in an <code>SSet</code> is the number of
+elements in the <code>SSet</code> that are less than <code>x</code>.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>A <em>finger</em> in a skiplist
+is an array that stores the sequence of nodes on a search path at which
+the search path goes down. (The variable <code>stack</code> in the <code>add(x)</code>
+code on page  is a finger; the shaded nodes in show the contents of the
+finger.) One can think of a finger as pointing out the path to a node in
+the lowest list, <span class="math inline">\(L_0\)</span>.</em></p>
+<p><em>A <em>finger search</em> implements the <code>find(x)</code> operation
+using a finger, by walking up the list using the finger until reaching a
+node <code>u</code> such that <span class="math inline">\(<code>u.x</code> &lt;
+<code>x</code>\)</span> and <span
+class="math inline">\(<code>u.next</code>=<code>null</code>\)</span> or <span
+class="math inline">\(<code>u.next.x</code> &gt;
+  <code>x</code>\)</span> and then performing a normal search for
+<code>x</code> starting from <code>u</code>. It is possible to prove that the
+expected number of steps required for a finger search is <span
+class="math inline">\(O(1+\log r)\)</span>, where <span
+class="math inline">\(r\)</span> is the number values in <span
+class="math inline">\(L_0\)</span> between <code>x</code> and the value
+pointed to by the finger.</em></p>
+<p><em>Implement a subclass of <code>Skiplist</code> called <code>SkiplistWithFinger</code> that
+implements <code>find(x)</code> operations using an internal finger. This
+subclass stores a finger, which is then used so that every <code>find(x)</code>
+operation is implemented as a finger search. During each <code>find(x)</code>
+operation the finger is updated so that each <code>find(x)</code> operation uses,
+as a starting point, a finger that points to the result of the previous
+<code>find(x)</code> operation.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Write a method, <code>truncate(i)</code>, that
+truncates a <code>SkiplistList</code> at position <code>i</code>. After the execution of
+this method, the size of the list is <code>i</code> and it contains only
+the elements at indices <span
+class="math inline">\(0,\ldots,<code>i</code>-1\)</span>. The return value
+is another <code>SkiplistList</code> that contains the elements at indices <span
+class="math inline">\(<code>i</code>,\ldots,<code>n</code>-1\)</span>. This
+method should run in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.12</strong>. <em>Write a <code>SkiplistList</code> method,
+<code>absorb(l2)</code>, that takes as an argument a <code>SkiplistList</code>, <code>l2</code>,
+empties it and appends its contents, in order, to the receiver. For
+example, if <code>l1</code> contains <span
+class="math inline">\(a,b,c\)</span> and <code>l2</code> contains <span
+class="math inline">\(d,e,f\)</span>, then after calling <code>l1.absorb(l2)</code>,
+<code>l1</code> will contain <span
+class="math inline">\(a,b,c,d,e,f\)</span> and <code>l2</code> will be
+empty. This method should run in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.13</strong>. <em>Using the ideas from the
+space-efficient list, <code>SEList</code>, design and implement a
+space-efficient <code>SSet</code>, <code>SESSet</code>. To do this, store the data, in
+order, in an <code>SEList</code>, and store the blocks of this <code>SEList</code> in an
+<code>SSet</code>. If the original <code>SSet</code> implementation uses <span
+class="math inline">\(O(<code>n</code>)\)</span> space to store <code>n</code>
+elements, then the <code>SESSet</code> will use enough space for <code>n</code>
+elements plus <span
+class="math inline">\(O(<code>n</code>/<code>b</code>+<code>b</code>)\)</span>
+wasted space.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.14</strong>. <em>Using an <code>SSet</code> as your
+underlying structure, design and implement an application that reads a
+(large) text file and allows you to search, interactively, for any
+substring contained in the text. As the user types their query, a
+matching part of the text (if any) should appear as a result.</em></p>
+<p><em>Hint 1: Every substring is a prefix of some suffix, so it
+suffices to store all suffixes of the text file.</em></p>
+<p><em>Hint 2: Any suffix can be represented compactly as a single
+integer indicating where the suffix begins in the text.</em></p>
+<p><em>Test your application on some large texts, such as some of the
+books available at Project Gutenberg <span class="citation"
+data-cites="gutenberg"></span>. If done correctly, your applications
+will be very responsive; there should be no noticeable lag between
+typing keystrokes and seeing the results.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.15</strong>. <em>(This exercise should be done
+after reading about binary search trees, in .) Compare skiplists with
+binary search trees in the following ways:</em></p>
+<ol>
+<li><p><em>Explain how removing some edges of a skiplist leads to a
+structure that looks like a binary tree and is similar to a binary
+search tree.</em></p></li>
+<li><p><em>Skiplists and binary search trees each use about the same
+number of pointers (2 per node). Skiplists make better use of those
+pointers, though. Explain why.</em></p></li>
+</ol>
+</div>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>This method does not exactly replicate the coin-tossing
+experiment since the value of <code>k</code> will always be less than the
+number of bits in an <code>int</code>. However, this will have negligible
+impact unless the number of elements in the structure is much greater
+than <span class="math inline">\(2^{32}=4294967296\)</span>.<a
+href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>See to see how this is derived using indicator variables
+and linearity of expectation.<a href="#fnref2" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Note that this might overcount the number of steps to
+the left, since the experiment should end either at the first heads or
+when the search path reaches the sentinel, whichever comes first. This
+is not a problem since the lemma is only stating an upper bound.<a
+href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>

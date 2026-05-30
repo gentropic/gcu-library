@@ -1,0 +1,779 @@
+<h1 id="red-black-trees">Red-Black Trees</h1>
+<p>In this chapter, we present red-black trees, a version of binary
+search trees with logarithmic height. Red-black trees are one of the
+most widely used data structures. They appear as the primary search
+structure in many library implementations, including the Java
+Collections Framework and several implementations of the C++ Standard
+Template Library. They are also used within the Linux operating system
+kernel. There are several reasons for the popularity of red-black
+trees:</p>
+<ol>
+<li><p>A red-black tree storing <code>n</code> values has height at most
+<span class="math inline">\(2\log <code>n</code>\)</span>.</p></li>
+<li><p>The <code>add(x)</code> and <code>remove(x)</code> operations on a red-black tree run in
+<span class="math inline">\(O(\log <code>n</code>)\)</span>
+<em>worst-case</em> time.</p></li>
+<li><p>The amortized number of rotations performed during an <code>add(x)</code>
+or <code>remove(x)</code> operation is constant.</p></li>
+</ol>
+<p>The first two of these properties already put red-black trees ahead
+of skiplists, treaps, and scapegoat trees. Skiplists and treaps rely on
+randomization and their <span class="math inline">\(O(\log
+<code>n</code>)\)</span> running times are only expected. Scapegoat trees
+have a guaranteed bound on their height, but <code>add(x)</code> and <code>remove(x)</code>
+only run in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> amortized time. The third property is just icing on
+the cake. It tells us that that the time needed to add or remove an
+element <code>x</code> is dwarfed by the time it takes to find <code>x</code>.<a
+href="#fn1" class="footnote-ref" id="fnref1"
+role="doc-noteref"><sup>1</sup></a></p>
+<p>However, the nice properties of red-black trees come with a price:
+implementation complexity. Maintaining a bound of <span
+class="math inline">\(2\log <code>n</code>\)</span> on the height is not
+easy. It requires a careful analysis of a number of cases. We must
+ensure that the implementation does exactly the right thing in each
+case. One misplaced rotation or change of colour produces a bug that can
+be very difficult to understand and track down.</p>
+<p>Rather than jumping directly into the implementation of red-black
+trees, we will first provide some background on a related data
+structure: 2-4 trees. This will give some insight into how red-black
+trees were discovered and why efficiently maintaining them is even
+possible.</p>
+<h2 id="trees">2-4 Trees</h2>
+<p>A 2-4 tree is a rooted tree with the following properties:</p>
+<div class="prp">
+<p><strong>Property 1.1</strong> (height). <em>All leaves have the same
+depth.</em></p>
+</div>
+<div class="prp">
+<p><strong>Property 1.2</strong> (degree). <em>Every internal node has
+2, 3, or 4 children.</em></p>
+</div>
+<p>An example of a 2-4 tree is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/24rb-2" />
+</div>
+<figcaption>A 2-4 tree of height 3.</figcaption>
+</figure>
+<p>The properties of 2-4 trees imply that their height is logarithmic in
+the number of leaves:</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>A 2-4 tree with <code>n</code> leaves has
+height at most <span class="math inline">\(\log
+<code>n</code>\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> The lower-bound of 2 on the number of children of an
+internal node implies that, if the height of a 2-4 tree is <span
+class="math inline">\(h\)</span>, then it has at least <span
+class="math inline">\(2^h\)</span> leaves. In other words, <span
+class="math display">\[<code>n</code> \ge 2^h \enspace .\]</span> Taking
+logarithms on both sides of this inequality gives <span
+class="math inline">\(h \le \log <code>n</code>\)</span>. ◻</p>
+</div>
+<h3 id="adding-a-leaf">Adding a Leaf</h3>
+<p>Adding a leaf to a 2-4 tree is easy (see ). If we want to add a leaf
+<code>u</code> as the child of some node <code>w</code> on the second-last
+level, then we simply make <code>u</code> a child of <code>w</code>. This
+certainly maintains the height property, but could violate the degree
+property; if <code>w</code> had four children prior to adding <code>u</code>,
+then <code>w</code> now has five children. In this case, we <em>split</em>
+<code>w</code> into two nodes, <code>w</code> and <code>w</code>’, having two and
+three children, respectively. But now <code>w</code>’ has no parent, so we
+recursively make <code>w</code>’ a child of <code>w</code>’s parent. Again, this
+may cause <code>w</code>’s parent to have too many children in which case we
+split it. This process goes on until we reach a node that has fewer than
+four children, or until we split the root, <code>r</code>, into two nodes
+<code>r</code> and <code>r'</code>. In the latter case, we make a new root that
+has <code>r</code> and <code>r'</code> as children. This simultaneously increases
+the depth of all leaves and so maintains the height property.</p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-add-1"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-add-2"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-add-3"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Adding a leaf to a 2-4 Tree. This process stops after one
+split because <code>w.parent</code> has a degree of less than 4 before the
+addition.</figcaption>
+</figure>
+<p>Since the height of the 2-4 tree is never more than <span
+class="math inline">\(\log <code>n</code>\)</span>, the process of adding a
+leaf finishes after at most <span class="math inline">\(\log
+<code>n</code>\)</span> steps.</p>
+<h3 id="removing-a-leaf">Removing a Leaf</h3>
+<p>Removing a leaf from a 2-4 tree is a little more tricky (see ). To
+remove a leaf <code>u</code> from its parent <code>w</code>, we just remove it.
+If <code>w</code> had only two children prior to the removal of <code>u</code>,
+then <code>w</code> is left with only one child and violates the degree
+property.</p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-remove-1"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-remove-2"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-remove-3"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-remove-4"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/24tree-remove-5"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Removing a leaf from a 2-4 Tree. This process goes all the
+way to the root because each of <code>u</code>’s ancestors and their
+siblings have only two children.</figcaption>
+</figure>
+<p>To correct this, we look at <code>w</code>’s sibling, <code>w'</code>. The
+node <code>w'</code> is sure to exist since <code>w</code>’s parent had at least
+two children. If <code>w'</code> has three or four children, then we take one
+of these children from <code>w'</code> and give it to <code>w</code>. Now
+<code>w</code> has two children and <code>w'</code> has two or three children and
+we are done.</p>
+<p>On the other hand, if <code>w'</code> has only two children, then we
+<em>merge</em> <code>w</code> and <code>w'</code> into a single node, <code>w</code>,
+that has three children. Next we recursively remove <code>w'</code> from the
+parent of <code>w'</code>. This process ends when we reach a node,
+<code>u</code>, where <code>u</code> or its sibling has more than two children,
+or when we reach the root. In the latter case, if the root is left with
+only one child, then we delete the root and make its child the new root.
+Again, this simultaneously decreases the height of every leaf and
+therefore maintains the height property.</p>
+<p>Again, since the height of the tree is never more than <span
+class="math inline">\(\log <code>n</code>\)</span>, the process of removing
+a leaf finishes after at most <span class="math inline">\(\log
+<code>n</code>\)</span> steps.</p>
+<h2 id="code65-a-simulated-2-4-tree"><code>RedBlackTree</code>: A Simulated 2-4
+Tree</h2>
+<p>A red-black tree is a binary search tree in which each node,
+<code>u</code>, has a <em>colour</em> which is either <em>red</em> or
+<em>black</em>. Red is represented by the value <span
+class="math inline">\(0\)</span> and black by the value <span
+class="math inline">\(1\)</span>.</p>
+<p>Before and after any operation on a red-black tree, the following two
+properties are satisfied. Each property is defined both in terms of the
+colours red and black, and in terms of the numeric values 0 and 1.</p>
+<div class="prp">
+<p><strong>Property 1.3</strong> (black-height). <em>There are the same
+number of black nodes on every root to leaf path. (The sum of the
+colours on any root to leaf path is the same.)</em></p>
+</div>
+<div class="prp">
+<p><strong>Property 1.4</strong> (no-red-edge). <em>No two red nodes are
+adjacent. (For any node <code>u</code>, except the root, <span
+class="math inline">\(<code>u.colour</code> + <code>u.parent.colour</code> \ge 1\)</span>.)</em></p>
+</div>
+<p>Notice that we can always colour the root, <code>r</code>, of a red-black
+tree black without violating either of these two properties, so we will
+assume that the root is black, and the algorithms for updating a
+red-black tree will maintain this. Another trick that simplifies
+red-black trees is to treat the external nodes (represented by
+<code>nil</code>) as black nodes. This way, every real node, <code>u</code>, of a
+red-black tree has exactly two children, each with a well-defined
+colour. An example of a red-black tree is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/24rb-1" />
+</div>
+<figcaption>An example of a red-black tree with black-height 3. External
+(<code>nil</code>) nodes are drawn as squares.</figcaption>
+</figure>
+<h3 id="red-black-trees-and-2-4-trees">Red-Black Trees and 2-4
+Trees</h3>
+<p>At first it might seem surprising that a red-black tree can be
+efficiently updated to maintain the black-height and no-red-edge
+properties, and it seems unusual to even consider these as useful
+properties. However, red-black trees were designed to be an efficient
+simulation of 2-4 trees as binary trees.</p>
+<p>Refer to . Consider any red-black tree, <span
+class="math inline">\(T\)</span>, having <code>n</code> nodes and perform
+the following transformation: Remove each red node <code>u</code> and
+connect <code>u</code>’s two children directly to the (black) parent of
+<code>u</code>. After this transformation we are left with a tree <span
+class="math inline">\(T&#39;\)</span> having only black nodes.</p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/24rb-3"
+alt="image" /></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/24rb-2"
+alt="image" /></td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Every red-black tree has a corresponding 2-4
+tree.</figcaption>
+</figure>
+<p>Every internal node in <span class="math inline">\(T&#39;\)</span>
+has two, three, or four children: A black node that started out with two
+black children will still have two black children after this
+transformation. A black node that started out with one red and one black
+child will have three children after this transformation. A black node
+that started out with two red children will have four children after
+this transformation. Furthermore, the black-height property now
+guarantees that every root-to-leaf path in <span
+class="math inline">\(T&#39;\)</span> has the same length. In other
+words, <span class="math inline">\(T&#39;\)</span> is a 2-4 tree!</p>
+<p>The 2-4 tree <span class="math inline">\(T&#39;\)</span> has <span
+class="math inline">\(<code>n</code>+1\)</span> leaves that correspond to
+the <span class="math inline">\(<code>n</code>+1\)</span> external nodes of
+the red-black tree. Therefore, this tree has height at most <span
+class="math inline">\(\log (<code>n</code>+1)\)</span>. Now, every root to
+leaf path in the 2-4 tree corresponds to a path from the root of the
+red-black tree <span class="math inline">\(T\)</span> to an external
+node. The first and last node in this path are black and at most one out
+of every two internal nodes is red, so this path has at most <span
+class="math inline">\(\log(<code>n</code>+1)\)</span> black nodes and at
+most <span class="math inline">\(\log(<code>n</code>+1)-1\)</span> red
+nodes. Therefore, the longest path from the root to any
+<em>internal</em> node in <span class="math inline">\(T\)</span> is at
+most <span class="math display">\[2\log(<code>n</code>+1) -2 \le 2\log
+<code>n</code> \enspace ,\]</span> for any <span
+class="math inline">\(<code>n</code>\ge 1\)</span>. This proves the most
+important property of red-black trees:</p>
+<div class="lem">
+<p><strong>Lemma 1.2</strong>. <em>The height of red-black tree with
+<code>n</code> nodes is at most <span class="math inline">\(2\log
+<code>n</code>\)</span>.</em></p>
+</div>
+<p>Now that we have seen the relationship between 2-4 trees and
+red-black trees, it is not hard to believe that we can efficiently
+maintain a red-black tree while adding and removing elements.</p>
+<p>We have already seen that adding an element in a <code>BinarySearchTree</code> can be
+done by adding a new leaf. Therefore, to implement <code>add(x)</code> in a
+red-black tree we need a method of simulating splitting a node with five
+children in a 2-4 tree. A 2-4 tree node with five children is
+represented by a black node that has two red children, one of which also
+has a red child. We can “split” this node by colouring it red and
+colouring its two children black. An example of this is shown in .</p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/rb-split-1"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/rb-split-2"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/rb-split-3"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Simulating a 2-4 tree split operation during an addition in
+a red-black tree. (This simulates the 2-4 tree addition shown in
+.)</figcaption>
+</figure>
+<p>Similarly, implementing <code>remove(x)</code> requires a method of merging two
+nodes and borrowing a child from a sibling. Merging two nodes is the
+inverse of a split (shown in ), and involves colouring two (black)
+siblings red and colouring their (red) parent black. Borrowing from a
+sibling is the most complicated of the procedures and involves both
+rotations and recolouring nodes.</p>
+<p>Of course, during all of this we must still maintain the no-red-edge
+property and the black-height property. While it is no longer surprising
+that this can be done, there are a large number of cases that have to be
+considered if we try to do a direct simulation of a 2-4 tree by a
+red-black tree. At some point, it just becomes simpler to disregard the
+underlying 2-4 tree and work directly towards maintaining the properties
+of the red-black tree.</p>
+<h3 id="left-leaning-red-black-trees">Left-Leaning Red-Black Trees</h3>
+<p>No single definition of red-black trees exists. Rather, there is a
+family of structures that manage to maintain the black-height and
+no-red-edge properties during <code>add(x)</code> and <code>remove(x)</code> operations.
+Different structures do this in different ways. Here, we implement a
+data structure that we call a <code>RedBlackTree</code>. This structure implements a
+particular variant of red-black trees that satisfies an additional
+property:</p>
+<div class="prp">
+<p><strong>Property 1.5</strong> (left-leaning). <em>At any node
+<code>u</code>, if <code>u.left</code> is black, then <code>u.right</code> is black.</em></p>
+</div>
+<p>Note that the red-black tree shown in does not satisfy the
+left-leaning property; it is violated by the parent of the red node in
+the rightmost path.</p>
+<p>The reason for maintaining the left-leaning property is that it
+reduces the number of cases encountered when updating the tree during
+<code>add(x)</code> and <code>remove(x)</code> operations. In terms of 2-4 trees, it implies
+that every 2-4 tree has a unique representation: A node of degree two
+becomes a black node with two black children. A node of degree three
+becomes a black node whose left child is red and whose right child is
+black. A node of degree four becomes a black node with two red
+children.</p>
+<p>Before we describe the implementation of <code>add(x)</code> and <code>remove(x)</code>
+in detail, we first present some simple subroutines used by these
+methods that are illustrated in . The first two subroutines are for
+manipulating colours while preserving the black-height property. The
+<code>pushBlack(u)</code> method takes as input a black node <code>u</code> that has two
+red children and colours <code>u</code> red and its two children black. The
+<code>pullBlack(u)</code> method reverses this operation:
+<code>[listing: ods/RedBlackTree.pushBlack(u).pullBlack(u)]</code></p>
+<figure>
+<div class="center">
+<img src="figs/flippullpush" />
+</div>
+<figcaption>Flips, pulls and pushes</figcaption>
+</figure>
+<p>The <code>flipLeft(u)</code> method swaps the colours of <code>u</code> and
+<code>u.right</code> and then performs a left rotation at <code>u</code>. This
+method reverses the colours of these two nodes as well as their
+parent-child relationship:
+<code>[listing: ods/RedBlackTree.flipLeft(u)]</code> The <code>flipLeft(u)</code>
+operation is especially useful in restoring the left-leaning property at
+a node <code>u</code> that violates it (because <code>u.left</code> is black and
+<code>u.right</code> is red). In this special case, we can be assured that this
+operation preserves both the black-height and no-red-edge properties.
+The <code>flipRight(u)</code> operation is symmetric with <code>flipLeft(u)</code>, when the roles
+of left and right are reversed.
+<code>[listing: ods/RedBlackTree.flipRight(u)]</code></p>
+<h3 id="addition">Addition</h3>
+<p>To implement <code>add(x)</code> in a <code>RedBlackTree</code>, we perform a standard
+<code>BinarySearchTree</code> insertion to add a new leaf, <code>u</code>, with <span
+class="math inline">\(<code>u.x</code>=<code>x</code>\)</span> and set <span
+class="math inline">\(<code>u.colour</code>=<code>red</code>\)</span>. Note that this
+does not change the black height of any node, so it does not violate the
+black-height property. It may, however, violate the left-leaning
+property (if <code>u</code> is the right child of its parent), and it may
+violate the no-red-edge property (if <code>u</code>’s parent is
+<code>red</code>). To restore these properties, we call the method
+<code>addFixup(u)</code>. <code>[listing: ods/RedBlackTree.add(x)]</code></p>
+<p>Illustrated in , the <code>addFixup(u)</code> method takes as input a node
+<code>u</code> whose colour is red and which may violate the no-red-edge
+property and/or the left-leaning property. The following discussion is
+probably impossible to follow without referring to or recreating it on a
+piece of paper. Indeed, the reader may wish to study this figure before
+continuing.</p>
+<figure>
+<div class="center">
+<img src="figs/rb-addfix" />
+</div>
+<figcaption>A single round in the process of fixing Property 2 after an
+insertion.</figcaption>
+</figure>
+<p>If <code>u</code> is the root of the tree, then we can colour
+<code>u</code> black to restore both properties. If <code>u</code>’s sibling
+is also red, then <code>u</code>’s parent must be black, so both the
+left-leaning and no-red-edge properties already hold.</p>
+<p>Otherwise, we first determine if <code>u</code>’s parent, <code>w</code>,
+violates the left-leaning property and, if so, perform a <code>flipLeft(w)</code>
+operation and set <span
+class="math inline">\(<code>u</code>=<code>w</code>\)</span>. This leaves us
+in a well-defined state: <code>u</code> is the left child of its parent,
+<code>w</code>, so <code>w</code> now satisfies the left-leaning property. All
+that remains is to ensure the no-red-edge property at <code>u</code>. We
+only have to worry about the case in which <code>w</code> is red, since
+otherwise <code>u</code> already satisfies the no-red-edge property.</p>
+<p>Since we are not done yet, <code>u</code> is red and <code>w</code> is red.
+The no-red-edge property (which is only violated by <code>u</code> and not
+by <code>w</code>) implies that <code>u</code>’s grandparent <code>g</code>
+exists and is black. If <code>g</code>’s right child is red, then the
+left-leaning property ensures that both <code>g</code>’s children are red,
+and a call to <code>pushBlack(g)</code> makes <code>g</code> red and <code>w</code> black.
+This restores the no-red-edge property at <code>u</code>, but may cause it
+to be violated at <code>g</code>, so the whole process starts over with
+<span class="math inline">\(<code>u</code>=<code>g</code>\)</span>.</p>
+<p>If <code>g</code>’s right child is black, then a call to <code>flipRight(g)</code>
+makes <code>w</code> the (black) parent of <code>g</code> and gives
+<code>w</code> two red children, <code>u</code> and <code>g</code>. This ensures
+that <code>u</code> satisfies the no-red-edge property and <code>g</code>
+satisfies the left-leaning property. In this case we can stop.
+<code>[listing: ods/RedBlackTree.addFixup(u)]</code></p>
+<p>The <code>insertFixup(u)</code> method takes constant time per iteration and each
+iteration either finishes or moves <code>u</code> closer to the root.
+Therefore, the <code>insertFixup(u)</code> method finishes after <span
+class="math inline">\(O(\log <code>n</code>)\)</span> iterations in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> time.</p>
+<h3 id="removal">Removal</h3>
+<p>The <code>remove(x)</code> operation in a <code>RedBlackTree</code> is the most complicated to
+implement, and this is true of all known red-black tree variants. Just
+like the <code>remove(x)</code> operation in a <code>BinarySearchTree</code>, this
+operation boils down to finding a node <code>w</code> with only one child,
+<code>u</code>, and splicing <code>w</code> out of the tree by having
+<code>w.parent</code> adopt <code>u</code>.</p>
+<p>The problem with this is that, if <code>w</code> is black, then the
+black-height property will now be violated at <code>w.parent</code>. We may avoid
+this problem, temporarily, by adding <code>w.colour</code> to <code>u.colour</code>. Of
+course, this introduces two other problems: (1) if <code>u</code> and
+<code>w</code> both started out black, then <span
+class="math inline">\(<code>u.colour</code>+<code>w.colour</code>=2\)</span> (double black),
+which is an invalid colour. If <code>w</code> was red, then it is replaced
+by a black node <code>u</code>, which may violate the left-leaning property
+at <span class="math inline">\(<code>u.parent</code>\)</span>. Both of these
+problems can be resolved with a call to the <code>removeFixup(u)</code> method.
+<code>[listing: ods/RedBlackTree.remove(x)]</code></p>
+<p>The <code>removeFixup(u)</code> method takes as its input a node <code>u</code> whose
+colour is black (1) or double-black (2). If <code>u</code> is double-black,
+then <code>removeFixup(u)</code> performs a series of rotations and recolouring
+operations that move the double-black node up the tree until it can be
+eliminated. During this process, the node <code>u</code> changes until, at
+the end of this process, <code>u</code> refers to the root of the subtree
+that has been changed. The root of this subtree may have changed colour.
+In particular, it may have gone from red to black, so the <code>removeFixup(u)</code>
+method finishes by checking if <code>u</code>’s parent violates the
+left-leaning property and, if so, fixing it.
+<code>[listing: ods/RedBlackTree.removeFixup(u)]</code></p>
+<p>The <code>removeFixup(u)</code> method is illustrated in . Again, the following text
+will be difficult, if not impossible, to follow without referring to .
+Each iteration of the loop in <code>removeFixup(u)</code> processes the double-black
+node <code>u</code>, based on one of four cases:</p>
+<figure>
+<div class="center">
+<img src="figs/rb-removefix" />
+</div>
+<figcaption>A single round in the process of eliminating a double-black
+node after a removal.</figcaption>
+</figure>
+<p>Case 0: <code>u</code> is the root. This is the easiest case to treat.
+We recolour <code>u</code> to be black (this does not violate any of the
+red-black tree properties).</p>
+<p>Case 1: <code>u</code>’s sibling, <code>v</code>, is red. In this case,
+<code>u</code>’s sibling is the left child of its parent, <code>w</code> (by
+the left-leaning property). We perform a right-flip at <code>w</code> and
+then proceed to the next iteration. Note that this action causes
+<code>w</code>’s parent to violate the left-leaning property and the depth
+of <code>u</code> to increase. However, it also implies that the next
+iteration will be in Case 3 with <code>w</code> coloured red. When
+examining Case 3 below, we will see that the process will stop during
+the next iteration.
+<code>[listing: ods/RedBlackTree.removeFixupCase1(u)]</code></p>
+<p>Case 2: <code>u</code>’s sibling, <code>v</code>, is black, and <code>u</code>
+is the left child of its parent, <code>w</code>. In this case, we call
+<code>pullBlack(w)</code>, making <code>u</code> black, <code>v</code> red, and darkening
+the colour of <code>w</code> to black or double-black. At this point,
+<code>w</code> does not satisfy the left-leaning property, so we call
+<code>flipLeft(w)</code> to fix this.</p>
+<p>At this point, <code>w</code> is red and <code>v</code> is the root of the
+subtree with which we started. We need to check if <code>w</code> causes
+the no-red-edge property to be violated. We do this by inspecting
+<code>w</code>’s right child, <code>q</code>. If <code>q</code> is black, then
+<code>w</code> satisfies the no-red-edge property and we can continue the
+next iteration with <span
+class="math inline">\(<code>u</code>=<code>v</code>\)</span>.</p>
+<p>Otherwise (<code>q</code> is red), so both the no-red-edge property and
+the left-leaning properties are violated at <code>q</code> and <code>w</code>,
+respectively. The left-leaning property is restored with a call to
+<code>rotateLeft(w)</code>, but the no-red-edge property is still violated. At this
+point, <code>q</code> is the left child of <code>v</code>, <code>w</code> is the
+left child of <code>q</code>, <code>q</code> and <code>w</code> are both red, and
+<code>v</code> is black or double-black. A <code>flipRight(v)</code> makes <code>q</code>
+the parent of both <code>v</code> and <code>w</code>. Following this up by a
+<code>pushBlack(q)</code> makes both <code>v</code> and <code>w</code> black and sets the
+colour of <code>q</code> back to the original colour of <code>w</code>.</p>
+<p>At this point, the double-black node is has been eliminated and the
+no-red-edge and black-height properties are reestablished. Only one
+possible problem remains: the right child of <code>v</code> may be red, in
+which case the left-leaning property would be violated. We check this
+and perform a <code>flipLeft(v)</code> to correct it if necessary.
+<code>[listing: ods/RedBlackTree.removeFixupCase2(u)]</code></p>
+<p>Case 3: <code>u</code>’s sibling is black and <code>u</code> is the right
+child of its parent, <code>w</code>. This case is symmetric to Case 2 and
+is handled mostly the same way. The only differences come from the fact
+that the left-leaning property is asymmetric, so it requires different
+handling.</p>
+<p>As before, we begin with a call to <code>pullBlack(w)</code>, which makes
+<code>v</code> red and <code>u</code> black. A call to <code>flipRight(w)</code> promotes
+<code>v</code> to the root of the subtree. At this point <code>w</code> is
+red, and the code branches two ways depending on the colour of
+<code>w</code>’s left child, <code>q</code>.</p>
+<p>If <code>q</code> is red, then the code finishes up exactly the same way
+as Case 2 does, but is even simpler since there is no danger of
+<code>v</code> not satisfying the left-leaning property.</p>
+<p>The more complicated case occurs when <code>q</code> is black. In this
+case, we examine the colour of <code>v</code>’s left child. If it is red,
+then <code>v</code> has two red children and its extra black can be pushed
+down with a call to <code>pushBlack(v)</code>. At this point, <code>v</code> now has
+<code>w</code>’s original colour, and we are done.</p>
+<p>If <code>v</code>’s left child is black, then <code>v</code> violates the
+left-leaning property, and we restore this with a call to <code>flipLeft(v)</code>.
+We then return the node <code>v</code> so that the next iteration of
+<code>removeFixup(u)</code> then continues with <span
+class="math inline">\(<code>u</code>=<code>v</code>\)</span>.
+<code>[listing: ods/RedBlackTree.removeFixupCase3(u)]</code>.</p>
+<p>Each iteration of <code>removeFixup(u)</code> takes constant time. Cases 2 and 3
+either finish or move <code>u</code> closer to the root of the tree. Case 0
+(where <code>u</code> is the root) always terminates and Case 1 leads
+immediately to Case 3, which also terminates. Since the height of the
+tree is at most <span class="math inline">\(2\log
+<code>n</code>\)</span>, we conclude that there are at most <span
+class="math inline">\(O(\log <code>n</code>)\)</span> iterations of
+<code>removeFixup(u)</code>, so <code>removeFixup(u)</code> runs in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> time.</p>
+<h2 id="summary">Summary</h2>
+<p>The following theorem summarizes the performance of the <code>RedBlackTree</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>A <code>RedBlackTree</code> implements the
+<code>SSet</code> interface and supports the operations <code>add(x)</code>,
+<code>remove(x)</code>, and <code>find(x)</code> in <span class="math inline">\(O(\log
+  <code>n</code>)\)</span> worst-case time per operation.</em></p>
+</div>
+<p>Not included in the above theorem is the following extra bonus:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>Beginning with an empty
+<code>RedBlackTree</code>, any sequence of <span class="math inline">\(m\)</span>
+<code>add(x)</code> and <code>remove(x)</code> operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls
+<code>addFixup(u)</code> and <code>removeFixup(u)</code>.</em></p>
+</div>
+<p>We only sketch a proof of . By comparing <code>addFixup(u)</code> and <code>removeFixup(u)</code>
+with the algorithms for adding or removing a leaf in a 2-4 tree, we can
+convince ourselves that this property is inherited from a 2-4 tree. In
+particular, if we can show that the total time spent splitting, merging,
+and borrowing in a 2-4 tree is <span
+class="math inline">\(O(m)\)</span>, then this implies .</p>
+<p>The proof of this theorem for 2-4 trees uses the potential method of
+amortized analysis.<a href="#fn2" class="footnote-ref" id="fnref2"
+role="doc-noteref"><sup>2</sup></a> Define the potential of an internal
+node <code>u</code> in a 2-4 tree as <span
+class="math display">\[\Phi(<code>u</code>) =
+    \begin{cases}
+      1 &amp; \text{if <code>u</code> has 2 children} \\
+      0 &amp; \text{if <code>u</code> has 3 children} \\
+      3 &amp; \text{if <code>u</code> has 4 children}  
+    \end{cases}\]</span> and the potential of a 2-4 tree as the sum of
+the potentials of its nodes. When a split occurs, it is because a node
+with four children becomes two nodes, with two and three children. This
+means that the overall potential drops by <span
+class="math inline">\(3-1-0 = 2\)</span>. When a merge occurs, two nodes
+that used to have two children are replaced by one node with three
+children. The result is a drop in potential of <span
+class="math inline">\(2-0=2\)</span>. Therefore, for every split or
+merge, the potential decreases by two.</p>
+<p>Next notice that, if we ignore splitting and merging of nodes, there
+are only a constant number of nodes whose number of children is changed
+by the addition or removal of a leaf. When adding a node, one node has
+its number of children increase by one, increasing the potential by at
+most three. During the removal of a leaf, one node has its number of
+children decrease by one, increasing the potential by at most one, and
+two nodes may be involved in a borrowing operation, increasing their
+total potential by at most one.</p>
+<p>To summarize, each merge and split causes the potential to drop by at
+least two. Ignoring merging and splitting, each addition or removal
+causes the potential to rise by at most three, and the potential is
+always non-negative. Therefore, the number of splits and merges caused
+by <span class="math inline">\(m\)</span> additions or removals on an
+initially empty tree is at most <span
+class="math inline">\(3m/2\)</span>. is a consequence of this analysis
+and the correspondence between 2-4 trees and red-black trees.</p>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>Red-black trees were first introduced by Guibas and Sedgewick <span
+class="citation" data-cites="gs78"></span>. Despite their high
+implementation complexity they are found in some of the most commonly
+used libraries and applications. Most algorithms and data structures
+textbooks discuss some variant of red-black trees.</p>
+<p>Andersson <span class="citation" data-cites="a93"></span> describes a
+left-leaning version of balanced trees that is similar to red-black
+trees but has the additional constraint that any node has at most one
+red child. This implies that these trees simulate 2-3 trees rather than
+2-4 trees. They are significantly simpler, though, than the <code>RedBlackTree</code>
+structure presented in this chapter.</p>
+<p>Sedgewick <span class="citation" data-cites="s08"></span> describes
+two versions of left-leaning red-black trees. These use recursion along
+with a simulation of top-down splitting and merging in 2-4 trees. The
+combination of these two techniques makes for particularly short and
+elegant code.</p>
+<p>A related, and older, data structure is the <em>AVL tree</em> <span
+class="citation" data-cites="avl62"></span>. AVL trees are
+<em>height-balanced</em>: At each node <span
+class="math inline">\(u\)</span>, the height of the subtree rooted at
+<code>u.left</code> and the subtree rooted at <code>u.right</code> differ by at most one.
+It follows immediately that, if <span
+class="math inline">\(F(h)\)</span> is the minimum number of leaves in a
+tree of height <span class="math inline">\(h\)</span>, then <span
+class="math inline">\(F(h)\)</span> obeys the Fibonacci recurrence <span
+class="math display">\[F(h) = F(h-1) + F(h-2)\]</span> with base cases
+<span class="math inline">\(F(0)=1\)</span> and <span
+class="math inline">\(F(1)=1\)</span>. This means <span
+class="math inline">\(F(h)\)</span> is approximately <span
+class="math inline">\(\varphi^h/\sqrt{5}\)</span>, where <span
+class="math inline">\(\varphi=(1+\sqrt{5})/2\approx1.61803399\)</span>
+is the <em>golden ratio</em>. (More precisely, <span
+class="math inline">\(|\varphi^h/\sqrt{5} - F(h)|\le 1/2\)</span>.)
+Arguing as in the proof of , this implies <span class="math display">\[h
+\le \log_\varphi <code>n</code> \approx 1.440420088\log <code>n</code>
+\enspace ,\]</span> so AVL trees have smaller height than red-black
+trees. The height balancing can be maintained during <code>add(x)</code> and
+<code>remove(x)</code> operations by walking back up the path to the root and
+performing a rebalancing operation at each node <code>u</code> where the
+height of <code>u</code>’s left and right subtrees differ by two. See .</p>
+<figure>
+<div class="center">
+<img src="figs/avl-rebalance" />
+</div>
+<figcaption>Rebalancing in an AVL tree. At most two rotations are
+required to convert a node whose subtrees have a height of <span
+class="math inline">\(h\)</span> and <span
+class="math inline">\(h+2\)</span> into a node whose subtrees each have
+a height of at most <span
+class="math inline">\(h+1\)</span>.</figcaption>
+</figure>
+<p>Andersson’s variant of red-black trees, Sedgewick’s variant of
+red-black trees, and AVL trees are all simpler to implement than the
+<code>RedBlackTree</code> structure defined here. Unfortunately, none of them can
+guarantee that the amortized time spent rebalancing is <span
+class="math inline">\(O(1)\)</span> per update. In particular, there is
+no analogue of for those structures.</p>
+<figure>
+
+<figcaption>A red-black tree on which to practice.</figcaption>
+</figure>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Illustrate the 2-4 tree that
+corresponds to the <code>RedBlackTree</code> in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Illustrate the addition of 13,
+then 3.5, then 3.3 on the <code>RedBlackTree</code> in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Illustrate the removal of 11, then
+9, then 5 on the <code>RedBlackTree</code> in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>Show that, for arbitrarily large
+values of <code>n</code>, there are red-black trees with <code>n</code> nodes
+that have height <span class="math inline">\(2\log
+<code>n</code>-O(1)\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Consider the operations
+<code>pushBlack(u)</code> and <code>pullBlack(u)</code>. What do these operations do to the
+underlying 2-4 tree that is being simulated by the red-black
+tree?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Show that, for arbitrarily large
+values of <code>n</code>, there exist sequences of <code>add(x)</code> and
+<code>remove(x)</code> operations that lead to red-black trees with <code>n</code>
+nodes that have height <span class="math inline">\(2\log
+<code>n</code>-O(1)\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Why does the method <code>remove(x)</code> in
+the <code>RedBlackTree</code> implementation perform the assignment <code>u.parent=w.parent</code>?
+Shouldn’t this already be done by the call to <code>splice(w)</code>?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Suppose a 2-4 tree, <span
+class="math inline">\(T\)</span>, has <span
+class="math inline">\(<code>n</code>_\ell\)</span> leaves and <span
+class="math inline">\(<code>n</code>_i\)</span> internal nodes.</em></p>
+<ol>
+<li><p><em>What is the minimum value of <span
+class="math inline">\(<code>n</code>_i\)</span>, as a function of <span
+class="math inline">\(<code>n</code>_\ell\)</span>?</em></p></li>
+<li><p><em>What is the maximum value of <span
+class="math inline">\(<code>n</code>_i\)</span>, as a function of <span
+class="math inline">\(<code>n</code>_\ell\)</span>?</em></p></li>
+<li><p><em>If <span class="math inline">\(T&#39;\)</span> is a red-black
+tree that represents <span class="math inline">\(T\)</span>, then how
+many red nodes does <span class="math inline">\(T&#39;\)</span>
+have?</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Suppose you are given a binary
+search tree with <code>n</code> nodes and a height of at most <span
+class="math inline">\(2\log <code>n</code>-2\)</span>. Is it always
+possible to colour the nodes red and black so that the tree satisfies
+the black-height and no-red-edge properties? If so, can it also be made
+to satisfy the left-leaning property?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>Suppose you have two red-black
+trees <span class="math inline">\(T_1\)</span> and <span
+class="math inline">\(T_2\)</span> that have the same black height,
+<span class="math inline">\(h\)</span>, and such that the largest key in
+<span class="math inline">\(T_1\)</span> is smaller than the smallest
+key in <span class="math inline">\(T_2\)</span>. Show how to merge <span
+class="math inline">\(T_1\)</span> and <span
+class="math inline">\(T_2\)</span> into a single red-black tree in <span
+class="math inline">\(O(h)\)</span> time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Extend your solution to to the
+case where the two trees <span class="math inline">\(T_1\)</span> and
+<span class="math inline">\(T_2\)</span> have different black heights,
+<span class="math inline">\(h_1\neq h_2\)</span>. The running-time
+should be <span
+class="math inline">\(O(\max\{h_1,h_2\})\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.12</strong>. <em>Prove that, during an <code>add(x)</code>
+operation, an AVL tree must perform at most one rebalancing operation
+(that involves at most two rotations; see ). Give an example of an AVL
+tree and a <code>remove(x)</code> operation on that tree that requires on the order
+of <span class="math inline">\(\log
+  <code>n</code>\)</span> rebalancing operations.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.13</strong>. <em>Implement an <code>AVLTree</code> class
+that implements AVL trees as described above. Compare its performance to
+that of the <code>RedBlackTree</code> implementation. Which implementation has a
+faster <code>find(x)</code> operation?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.14</strong>. <em>Design and implement a series of
+experiments that compare the relative performance of <code>find(x)</code>,
+<code>add(x)</code>, and <code>remove(x)</code> for the <code>SSet</code> implemeentations
+<code>SkiplistSSet</code>, <code>ScapegoatTree</code>, <code>Treap</code>, and <code>RedBlackTree</code>. Be sure to
+include multiple test scenarios, including cases where the data is
+random, already sorted, is removed in random order, is removed in sorted
+order, and so on.</em></p>
+</div>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Note that skiplists and treaps also have this property
+in the expected sense. See Exercises <a href="#exc:skiplist-changes"
+data-reference-type="ref"
+data-reference="exc:skiplist-changes">[exc:skiplist-changes]</a> and <a
+href="#exc:treap-rotates" data-reference-type="ref"
+data-reference="exc:treap-rotates">[exc:treap-rotates]</a>.<a
+href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>See the proofs of and for other applications of the
+potential method.<a href="#fnref2" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>

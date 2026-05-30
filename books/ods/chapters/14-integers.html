@@ -1,0 +1,570 @@
+<h1 id="data-structures-for-integers">Data Structures for Integers</h1>
+<p>In this chapter, we return to the problem of implementing an
+<code>SSet</code>. The difference now is that we assume the elements stored in
+the <code>SSet</code> are <code>w</code>-bit integers. That is, we want to implement
+<code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> where <span
+class="math inline">\(<code>x</code>\in\{0,\ldots,2^{<code>w</code>}-1\}\)</span>.
+It is not too hard to think of plenty of applications where the data—or
+at least the key that we use for sorting the data—is an integer.</p>
+<p>We will discuss three data structures, each building on the ideas of
+the previous. The first structure, the <code>BinaryTrie</code> performs all three
+<code>SSet</code> operations in <span
+class="math inline">\(O(<code>w</code>)\)</span> time. This is not very
+impressive, since any subset of <span
+class="math inline">\(\{0,\ldots,2^{<code>w</code>}-1\}\)</span> has size
+<span class="math inline">\(<code>n</code>\le 2^{<code>w</code>}\)</span>, so
+that <span class="math inline">\(\log <code>n</code> \le
+<code>w</code>\)</span>. All the other <code>SSet</code> implementations discussed
+in this book perform all operations in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> time so they are all
+at least as fast as a <code>BinaryTrie</code>.</p>
+<p>The second structure, the <code>XFastTrie</code>, speeds up the search in a
+<code>BinaryTrie</code> by using hashing. With this speedup, the <code>find(x)</code> operation
+runs in <span class="math inline">\(O(\log <code>w</code>)\)</span> time.
+However, <code>add(x)</code> and <code>remove(x)</code> operations in an <code>XFastTrie</code> still
+take <span class="math inline">\(O(<code>w</code>)\)</span> time and the
+space used by an <code>XFastTrie</code> is <span
+class="math inline">\(O(<code>n</code>\cdot<code>w</code>)\)</span>.</p>
+<p>The third data structure, the <code>YFastTrie</code>, uses an <code>XFastTrie</code> to store
+only a sample of roughly one out of every <span
+class="math inline">\(<code>w</code>\)</span> elements and stores the
+remaining elements in a standard <code>SSet</code> structure. This trick
+reduces the running time of <code>add(x)</code> and <code>remove(x)</code> to <span
+class="math inline">\(O(\log <code>w</code>)\)</span> and decreases the
+space to <span class="math inline">\(O(<code>n</code>)\)</span>.</p>
+<p>The implementations used as examples in this chapter can store any
+type of data, as long as an integer can be associated with it. In the
+code samples, the variable <code>ix</code> is always the integer value
+associated with <code>x</code>, and the method <code>intValue(x)</code> converts
+<code>x</code> to its associated integer. In the text, however, we will
+simply treat <code>x</code> as if it is an integer.</p>
+<h2 id="code44-a-digital-search-tree"><code>BinaryTrie</code>: A digital search
+tree</h2>
+<p>A <code>BinaryTrie</code> encodes a set of <code>w</code> bit integers in a binary
+tree. All leaves in the tree have depth <code>w</code> and each integer is
+encoded as a root-to-leaf path. The path for the integer <code>x</code>
+turns left at level <code>i</code> if the <code>i</code>th most significant bit
+of <code>x</code> is a 0 and turns right if it is a 1. shows an example for
+the case <span class="math inline">\(<code>w</code>=4\)</span>, in which the
+trie stores the integers 3(0011), 9(1001), 12(1100), and 13(1101).</p>
+<figure>
+<div class="center">
+<img src="figs/binarytrie-ex-1" />
+</div>
+<figcaption>The integers stored in a binary trie are encoded as
+root-to-leaf paths.</figcaption>
+</figure>
+<p>Because the search path for a value <code>x</code> depends on the bits of
+<code>x</code>, it will be helpful to name the children of a node,
+<code>u</code>, <code>u.child[0]</code> (<code>left</code>) and <code>u.child[1]</code> (<code>right</code>). These
+child pointers will actually serve double-duty. Since the leaves in a
+binary trie have no children, the pointers are used to string the leaves
+together into a doubly-linked list. For a leaf in the binary trie
+<code>u.child[0]</code> (<code>prev</code>) is the node that comes before <code>u</code> in the
+list and <code>u.child[1]</code> (<code>next</code>) is the node that follows <code>u</code> in
+the list. A special node, <code>dummy</code>, is used both before the first node
+and after the last node in the list (see ).</p>
+<p>Each node, <code>u</code>, also contains an additional pointer
+<code>u.jump</code>. If <code>u</code>’s left child is missing, then <code>u.jump</code>
+points to the smallest leaf in <code>u</code>’s subtree. If <code>u</code>’s
+right child is missing, then <code>u.jump</code> points to the largest leaf in
+<code>u</code>’s subtree. An example of a <code>BinaryTrie</code>, showing <code>jump</code>
+pointers and the doubly-linked list at the leaves, is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/binarytrie-ex-2" />
+</div>
+<figcaption>A <code>BinaryTrie</code> with <code>jump</code> pointers shown as curved dashed
+edges.</figcaption>
+</figure>
+<p>The <code>find(x)</code> operation in a <code>BinaryTrie</code> is fairly straightforward.
+We try to follow the search path for <code>x</code> in the trie. If we reach
+a leaf, then we have found <code>x</code>. If we reach a node <code>u</code>
+where we cannot proceed (because <code>u</code> is missing a child), then we
+follow <code>u.jump</code>, which takes us either to the smallest leaf larger
+than <code>x</code> or the largest leaf smaller than <code>x</code>. Which of
+these two cases occurs depends on whether <code>u</code> is missing its left
+or right child, respectively. In the former case (<code>u</code> is missing
+its left child), we have found the node we want. In the latter case
+(<code>u</code> is missing its right child), we can use the linked list to
+reach the node we want. Each of these cases is illustrated in .
+<code>[listing: ods/BinaryTrie.find(x)]</code></p>
+<figure>
+<div class="center">
+<img src="figs/binarytrie-ex-3" />
+</div>
+<figcaption>The paths followed by <code>find(5)</code> and
+<code>find(8)</code>.</figcaption>
+</figure>
+<p>The running-time of the <code>find(x)</code> method is dominated by the time
+it takes to follow a root-to-leaf path, so it runs in <span
+class="math inline">\(O(<code>w</code>)\)</span> time.</p>
+<p>The <code>add(x)</code> operation in a <code>BinaryTrie</code> is also fairly
+straightforward, but has a lot of work to do:</p>
+<ol>
+<li><p>It follows the search path for <code>x</code> until reaching a node
+<code>u</code> where it can no longer proceed.</p></li>
+<li><p>It creates the remainder of the search path from <code>u</code> to a
+leaf that contains <code>x</code>.</p></li>
+<li><p>It adds the node, <code>u'</code>, containing <code>x</code> to the
+linked list of leaves (it has access to the predecessor, <code>pred</code>, of
+<code>u'</code> in the linked list from the <code>jump</code> pointer of the last
+node, <code>u</code>, encountered during step 1.)</p></li>
+<li><p>It walks back up the search path for <code>x</code> adjusting
+<code>jump</code> pointers at the nodes whose <code>jump</code> pointer should now
+point to <code>x</code>.</p></li>
+</ol>
+<p>An addition is illustrated in .</p>
+<figure>
+<div class="center">
+<img src="figs/binarytrie-add" />
+</div>
+<figcaption>Adding the values 2 and 15 to the <code>BinaryTrie</code> in
+.</figcaption>
+</figure>
+<p><code>[listing: ods/BinaryTrie.add(x)]</code> This method performs
+one walk down the search path for <code>x</code> and one walk back up. Each
+step of these walks takes constant time, so the <code>add(x)</code> method runs
+in <span class="math inline">\(O(<code>w</code>)\)</span> time.</p>
+<p>The <code>remove(x)</code> operation undoes the work of <code>add(x)</code>. Like
+<code>add(x)</code>, it has a lot of work to do:</p>
+<ol>
+<li><p>It follows the search path for <code>x</code> until reaching the
+leaf, <code>u</code>, containing <code>x</code>.</p></li>
+<li><p>It removes <code>u</code> from the doubly-linked list.</p></li>
+<li><p>It deletes <code>u</code> and then walks back up the search path for
+<code>x</code> deleting nodes until reaching a node <code>v</code> that has a
+child that is not on the search path for <code>x</code>.</p></li>
+<li><p>It walks upwards from <code>v</code> to the root updating any
+<code>jump</code> pointers that point to <code>u</code>.</p></li>
+</ol>
+<p>A removal is illustrated in .</p>
+<figure>
+<div class="center">
+<img src="figs/binarytrie-remove" />
+</div>
+<figcaption>Removing the value 9 from the <code>BinaryTrie</code> in .</figcaption>
+</figure>
+<p><code>[listing: ods/BinaryTrie.remove(x)]</code></p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>A <code>BinaryTrie</code> implements the
+<code>SSet</code> interface for <code>w</code>-bit integers. A <code>BinaryTrie</code>
+supports the operations <code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> in
+<span class="math inline">\(O(<code>w</code>)\)</span> time per operation.
+The space used by a <code>BinaryTrie</code> that stores <code>n</code> values is <span
+class="math inline">\(O(<code>n</code>\cdot<code>w</code>)\)</span>.</em></p>
+</div>
+<h2 id="code151-searching-in-doubly-logarithmic-time"><code>XFastTrie</code>:
+Searching in Doubly-Logarithmic Time</h2>
+<p>The performance of the <code>BinaryTrie</code> structure is not very impressive.
+The number of elements, <code>n</code>, stored in the structure is at most
+<span class="math inline">\(2^{<code>w</code>}\)</span>, so <span
+class="math inline">\(\log <code>n</code>\le <code>w</code>\)</span>. In other
+words, any of the comparison-based <code>SSet</code> structures described in
+other parts of this book are at least as efficient as a <code>BinaryTrie</code>, and
+are not restricted to only storing integers.</p>
+<p>Next we describe the <code>XFastTrie</code>, which is just a <code>BinaryTrie</code> with
+<code>w+1</code> hash tables—one for each level of the trie. These hash
+tables are used to speed up the <code>find(x)</code> operation to <span
+class="math inline">\(O(\log <code>w</code>)\)</span> time. Recall that the
+<code>find(x)</code> operation in a <code>BinaryTrie</code> is almost complete once we reach
+a node, <code>u</code>, where the search path for <code>x</code> would like to
+proceed to <code>u.right</code> (or <code>u.left</code>) but <code>u</code> has no right
+(respectively, left) child. At this point, the search uses <code>u.jump</code>
+to jump to a leaf, <code>v</code>, of the <code>BinaryTrie</code> and either return
+<code>v</code> or its successor in the linked list of leaves. An
+<code>XFastTrie</code> speeds up the search process by using binary search on the
+levels of the trie to locate the node <code>u</code>.</p>
+<p>To use binary search, we need a way to determine if the node
+<code>u</code> we are looking for is above a particular level, <code>i</code>,
+of if <code>u</code> is at or below level <code>i</code>. This information is
+given by the highest-order <code>i</code> bits in the binary representation
+of <code>x</code>; these bits determine the search path that <code>x</code>
+takes from the root to level <code>i</code>. For an example, refer to ; in
+this figure the last node, <code>u</code>, on search path for 14 (whose
+binary representation is 1110) is the node labelled <span
+class="math inline">\(11{\star\star}\)</span> at level 2 because there
+is no node labelled <span class="math inline">\(111{\star}\)</span> at
+level 3. Thus, we can label each node at level <code>i</code> with an
+<code>i</code>-bit integer. Then, the node <code>u</code> we are searching for
+would be at or below level <code>i</code> if and only if there is a node at
+level <code>i</code> whose label matches the highest-order <code>i</code> bits
+of <code>x</code>.</p>
+<figure>
+<div class="center">
+<img src="figs/xfast-path" />
+</div>
+<figcaption>Since there is no node labelled <span
+class="math inline">\(111\star\)</span>, the search path for 14 (1110)
+ends at the node labelled <span
+class="math inline">\(11{\star\star}\)</span> .</figcaption>
+</figure>
+<p>In an <code>XFastTrie</code>, we store, for each <span
+class="math inline">\(<code>i</code>\in\{0,\ldots,<code>w</code>\}\)</span>,
+all the nodes at level <code>i</code> in a <code>USet</code>, <code>t[i]</code>, that
+is implemented as a hash table (). Using this <code>USet</code> allows us to
+check in constant expected time if there is a node at level <code>i</code>
+whose label matches the highest-order <code>i</code> bits of <code>x</code>.
+In fact, we can even find this node using <code>t[i].find(x&gt;&gt;(w-i))</code></p>
+<p>The hash tables <span
+class="math inline">\(<code>t[0]</code>,\ldots,<code>t[w]</code>\)</span> allow us
+to use binary search to find <code>u</code>. Initially, we know that
+<code>u</code> is at some level <code>i</code> with <span
+class="math inline">\(0\le <code>i</code>&lt; <code>w</code>+1\)</span>. We
+therefore initialize <span class="math inline">\(<code>l</code>=0\)</span>
+and <span class="math inline">\(<code>h</code>=<code>w</code>+1\)</span> and
+repeatedly look at the hash table <code>t[i]</code>, where <span
+class="math inline">\(<code>i</code>=\lfloor
+(<code>l+h</code>)/2\rfloor\)</span>. If <span
+class="math inline">\(<code>t[i]</code>\)</span> contains a node whose label
+matches <code>x</code>’s highest-order <code>i</code> bits then we set
+<code>l=i</code> (<code>u</code> is at or below level <code>i</code>); otherwise we
+set <code>h=i</code> (<code>u</code> is above level <code>i</code>). This process
+terminates when <span class="math inline">\(<code>h-l</code>\le 1\)</span>,
+in which case we determine that <code>u</code> is at level <code>l</code>. We
+then complete the <code>find(x)</code> operation using <code>u.jump</code> and the
+doubly-linked list of leaves.
+<code>[listing: ods/XFastTrie.find(x)]</code> Each iteration of the
+<code>while</code> loop in the above method decreases <code>h-l</code> by roughly a
+factor of two, so this loop finds <code>u</code> after <span
+class="math inline">\(O(\log <code>w</code>)\)</span> iterations. Each
+iteration performs a constant amount of work and one <code>find(x)</code>
+operation in a <code>USet</code>, which takes a constant expected amount of
+time. The remaining work takes only constant time, so the <code>find(x)</code>
+method in an <code>XFastTrie</code> takes only <span
+class="math inline">\(O(\log<code>w</code>)\)</span> expected time.</p>
+<p>The <code>add(x)</code> and <code>remove(x)</code> methods for an <code>XFastTrie</code> are almost
+identical to the same methods in a <code>BinaryTrie</code>. The only modifications
+are for managing the hash tables <code>t[0]</code>,…,<code>t[w]</code>. During the
+<code>add(x)</code> operation, when a new node is created at level <code>i</code>,
+this node is added to <code>t[i]</code>. During a <code>remove(x)</code> operation, when
+a node is removed form level <code>i</code>, this node is removed from
+<code>t[i]</code>. Since adding and removing from a hash table take constant
+expected time, this does not increase the running times of <code>add(x)</code>
+and <code>remove(x)</code> by more than a constant factor. We omit a code listing
+for <code>add(x)</code> and <code>remove(x)</code> since the code is almost identical to
+the (long) code listing already provided for the same methods in a
+<code>BinaryTrie</code>.</p>
+<p>The following theorem summarizes the performance of an
+<code>XFastTrie</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>An <code>XFastTrie</code> implements the
+<code>SSet</code> interface for <code>w</code>-bit integers. An <code>XFastTrie</code>
+supports the operations</em></p>
+<ul>
+<li><p><em><code>add(x)</code> and <code>remove(x)</code> in <span
+class="math inline">\(O(<code>w</code>)\)</span> expected time per
+operation and</em></p></li>
+<li><p><em><code>find(x)</code> in <span class="math inline">\(O(\log
+<code>w</code>)\)</span> expected time per operation.</em></p></li>
+</ul>
+<p><em>The space used by an <code>XFastTrie</code> that stores <code>n</code> values
+is <span
+class="math inline">\(O(<code>n</code>\cdot<code>w</code>)\)</span>.</em></p>
+</div>
+<h2 id="code274-a-doubly-logarithmic-time-code275"><code>YFastTrie</code>: A
+Doubly-Logarithmic Time <code>SSet</code></h2>
+<p>The <code>XFastTrie</code> is a vast—even exponential—improvement over the
+<code>BinaryTrie</code> in terms of query time, but the <code>add(x)</code> and <code>remove(x)</code>
+operations are still not terribly fast. Furthermore, the space usage,
+<span class="math inline">\(O(<code>n</code>\cdot<code>w</code>)\)</span>, is
+higher than the other <code>SSet</code> implementations described in this
+book, which all use <span class="math inline">\(O(<code>n</code>)\)</span>
+space. These two problems are related; if <code>n</code> <code>add(x)</code>
+operations build a structure of size <span
+class="math inline">\(<code>n</code>\cdot<code>w</code>\)</span>, then the
+<code>add(x)</code> operation requires at least on the order of <code>w</code> time
+(and space) per operation.</p>
+<p>The <code>YFastTrie</code>, discussed next, simultaneously improves the space
+and speed of <code>XFastTrie</code>s. A <code>YFastTrie</code> uses an <code>XFastTrie</code>,
+<code>xft</code>, but only stores <span
+class="math inline">\(O(<code>n</code>/<code>w</code>)\)</span> values in
+<code>xft</code>. In this way, the total space used by <code>xft</code> is only
+<span class="math inline">\(O(<code>n</code>)\)</span>. Furthermore, only
+one out of every <code>w</code> <code>add(x)</code> or <code>remove(x)</code> operations in
+the <code>YFastTrie</code> results in an <code>add(x)</code> or <code>remove(x)</code> operation in
+<code>xft</code>. By doing this, the average cost incurred by calls to
+<code>xft</code>’s <code>add(x)</code> and <code>remove(x)</code> operations is only
+constant.</p>
+<p>The obvious question becomes: If <code>xft</code> only stores
+<code>n</code>/<code>w</code> elements, where do the remaining <span
+class="math inline">\(<code>n</code>(1-1/<code>w</code>)\)</span> elements go?
+These elements move into <em>secondary structures</em>, in this case an
+extended version of treaps (). There are roughly <code>n</code>/<code>w</code>
+of these secondary structures so, on average, each of them stores <span
+class="math inline">\(O(<code>w</code>)\)</span> items. Treaps support
+logarithmic time <code>SSet</code> operations, so the operations on these
+treaps will run in <span class="math inline">\(O(\log
+<code>w</code>)\)</span> time, as required.</p>
+<p>More concretely, a <code>YFastTrie</code> contains an <code>XFastTrie</code>, <code>xft</code>,
+that contains a random sample of the data, where each element appears in
+the sample independently with probability <span
+class="math inline">\(1/<code>w</code>\)</span>. For convenience, the value
+<span class="math inline">\(2^{<code>w</code>}-1\)</span>, is always
+contained in <code>xft</code>. Let <span
+class="math inline">\(<code>x</code>_0&lt;<code>x</code>_1&lt;\cdots&lt;<code>x</code>_{k-1}\)</span>
+denote the elements stored in <code>xft</code>. Associated with each element,
+<span class="math inline">\(<code>x</code>_i\)</span>, is a treap, <span
+class="math inline">\(<code>t</code>_i\)</span>, that stores all values in
+the range <span
+class="math inline">\(<code>x</code>_{i-1}+1,\ldots,<code>x</code>_i\)</span>.
+This is illustrated in .</p>
+<figure>
+<div class="center">
+<img src="figs/yfast" />
+</div>
+<figcaption>A <code>YFastTrie</code> containing the values 0, 1, 3, 4, 6, 8, 9, 10,
+11, and 13.</figcaption>
+</figure>
+<p>The <code>find(x)</code> operation in a <code>YFastTrie</code> is fairly easy. We search
+for <code>x</code> in <code>xft</code> and find some value <span
+class="math inline">\(<code>x</code>_i\)</span> associated with the treap
+<span class="math inline">\(<code>t</code>_i\)</span>. We then use the
+treap <code>find(x)</code> method on <span
+class="math inline">\(<code>t</code>_i\)</span> to answer the query. The
+entire method is a one-liner:
+<code>[listing: ods/YFastTrie.find(x)]</code> The first <code>find(x)</code>
+operation (on <code>xft</code>) takes <span
+class="math inline">\(O(\log<code>w</code>)\)</span> time. The second
+<code>find(x)</code> operation (on a treap) takes <span
+class="math inline">\(O(\log r)\)</span> time, where <span
+class="math inline">\(r\)</span> is the size of the treap. Later in this
+section, we will show that the expected size of the treap is <span
+class="math inline">\(O(<code>w</code>)\)</span> so that this operation
+takes <span class="math inline">\(O(\log <code>w</code>)\)</span> time.<a
+href="#fn1" class="footnote-ref" id="fnref1"
+role="doc-noteref"><sup>1</sup></a></p>
+<p>Adding an element to a <code>YFastTrie</code> is also fairly simple—most of the
+time. The <code>add(x)</code> method calls <code>xft.find(x)</code> to locate the treap,
+<code>t</code>, into which <code>x</code> should be inserted. It then calls
+<code>t.add(x)</code> to add <code>x</code> to <code>t</code>. At this point, it tosses
+a biased coin that comes up as heads with probability <span
+class="math inline">\(1/<code>w</code>\)</span> and as tails with
+probability <span class="math inline">\(1-1/<code>w</code>\)</span>. If
+this coin comes up heads, then <code>x</code> will be added to
+<code>xft</code>.</p>
+<p>This is where things get a little more complicated. When <code>x</code>
+is added to <code>xft</code>, the treap <code>t</code> needs to be split into
+two treaps, <code>t1</code> and <code>t'</code>. The treap <code>t1</code> contains
+all the values less than or equal to <code>x</code>; <code>t'</code> is the
+original treap, <code>t</code>, with the elements of <code>t1</code> removed.
+Once this is done, we add the pair <code>(x,t1)</code> to <code>xft</code>. shows an
+example. <code>[listing: ods/YFastTrie.add(x)]</code></p>
+<figure>
+<div class="center">
+<img src="figs/yfast-add" />
+</div>
+<figcaption>Adding the values 2 and 6 to a <code>YFastTrie</code>. The coin toss
+for 6 came up heads, so 6 was added to <code>xft</code> and the treap
+containing <span class="math inline">\(4,5,6,8,9\)</span> was
+split.</figcaption>
+</figure>
+<p>Adding <code>x</code> to <code>t</code> takes <span
+class="math inline">\(O(\log <code>w</code>)\)</span> time. shows that
+splitting <code>t</code> into <code>t1</code> and <code>t'</code> can also be done
+in <span class="math inline">\(O(\log <code>w</code>)\)</span> expected
+time. Adding the pair (<code>x</code>,<code>t1</code>) to <code>xft</code> takes
+<span class="math inline">\(O(<code>w</code>)\)</span> time, but only
+happens with probability <span
+class="math inline">\(1/<code>w</code>\)</span>. Therefore, the expected
+running time of the <code>add(x)</code> operation is <span
+class="math display">\[O(\log<code>w</code>) +
+\frac{1}{<code>w</code>}O(<code>w</code>) = O(\log <code>w</code>) \enspace
+.\]</span></p>
+<p>The <code>remove(x)</code> method undoes the work performed by <code>add(x)</code>. We
+use <code>xft</code> to find the leaf, <code>u</code>, in <code>xft</code> that
+contains the answer to <code>xft.find(x)</code>. From <code>u</code>, we get the treap,
+<code>t</code>, containing <code>x</code> and remove <code>x</code> from
+<code>t</code>. If <code>x</code> was also stored in <code>xft</code> (and
+<code>x</code> is not equal to <span
+class="math inline">\(2^{<code>w</code>}-1\)</span>) then we remove
+<code>x</code> from <code>xft</code> and add the elements from <code>x</code>’s
+treap to the treap, <code>t2</code>, that is stored by <code>u</code>’s
+successor in the linked list. This is illustrated in .
+<code>[listing: ods/YFastTrie.remove(x)]</code></p>
+<figure>
+<div class="center">
+<img src="figs/yfast-remove" />
+</div>
+<figcaption>Removing the values 1 and 9 from a <code>YFastTrie</code> in
+.</figcaption>
+</figure>
+<p>Finding the node <code>u</code> in <code>xft</code> takes <span
+class="math inline">\(O(\log<code>w</code>)\)</span> expected time.
+Removing <code>x</code> from <code>t</code> takes <span
+class="math inline">\(O(\log<code>w</code>)\)</span> expected time. Again,
+shows that merging all the elements of <code>t</code> into <code>t2</code> can
+be done in <span class="math inline">\(O(\log<code>w</code>)\)</span> time.
+If necessary, removing <code>x</code> from <code>xft</code> takes <span
+class="math inline">\(O(<code>w</code>)\)</span> time, but <code>x</code> is
+only contained in <code>xft</code> with probability <span
+class="math inline">\(1/<code>w</code>\)</span>. Therefore, the expected
+time to remove an element from a <code>YFastTrie</code> is <span
+class="math inline">\(O(\log <code>w</code>)\)</span>.</p>
+<p>Earlier in the discussion, we delayed arguing about the sizes of
+treaps in this structure until later. Before finishing this chapter, we
+prove the result we need.</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>Let <code>x</code> be an integer stored
+in a <code>YFastTrie</code> and let <span
+class="math inline">\(<code>n</code>_<code>x</code>\)</span> denote the number
+of elements in the treap, <code>t</code>, that contains <code>x</code>. Then
+<span class="math inline">\(\E[<code>n</code>_<code>x</code>] \le
+2<code>w</code>-1\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> Refer to . Let <span
+class="math inline">\(<code>x</code>_1&lt;<code>x</code>_2&lt;\cdots&lt;<code>x</code>_i=<code>x</code>&lt;<code>x</code>_{i+1}&lt;\cdots&lt;<code>x</code>_<code>n</code>\)</span>
+denote the elements stored in the <code>YFastTrie</code>. The treap <code>t</code>
+contains some elements greater than or equal to <code>x</code>. These are
+<span
+class="math inline">\(<code>x</code>_i,<code>x</code>_{i+1},\ldots,<code>x</code>_{i+j-1}\)</span>,
+where <span class="math inline">\(<code>x</code>_{i+j-1}\)</span> is the
+only one of these elements in which the biased coin toss performed in
+the <code>add(x)</code> method turned up as heads. In other words, <span
+class="math inline">\(\E[j]\)</span> is equal to the expected number of
+biased coin tosses required to obtain the first heads.<a href="#fn2"
+class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>
+Each coin toss is independent and turns up as heads with probability
+<span class="math inline">\(1/<code>w</code>\)</span>, so <span
+class="math inline">\(\E[j]\le<code>w</code>\)</span>. (See for an analysis
+of this for the case <span
+class="math inline">\(<code>w</code>=2\)</span>.)</p>
+<p>Similarly, the elements of <code>t</code> smaller than <code>x</code> are
+<span
+class="math inline">\(<code>x</code>_{i-1},\ldots,<code>x</code>_{i-k}\)</span>
+where all these <span class="math inline">\(k\)</span> coin tosses turn
+up as tails and the coin toss for <span
+class="math inline">\(<code>x</code>_{i-k-1}\)</span> turns up as heads.
+Therefore, <span class="math inline">\(\E[k]\le<code>w</code>-1\)</span>,
+since this is the same coin tossing experiment considered in the
+preceding paragraph, but one in which the last toss is not counted. In
+summary, <span
+class="math inline">\(<code>n</code>_<code>x</code>=j+k\)</span>, so <span
+class="math display">\[\E[<code>n</code>_<code>x</code>] = \E[j+k] = \E[j] +
+\E[k] \le 2<code>w</code>-1 \enspace .  \qedhere\]</span> ◻</p>
+</div>
+<figure>
+<div class="center">
+<img src="figs/yfast-sample" />
+</div>
+<figcaption>The number of elements in the treap <code>t</code> containing
+<code>x</code> is determined by two coin tossing experiments.</figcaption>
+</figure>
+<p>was the last piece in the proof of the following theorem, which
+summarizes the performance of the <code>YFastTrie</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.3</strong>. <em>A <code>YFastTrie</code> implements the
+<code>SSet</code> interface for <code>w</code>-bit integers. A <code>YFastTrie</code>
+supports the operations <code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> in
+<span class="math inline">\(O(\log <code>w</code>)\)</span> expected time
+per operation. The space used by a <code>YFastTrie</code> that stores <code>n</code>
+values is <span
+class="math inline">\(O(<code>n</code>+<code>w</code>)\)</span>.</em></p>
+</div>
+<p>The <code>w</code> term in the space requirement comes from the fact
+that <code>xft</code> always stores the value <span
+class="math inline">\(2^<code>w</code>-1\)</span>. The implementation could
+be modified (at the expense of adding some extra cases to the code) so
+that it is unnecessary to store this value. In this case, the space
+requirement in the theorem becomes <span
+class="math inline">\(O(<code>n</code>)\)</span>.</p>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>The first data structure to provide <span
+class="math inline">\(O(\log<code>w</code>)\)</span> time <code>add(x)</code>,
+<code>remove(x)</code>, and <code>find(x)</code> operations was proposed by van Emde Boas
+and has since become known as the <em>van Emde Boas</em> (or
+<em>stratified</em>) <em>tree</em> <span class="citation"
+data-cites="e77"></span>. The original van Emde Boas structure had size
+<span class="math inline">\(2^{<code>w</code>}\)</span>, making it
+impractical for large integers.</p>
+<p>The <code>XFastTrie</code> and <code>YFastTrie</code> data structures were discovered by
+Willard <span class="citation" data-cites="w83"></span>. The <code>XFastTrie</code>
+structure is closely related to van Emde Boas trees; for instance, the
+hash tables in an <code>XFastTrie</code> replace arrays in a van Emde Boas tree.
+That is, instead of storing the hash table <code>t[i]</code>, a van Emde Boas
+tree stores an array of length <span
+class="math inline">\(2^{<code>i</code>}\)</span>.</p>
+<p>Another structure for storing integers is Fredman and Willard’s
+fusion trees <span class="citation" data-cites="fw93"></span>. This
+structure can store <code>n</code> <code>w</code>-bit integers in <span
+class="math inline">\(O(<code>n</code>)\)</span> space so that the
+<code>find(x)</code> operation runs in <span class="math inline">\(O((\log
+<code>n</code>)/(\log
+<code>w</code>))\)</span> time. By using a fusion tree when <span
+class="math inline">\(\log <code>w</code> &gt; \sqrt{\log
+<code>n</code>}\)</span> and a <code>YFastTrie</code> when <span
+class="math inline">\(\log <code>w</code> \le \sqrt{\log
+<code>n</code>}\)</span>, one obtains an <span
+class="math inline">\(O(<code>n</code>)\)</span> space data structure that
+can implement the <code>find(x)</code> operation in <span
+class="math inline">\(O(\sqrt{\log <code>n</code>})\)</span> time. Recent
+lower-bound results of Pǎtraşcu and Thorup <span class="citation"
+data-cites="pt07"></span> show that these results are more or less
+optimal, at least for structures that use only <span
+class="math inline">\(O(<code>n</code>)\)</span> space.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Design and implement a simplified
+version of a <code>BinaryTrie</code> that does not have a linked list or jump
+pointers, but for which <code>find(x)</code></em></p>
+<p><em>still runs in <span class="math inline">\(O(<code>w</code>)\)</span>
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Design and implement a simplified
+implementation of an <code>XFastTrie</code> that doesn’t use a binary trie at all.
+Instead, your implementation should store everything in a doubly-linked
+list and <span class="math inline">\(<code>w</code>+1\)</span> hash
+tables.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>We can think of a <code>BinaryTrie</code> as a
+structure that stores bit strings of length <code>w</code> in such a way
+that each bitstring is represented as a root to leaf path. Extend this
+idea into an <code>SSet</code> implementation that stores variable-length
+strings and implements <code>add(s)</code>, <code>remove(s)</code>, and <code>find(s)</code> in time
+proporitional to the length of <code>s</code>.</em></p>
+<p><em>Hint: Each node in your data structure should store a hash table
+that is indexed by character values.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>For an integer <span
+class="math inline">\(<code>x</code>\in\{0,\ldots2^{<code>w</code>}-1\}\)</span>,
+let <span class="math inline">\(d(<code>x</code>)\)</span> denote the
+difference between <code>x</code> and the value returned by <code>find(x)</code> [if
+<code>find(x)</code> returns <code>null</code>, then define <span
+class="math inline">\(d(<code>x</code>)\)</span> as <span
+class="math inline">\(2^<code>w</code>\)</span>]. For example, if
+<code>find(23)</code> returns 43, then <span
+class="math inline">\(d(23)=20\)</span>.</em></p>
+<ol>
+<li><p><em>Design and implement a modified version of the <code>find(x)</code>
+operation in an <code>XFastTrie</code> that runs in <span
+class="math inline">\(O(1+\log d(<code>x</code>))\)</span> expected time.
+Hint: The hash table <span class="math inline">\(t[<code>w</code>]\)</span>
+contains all the values, <code>x</code>, such that <span
+class="math inline">\(d(<code>x</code>)=0\)</span>, so that would be a good
+place to start.</em></p></li>
+<li><p><em>Design and implement a modified version of the <code>find(x)</code>
+operation in an <code>XFastTrie</code> that runs in <span
+class="math inline">\(O(1+\log\log d(<code>x</code>))\)</span> expected
+time.</em></p></li>
+</ol>
+</div>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>This is an application of <em>Jensen’s Inequality</em>:
+If <span class="math inline">\(\E[r]=<code>w</code>\)</span>, then <span
+class="math inline">\(\E[\log r]
+\le \log w\)</span>.<a href="#fnref1" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>This analysis ignores the fact that <span
+class="math inline">\(j\)</span> never exceeds <span
+class="math inline">\(<code>n</code>-i+1\)</span>. However, this only
+decreases <span class="math inline">\(\E[j]\)</span>, so the upper bound
+still holds.<a href="#fnref2" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>

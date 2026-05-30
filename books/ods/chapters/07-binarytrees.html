@@ -1,0 +1,523 @@
+<h1 id="binary-trees">Binary Trees</h1>
+<p>This chapter introduces one of the most fundamental structures in
+computer science: binary trees. The use of the word <em>tree</em> here
+comes from the fact that, when we draw them, the resultant drawing often
+resembles the trees found in a forest. There are many ways of ways of
+defining binary trees. Mathematically, a <em>binary tree</em> is a
+connected, undirected, finite graph with no cycles, and no vertex of
+degree greater than three.</p>
+<p>For most computer science applications, binary trees are
+<em>rooted:</em> A special node, <code>r</code>, of degree at most two is
+called the <em>root</em> of the tree. For every node, <span
+class="math inline">\(<code>u</code>\neq <code>r</code>\)</span>, the second node
+on the path from <code>u</code> to <code>r</code> is called the <em>parent</em> of
+<code>u</code>. Each of the other nodes adjacent to <code>u</code> is called a
+<em>child</em> of <code>u</code>. Most of the binary trees we are interested
+in are <em>ordered</em>, so we distinguish between the <em>left
+child</em> and <em>right child</em> of <code>u</code>.</p>
+<p>In illustrations, binary trees are usually drawn from the root
+downward, with the root at the top of the drawing and the left and right
+children respectively given by left and right positions in the drawing
+(). For example, .a shows a binary tree with nine nodes.</p>
+<figure>
+<div class="center">
+<img src="figs/bintree-traverse-1" />
+</div>
+<figcaption>The parent, left child, and right child of the node
+<code>u</code> in a <code>BinaryTree</code>.</figcaption>
+</figure>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/bintree-1"
+alt="image" /></td>
+<td style="text-align: center;"><img src="figs/bintree-2"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;">(a)</td>
+<td style="text-align: center;">(b)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>A binary tree with (a) nine real nodes and (b) ten external
+nodes.</figcaption>
+</figure>
+<p>Because binary trees are so important, a certain terminology has
+developed for them: The <em>depth</em> of a node, <code>u</code>, in a
+binary tree is the length of the path from <code>u</code> to the root of the
+tree. If a node, <code>w</code>, is on the path from <code>u</code> to
+<code>r</code>, then <code>w</code> is called an <em>ancestor</em> of <code>u</code>
+and <code>u</code> a <em>descendant</em> of <code>w</code>. The <em>subtree</em>
+of a node, <code>u</code>, is the binary tree that is rooted at <code>u</code>
+and contains all of <code>u</code>’s descendants. The <em>height</em> of a
+node, <code>u</code>, is the length of the longest path from <code>u</code> to
+one of its descendants. The <em>height</em> of a tree is the height of
+its root. A node, <code>u</code>, is a <em>leaf</em> if it has no
+children.</p>
+<p>We sometimes think of the tree as being augmented with <em>external
+nodes</em>. Any node that does not have a left child has an external
+node as its left child, and, correspondingly, any node that does not
+have a right child has an external node as its right child (see .b). It
+is easy to verify, by induction, that a binary tree with <span
+class="math inline">\(<code>n</code>\ge 1\)</span> real nodes has <span
+class="math inline">\(<code>n</code>+1\)</span> external nodes.</p>
+<h2 id="code28-a-basic-binary-tree"><code>BinaryTree</code>: A Basic Binary Tree</h2>
+<p>The simplest way to represent a node, <code>u</code>, in a binary tree is
+to explicitly store the (at most three) neighbours of <code>u</code>.</p>
+<p>When one of these three neighbours is not present, we set it to
+<code>nil</code>. In this way, both external nodes of the tree and the parent
+of the root correspond to the value <code>nil</code>.</p>
+<p>The binary tree itself can then be represented by a reference to its
+root node, <code>r</code>: <code>[listing: ods/BinaryTree.r]</code></p>
+<p>We can compute the depth of a node, <code>u</code>, in a binary tree by
+counting the number of steps on the path from <code>u</code> to the root:
+<code>[listing: ods/BinaryTree.depth(u)]</code></p>
+<h3 id="recursive-algorithms">Recursive Algorithms</h3>
+<p>Using recursive algorithms makes it very easy to compute facts about
+binary trees. For example, to compute the size of (number of nodes in) a
+binary tree rooted at node <code>u</code>, we recursively compute the sizes
+of the two subtrees rooted at the children of <code>u</code>, sum up these
+sizes, and add one:</p>
+<p><code>[listing: ods/BinaryTree.size(u)]</code></p>
+<p>To compute the height of a node <code>u</code>, we can compute the height
+of <code>u</code>’s two subtrees, take the maximum, and add one:</p>
+<p><code>[listing: ods/BinaryTree.height(u)]</code></p>
+<h3 id="traversing-binary-trees">Traversing Binary Trees</h3>
+<p>The two algorithms from the previous section both use recursion to
+visit all the nodes in a binary tree. Each of them visits the nodes of
+the binary tree in the same order as the following code:
+<code>[listing: ods/BinaryTree.traverse(u)]</code></p>
+<p>Using recursion this way produces very short, simple code, but it can
+also be problematic. The maximum depth of the recursion is given by the
+maximum depth of a node in the binary tree, i.e., the tree’s height. If
+the height of the tree is very large, then this recursion could very
+well use more stack space than is available, causing a crash.</p>
+<p>To traverse a binary tree without recursion, you can use an algorithm
+that relies on where it came from to determine where it will go next.
+See . If we arrive at a node <code>u</code> from <code>u.parent</code>, then the next
+thing to do is to visit <code>u.left</code>. If we arrive at <code>u</code> from
+<code>u.left</code>, then the next thing to do is to visit <code>u.right</code>. If we
+arrive at <code>u</code> from <code>u.right</code>, then we are done visiting
+<code>u</code>’s subtree, and so we return to <code>u.parent</code>. The following code
+implements this idea, with code included for handling the cases where
+any of <code>u.left</code>, <code>u.right</code>, or <code>u.parent</code> is <code>nil</code>:
+<code>[listing: ods/BinaryTree.traverse2()]</code></p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/bintree-traverse-2"
+alt="image" /> <img src="figs/bintree-3" alt="image" /></td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>The three cases that occur at node <code>u</code> when
+traversing a binary tree non-recursively, and the resultant traversal of
+the tree.</figcaption>
+</figure>
+<p>The same facts that can be computed with recursive algorithms can
+also be computed in this way, without recursion. For example, to compute
+the size of the tree we keep a counter, <code>n</code>, and increment
+<code>n</code> whenever visiting a node for the first time:
+<code>[listing: ods/BinaryTree.size2()]</code></p>
+<p>In some implementations of binary trees, the <code>parent</code> field is not
+used. When this is the case, a non-recursive implementation is still
+possible, but the implementation has to use a <code>List</code> (or <code>Stack</code>)
+to keep track of the path from the current node to the root.</p>
+<p>A special kind of traversal that does not fit the pattern of the
+above functions is the <em>breadth-first traversal</em>. In a
+breadth-first traversal, the nodes are visited level-by-level starting
+at the root and moving down, visiting the nodes at each level from left
+to right (see ). This is similar to the way that we would read a page of
+English text. Breadth-first traversal is implemented using a queue,
+<code>q</code>, that initially contains only the root, <code>r</code>. At each
+step, we extract the next node, <code>u</code>, from <code>q</code>, process
+<code>u</code> and add <code>u.left</code> and <code>u.right</code> (if they are
+non-<code>nil</code>) to <code>q</code>:
+<code>[listing: ods/BinaryTree.bfTraverse()]</code></p>
+<figure>
+<div class="center">
+<img src="figs/bintree-4" />
+</div>
+<figcaption>During a breadth-first traversal, the nodes of a binary tree
+are visited level-by-level, and left-to-right within each
+level.</figcaption>
+</figure>
+<h2 id="code70-an-unbalanced-binary-search-tree"><code>BinarySearchTree</code>: An
+Unbalanced Binary Search Tree</h2>
+<p>A <code>BinarySearchTree</code> is a special kind of binary tree in which each node,
+<code>u</code>, also stores a data value, <code>u.x</code>, from some total order.
+The data values in a binary search tree obey the <em>binary search tree
+property</em>: For a node, <code>u</code>, every data value stored in the
+subtree rooted at <code>u.left</code> is less than <code>u.x</code> and every data
+value stored in the subtree rooted at <code>u.right</code> is greater than
+<code>u.x</code>. An example of a <code>BinarySearchTree</code> is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/bst-example" />
+</div>
+<figcaption>A binary search tree.</figcaption>
+</figure>
+<h3 id="searching">Searching</h3>
+<p>The binary search tree property is extremely useful because it allows
+us to quickly locate a value, <code>x</code>, in a binary search tree. To do
+this we start searching for <code>x</code> at the root, <code>r</code>. When
+examining a node, <code>u</code>, there are three cases:</p>
+<ol>
+<li><p>If <span class="math inline">\(<code>x</code>&lt;
+<code>u.x</code>\)</span>, then the search proceeds to <code>u.left</code>;</p></li>
+<li><p>If <span class="math inline">\(<code>x</code>&gt;
+<code>u.x</code>\)</span>, then the search proceeds to <code>u.right</code>;</p></li>
+<li><p>If <span class="math inline">\(<code>x</code>= <code>u.x</code>\)</span>,
+then we have found the node <code>u</code> containing <code>x</code>.</p></li>
+</ol>
+<p>The search terminates when Case 3 occurs or when <code>u=nil</code>. In the
+former case, we found <code>x</code>. In the latter case, we conclude that
+<code>x</code> is not in the binary search tree.
+<code>[listing: ods/BinarySearchTree.findEQ(x)]</code></p>
+<p>Two examples of searches in a binary search tree are shown in . As
+the second example shows, even if we don’t find <code>x</code> in the tree,
+we still gain some valuable information. If we look at the last node,
+<code>u</code>, at which Case 1 occurred, we see that <code>u.x</code> is the
+smallest value in the tree that is greater than <code>x</code>. Similarly,
+the last node at which Case 2 occurred contains the largest value in the
+tree that is less than <code>x</code>. Therefore, by keeping track of the
+last node, <code>z</code>, at which Case 1 occurs, a <code>BinarySearchTree</code> can
+implement the <code>find(x)</code> operation that returns the smallest value
+stored in the tree that is greater than or equal to <code>x</code>:
+<code>[listing: ods/BinarySearchTree.find(x)]</code></p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/bst-example-2"
+alt="image" /></td>
+<td style="text-align: center;"><img src="figs/bst-example-3"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;">(a)</td>
+<td style="text-align: center;">(b)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>An example of (a) a successful search (for <span
+class="math inline">\(6\)</span>) and (b) an unsuccessful search (for
+<span class="math inline">\(10\)</span>) in a binary search
+tree.</figcaption>
+</figure>
+<h3 id="addition">Addition</h3>
+<p>To add a new value, <code>x</code>, to a <code>BinarySearchTree</code>, we first search
+for <code>x</code>. If we find it, then there is no need to insert it.
+Otherwise, we store <code>x</code> at a leaf child of the last node,
+<code>p</code>, encountered during the search for <code>x</code>. Whether the
+new node is the left or right child of <code>p</code> depends on the result
+of comparing <code>x</code> and <code>p.x</code>.
+<code>[listing: ods/BinarySearchTree.add(x)]</code>
+<code>[listing: ods/BinarySearchTree.findLast(x)]</code>
+<code>[listing: ods/BinarySearchTree.addChild(p,u)]</code> An example is
+shown in . The most time-consuming part of this process is the initial
+search for <code>x</code>, which takes an amount of time proportional to
+the height of the newly added node <code>u</code>. In the worst case, this
+is equal to the height of the <code>BinarySearchTree</code>.</p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/bst-example-4"
+alt="image" /></td>
+<td style="text-align: center;"><img src="figs/bst-example-5"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Inserting the value <span class="math inline">\(8.5\)</span>
+into a binary search tree.</figcaption>
+</figure>
+<h3 id="removal">Removal</h3>
+<p>Deleting a value stored in a node, <code>u</code>, of a <code>BinarySearchTree</code> is a
+little more difficult. If <code>u</code> is a leaf, then we can just detach
+<code>u</code> from its parent. Even better: If <code>u</code> has only one
+child, then we can splice <code>u</code> from the tree by having
+<code>u.parent</code> adopt <code>u</code>’s child (see ):
+<code>[listing: ods/BinarySearchTree.splice(u)]</code></p>
+<figure>
+<div class="center">
+<img src="figs/bst-splice" />
+</div>
+<figcaption>Removing a leaf (<span class="math inline">\(6\)</span>) or
+a node with only one child (<span class="math inline">\(9\)</span>) is
+easy.</figcaption>
+</figure>
+<p>Things get tricky, though, when <code>u</code> has two children. In this
+case, the simplest thing to do is to find a node, <code>w</code>, that has
+less than two children and such that <code>w.x</code> can replace
+<code>u.x</code>. To maintain the binary search tree property, the value
+<code>w.x</code> should be close to the value of <code>u.x</code>. For example,
+choosing <code>w</code> such that <code>w.x</code> is the smallest value greater
+than <code>u.x</code> will work. Finding the node <code>w</code> is easy; it is
+the smallest value in the subtree rooted at <code>u.right</code>. This node can
+be easily removed because it has no left child (see ).</p>
+<p><code>[listing: ods/BinarySearchTree.remove_node(u)]</code></p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/bst-delete-1"
+alt="image" /> <img src="figs/bst-delete-2" alt="image" /></td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Deleting a value (<span class="math inline">\(11\)</span>)
+from a node, <code>u</code>, with two children is done by replacing
+<code>u</code>’s value with the smallest value in the right subtree of
+<code>u</code>.</figcaption>
+</figure>
+<h3 id="summary">Summary</h3>
+<p>The <code>find(x)</code>, <code>add(x)</code>, and <code>remove(x)</code> operations in a
+<code>BinarySearchTree</code> each involve following a path from the root of the tree to
+some node in the tree. Without knowing more about the shape of the tree
+it is difficult to say much about the length of this path, except that
+it is less than <code>n</code>, the number of nodes in the tree. The
+following (unimpressive) theorem summarizes the performance of the
+<code>BinarySearchTree</code> data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em><code>BinarySearchTree</code> implements the
+<code>SSet</code> interface and supports the operations <code>add(x)</code>,
+<code>remove(x)</code>, and <code>find(x)</code> in <span
+class="math inline">\(O(<code>n</code>)\)</span> time per
+operation.</em></p>
+</div>
+<p>compares poorly with , which shows that the <code>SkiplistSSet</code> structure can
+implement the <code>SSet</code> interface with <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time per
+operation. The problem with the <code>BinarySearchTree</code> structure is that it can
+become <em>unbalanced</em>. Instead of looking like the tree in it can
+look like a long chain of <code>n</code> nodes, all but the last having
+exactly one child.</p>
+<p>There are a number of ways of avoiding unbalanced binary search
+trees, all of which lead to data structures that have <span
+class="math inline">\(O(\log
+<code>n</code>)\)</span> time operations. In we show how <span
+class="math inline">\(O(\log <code>n</code>)\)</span> <em>expected</em>
+time operations can be achieved with randomization. In we show how <span
+class="math inline">\(O(\log <code>n</code>)\)</span> <em>amortized</em>
+time operations can be achieved with partial rebuilding operations. In
+we show how <span class="math inline">\(O(\log <code>n</code>)\)</span>
+<em>worst-case</em> time operations can be achieved by simulating a tree
+that is not binary: one in which nodes can have up to four children.</p>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>Binary trees have been used to model relationships for thousands of
+years. One reason for this is that binary trees naturally model
+(pedigree) family trees. These are the family trees in which the root is
+a person, the left and right children are the person’s parents, and so
+on, recursively. In more recent centuries binary trees have also been
+used to model species trees in biology, where the leaves of the tree
+represent extant species and the internal nodes of the tree represent
+<em>speciation events</em> in which two populations of a single species
+evolve into two separate species.</p>
+<p>Binary search trees appear to have been discovered independently by
+several groups in the 1950s <span class="citation"
+data-cites="k97v3"></span>. Further references to specific kinds of
+binary search trees are provided in subsequent chapters.</p>
+<p>When implementing a binary tree from scratch, there are several
+design decisions to be made. One of these is the question of whether or
+not each node stores a pointer to its parent. If most of the operations
+simply follow a root-to-leaf path, then parent pointers are unnecessary,
+waste space, and are a potential source of coding errors. On the other
+hand, the lack of parent pointers means that tree traversals must be
+done recursively or with the use of an explicit stack. Some other
+methods (like inserting or deleting into some kinds of balanced binary
+search trees) are also complicated by the lack of parent pointers.</p>
+<p>Another design decision is concerned with how to store the parent,
+left child, and right child pointers at a node. In the implementation
+given here, these pointers are stored as separate variables. Another
+option is to store them in an array, <code>p</code>, of length 3, so that
+<code>u.p[0]</code> is the left child of <code>u</code>, <code>u.p[1]</code> is the right
+child of <code>u</code>, and <code>u.p[2]</code> is the parent of <code>u</code>.
+Using an array this way means that some sequences of <code>if</code>
+statements can be simplified into algebraic expressions.</p>
+<p>An example of such a simplification occurs during tree traversal. If
+a traversal arrives at a node <code>u</code> from <code>u.p[i]</code>, then the
+next node in the traversal is <span
+class="math inline">\(<code>u.p</code>[(<code>i</code>+1)\bmod 3]\)</span>.
+Similar examples occur when there is left-right symmetry. For example,
+the sibling of <code>u.p[i]</code> is <span
+class="math inline">\(<code>u.p</code>[(<code>i</code>+1)\bmod 2]\)</span>. This
+trick works whether <code>u.p[i]</code> is a left child (<span
+class="math inline">\(<code>i</code>=0\)</span>) or a right child (<span
+class="math inline">\(<code>i</code>=1\)</span>) of <code>u</code>. In some
+cases this means that some complicated code that would otherwise need to
+have both a left version and right version can be written only once. See
+the methods <code>rotateLeft(u)</code> and <code>rotateRight(u)</code> on page  for an example.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Prove that a binary tree having
+<span class="math inline">\(<code>n</code>\ge 1\)</span> nodes has <span
+class="math inline">\(<code>n</code>-1\)</span> edges.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Prove that a binary tree having
+<span class="math inline">\(<code>n</code>\ge 1\)</span> real nodes has
+<span class="math inline">\(<code>n</code>+1\)</span> external
+nodes.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Prove that, if a binary tree,
+<span class="math inline">\(T\)</span>, has at least one leaf, then
+either (a) <span class="math inline">\(T\)</span>’s root has at most one
+child or (b) <span class="math inline">\(T\)</span> has more than one
+leaf.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>Implement a non-recursive method,
+<code>size2(u)</code>, that computes the size of the subtree rooted at node
+<code>u</code>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Write a non-recursive method,
+<code>height2(u)</code>, that computes the height of node <code>u</code> in a
+<code>BinaryTree</code>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>A binary tree is
+<em>size-balanced</em> if, for every node <code>u</code>, the size of the
+subtrees rooted at <code>u.left</code> and <code>u.right</code> differ by at most one.
+Write a recursive method, <code>isBalanced()</code>, that tests if a binary tree is
+balanced. Your method should run in <span
+class="math inline">\(O(<code>n</code>)\)</span> time. (Be sure to test
+your code on some large trees with different shapes; it is easy to write
+a method that takes much longer than <span
+class="math inline">\(O(<code>n</code>)\)</span> time.)</em></p>
+</div>
+<p>A <em>pre-order</em> traversal of a binary tree is a traversal that
+visits each node, <code>u</code>, before any of its children. An
+<em>in-order</em> traversal visits <code>u</code> after visiting all the
+nodes in <code>u</code>’s left subtree but before visiting any of the nodes
+in <code>u</code>’s right subtree. A <em>post-order</em> traversal visits
+<code>u</code> only after visiting all other nodes in <code>u</code>’s
+subtree. The pre/in/post-order numbering of a tree labels the nodes of a
+tree with the integers <span
+class="math inline">\(0,\ldots,<code>n</code>-1\)</span> in the order that
+they are encountered by a pre/in/post-order traversal. See for an
+example.</p>
+<figure>
+<div class="center">
+<p><img src="figs/binarytree-numbering-1" alt="image" /> <img
+src="figs/binarytree-numbering-2" alt="image" /><br />
+<img src="figs/binarytree-numbering-3" alt="image" /></p>
+</div>
+<figcaption>Pre-order, post-order, and in-order numberings of a binary
+tree.</figcaption>
+</figure>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Create a subclass of <code>BinaryTree</code>
+whose nodes have fields for storing pre-order, post-order, and in-order
+numbers. Write recursive methods <code>preOrderNumber()</code>, <code>inOrderNumber()</code>, and
+<code>postOrderNumbers()</code> that assign these numbers correctly. These methods should
+each run in <span class="math inline">\(O(<code>n</code>)\)</span>
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Implement the non-recursive
+functions <code>nextPreOrder(u)</code>, <code>nextInOrder(u)</code>, and <code>nextPostOrder(u)</code> that return the node
+that follows <code>u</code> in a pre-order, in-order, or post-order
+traversal, respectively. These functions should take amortized constant
+time; if we start at any node <code>u</code> and repeatedly call one of
+these functions and assign the return value to <code>u</code> until <span
+class="math inline">\(<code>u</code>=<code>null</code>\)</span>, then the cost of
+all these calls should be <span
+class="math inline">\(O(<code>n</code>)\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Suppose we are given a binary tree
+with pre-, post-, and in-order numbers assigned to the nodes. Show how
+these numbers can be used to answer each of the following questions in
+constant time:</em></p>
+<ol>
+<li><p><em>Given a node <code>u</code>, determine the size of the subtree
+rooted at <code>u</code>.</em></p></li>
+<li><p><em>Given a node <code>u</code>, determine the depth of
+<code>u</code>.</em></p></li>
+<li><p><em>Given two nodes <code>u</code> and <code>w</code>, determine if
+<code>u</code> is an ancestor of <code>w</code></em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>Suppose you are given a list of
+nodes with pre-order and in-order numbers assigned. Prove that there is
+at most one possible tree with this pre-order/in-order numbering and
+show how to construct it.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Show that the shape of any binary
+tree on <code>n</code> nodes can be represented using at most <span
+class="math inline">\(2(<code>n</code>-1)\)</span> bits. (Hint: think about
+recording what happens during a traversal and then playing back that
+recording to reconstruct the tree.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.12</strong>. <em>Illustrate what happens when we
+add the values <span class="math inline">\(3.5\)</span> and then 4.5 to
+the binary search tree in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.13</strong>. <em>Illustrate what happens when we
+remove the values <span class="math inline">\(3\)</span> and then 5 from
+the binary search tree in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.14</strong>. <em>Implement a <code>BinarySearchTree</code> method,
+<code>getLE(x)</code>, that returns a list of all items in the tree that are less
+than or equal to <code>x</code>. The running time of your method should be
+<span class="math inline">\(O(<code>n</code>&#39;+<code>h</code>)\)</span>
+where <span class="math inline">\(<code>n</code>&#39;\)</span> is the
+number of items less than or equal to <code>x</code> and <code>h</code> is the
+height of the tree.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.15</strong>. <em>Describe how to add the elements
+<span class="math inline">\(\{1,\ldots,<code>n</code>\}\)</span> to an
+initially empty <code>BinarySearchTree</code> in such a way that the resulting tree has
+height <span class="math inline">\(<code>n</code>-1\)</span>. How many ways
+are there to do this?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.16</strong>. <em>If we have some <code>BinarySearchTree</code> and
+perform the operations <code>add(x)</code> followed by <code>remove(x)</code> (with the
+same value of <code>x</code>) do we necessarily return to the original
+tree?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.17</strong>. <em>Can a <code>remove(x)</code> operation
+increase the height of any node in a <code>BinarySearchTree</code>? If so, by how
+much?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.18</strong>. <em>Can an <code>add(x)</code> operation
+increase the height of any node in a <code>BinarySearchTree</code>? Can it increase the
+height of the tree? If so, by how much?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.19</strong>. <em>Design and implement a version of
+<code>BinarySearchTree</code> in which each node, <code>u</code>, maintains values
+<code>u.size</code> (the size of the subtree rooted at <code>u</code>), <code>u.depth</code>
+(the depth of <code>u</code>), and <code>u.height</code> (the height of the subtree
+rooted at <code>u</code>).</em></p>
+<p><em>These values should be maintained, even during calls to the
+<code>add(x)</code> and <code>remove(x)</code> operations, but this should not increase the
+cost of these operations by more than a constant factor.</em></p>
+</div>

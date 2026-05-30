@@ -1,0 +1,100 @@
+{
+  "title": "Open Data Structures (Python edition)",
+  "author": "Pat Morin",
+  "lang": "en",
+  "slug": "ods",
+  "license": "CC BY 2.5",
+  "source": "https://opendatastructures.org",
+  "chapters": [
+    {
+      "id": "why",
+      "title": "Why This Book?",
+      "file": "chapters/01-why.html",
+      "format": "html"
+    },
+    {
+      "id": "intro",
+      "title": "Introduction",
+      "file": "chapters/02-intro.html",
+      "format": "html"
+    },
+    {
+      "id": "arrays",
+      "title": "Array-Based Lists",
+      "file": "chapters/03-arrays.html",
+      "format": "html"
+    },
+    {
+      "id": "linkedlists",
+      "title": "Linked Lists",
+      "file": "chapters/04-linkedlists.html",
+      "format": "html"
+    },
+    {
+      "id": "skiplists",
+      "title": "Skiplists",
+      "file": "chapters/05-skiplists.html",
+      "format": "html"
+    },
+    {
+      "id": "hashing",
+      "title": "Hash Tables",
+      "file": "chapters/06-hashing.html",
+      "format": "html"
+    },
+    {
+      "id": "binarytrees",
+      "title": "Binary Trees",
+      "file": "chapters/07-binarytrees.html",
+      "format": "html"
+    },
+    {
+      "id": "rbs",
+      "title": "Random Binary Search Trees",
+      "file": "chapters/08-rbs.html",
+      "format": "html"
+    },
+    {
+      "id": "scapegoat",
+      "title": "Scapegoat Trees",
+      "file": "chapters/09-scapegoat.html",
+      "format": "html"
+    },
+    {
+      "id": "redblack",
+      "title": "Red-Black Trees",
+      "file": "chapters/10-redblack.html",
+      "format": "html"
+    },
+    {
+      "id": "heaps",
+      "title": "Heaps",
+      "file": "chapters/11-heaps.html",
+      "format": "html"
+    },
+    {
+      "id": "sorting",
+      "title": "Sorting Algorithms",
+      "file": "chapters/12-sorting.html",
+      "format": "html"
+    },
+    {
+      "id": "graphs",
+      "title": "Graphs",
+      "file": "chapters/13-graphs.html",
+      "format": "html"
+    },
+    {
+      "id": "integers",
+      "title": "Data Structures for Integers",
+      "file": "chapters/14-integers.html",
+      "format": "html"
+    },
+    {
+      "id": "btree",
+      "title": "External Memory Searching",
+      "file": "chapters/15-btree.html",
+      "format": "html"
+    }
+  ]
+}

@@ -1,0 +1,376 @@
+<h1 id="heaps">Heaps</h1>
+<p>In this chapter, we discuss two implementations of the extremely
+useful priority <code>Queue</code> data structure. Both of these structures are a
+special kind of binary tree called a <em>heap</em>, which means “a
+disorganized pile.” This is in contrast to binary search trees that can
+be thought of as a highly organized pile.</p>
+<p>The first heap implementation uses an array to simulate a complete
+binary tree. This very fast implementation is the basis of one of the
+fastest known sorting algorithms, namely heapsort (see ). The second
+implementation is based on more flexible binary trees. It supports a
+<code>meld(h)</code> operation that allows the priority queue to absorb the
+elements of a second priority queue <code>h</code>.</p>
+<h2 id="code3-an-implicit-binary-tree"><code>BinaryHeap</code>: An Implicit Binary
+Tree</h2>
+<p>Our first implementation of a (priority) <code>Queue</code> is based on a
+technique that is over four hundred years old. <em>Eytzinger’s
+method</em> allows us to represent a complete binary tree as an array by
+laying out the nodes of the tree in breadth-first order (see ). In this
+way, the root is stored at position 0, the root’s left child is stored
+at position 1, the root’s right child at position 2, the left child of
+the left child of the root is stored at position 3, and so on. See .</p>
+<figure>
+<div class="center">
+<img src="figs/eytzinger" />
+</div>
+<figcaption>Eytzinger’s method represents a complete binary tree as an
+array.</figcaption>
+</figure>
+<p>If we apply Eytzinger’s method to a sufficiently large tree, some
+patterns emerge. The left child of the node at index <code>i</code> is at
+index <span class="math inline">\(<code>left(i)</code>=2<code>i</code>+1\)</span> and
+the right child of the node at index <code>i</code> is at index <span
+class="math inline">\(<code>right(i)</code>=2<code>i</code>+2\)</span>. The parent of
+the node at index <code>i</code> is at index <span
+class="math inline">\(<code>parent(i)</code>=(<code>i</code>-1)/2\)</span>.
+<code>[listing: ods/BinaryHeap.left(i).right(i).parent(i)]</code></p>
+<p>A <code>BinaryHeap</code> uses this technique to implicitly represent a complete
+binary tree in which the elements are <em>heap-ordered</em>: The value
+stored at any index <code>i</code> is not smaller than the value stored at
+index <code>parent(i)</code>, with the exception of the root value, <span
+class="math inline">\(<code>i</code>=0\)</span>. It follows that the
+smallest value in the priority <code>Queue</code> is therefore stored at
+position 0 (the root).</p>
+<p>In a <code>BinaryHeap</code>, the <code>n</code> elements are stored in an array
+<code>a</code>: <code>[listing: ods/BinaryHeap.a.n]</code></p>
+<p>Implementing the <code>add(x)</code> operation is fairly straightforward. As
+with all array-based structures, we first check to see if <code>a</code> is
+full (by checking if <span
+class="math inline">\(<code>a.length</code>=<code>n</code>\)</span>) and, if so, we
+grow <code>a</code>. Next, we place <code>x</code> at location <code>a[n]</code> and
+increment <code>n</code>. At this point, all that remains is to ensure that
+we maintain the heap property. We do this by repeatedly swapping
+<code>x</code> with its parent until <code>x</code> is no longer smaller than
+its parent. See .
+<code>[listing: ods/BinaryHeap.add(x).bubbleUp(i)]</code></p>
+<figure>
+<div class="center">
+<p><img src="figs/heap-insert-1" alt="image" /><br />
+<img src="figs/heap-insert-2" alt="image" /><br />
+<img src="figs/heap-insert-3" alt="image" /><br />
+<img src="figs/heap-insert-4" alt="image" /><br />
+</p>
+</div>
+<figcaption>Adding the value 6 to a <code>BinaryHeap</code>.</figcaption>
+</figure>
+<p>Implementing the <code>remove()</code> operation, which removes the smallest
+value from the heap, is a little trickier. We know where the smallest
+value is (at the root), but we need to replace it after we remove it and
+ensure that we maintain the heap property.</p>
+<p>The easiest way to do this is to replace the root with the value
+<code>a[n-1]</code>, delete that value, and decrement <code>n</code>. Unfortunately,
+the new root element is now probably not the smallest element, so it
+needs to be moved downwards. We do this by repeatedly comparing this
+element to its two children. If it is the smallest of the three then we
+are done. Otherwise, we swap this element with the smallest of its two
+children and continue.
+<code>[listing: ods/BinaryHeap.remove().trickleDown(i)]</code></p>
+<figure>
+<div class="center">
+<p><img src="figs/heap-remove-1" alt="image" /><br />
+<img src="figs/heap-remove-2" alt="image" /><br />
+<img src="figs/heap-remove-3" alt="image" /><br />
+<img src="figs/heap-remove-4" alt="image" /><br />
+</p>
+</div>
+<figcaption>Removing the minimum value, 4, from a
+<code>BinaryHeap</code>.</figcaption>
+</figure>
+<p>As with other array-based structures, we will ignore the time spent
+in calls to <code>resize()</code>, since these can be accounted for using the
+amortization argument from . The running times of both <code>add(x)</code> and
+<code>remove()</code> then depend on the height of the (implicit) binary tree.
+Luckily, this is a <em>complete</em> binary tree; every level except the
+last has the maximum possible number of nodes. Therefore, if the height
+of this tree is <span class="math inline">\(h\)</span>, then it has at
+least <span class="math inline">\(2^h\)</span> nodes. Stated another way
+<span class="math display">\[<code>n</code> \ge 2^h \enspace .\]</span>
+Taking logarithms on both sides of this equation gives <span
+class="math display">\[h \le \log <code>n</code> \enspace .\]</span>
+Therefore, both the <code>add(x)</code> and <code>remove()</code> operation run in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> time.</p>
+<h3 id="summary">Summary</h3>
+<p>The following theorem summarizes the performance of a <code>BinaryHeap</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>A <code>BinaryHeap</code> implements the
+(priority) <code>Queue</code> interface. Ignoring the cost of calls to
+<code>resize()</code>, a <code>BinaryHeap</code> supports the operations <code>add(x)</code> and
+<code>remove()</code> in <span class="math inline">\(O(\log <code>n</code>)\)</span>
+time per operation.</em></p>
+<p><em>Furthermore, beginning with an empty <code>BinaryHeap</code>, any sequence of
+<span class="math inline">\(m\)</span> <code>add(x)</code> and <code>remove()</code>
+operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls to
+<code>resize()</code>.</em></p>
+</div>
+<h2 id="code58-a-randomized-meldable-heap"><code>MeldableHeap</code>: A Randomized
+Meldable Heap</h2>
+<p>In this section, we describe the <code>MeldableHeap</code>, a priority <code>Queue</code>
+implementation in which the underlying structure is also a heap-ordered
+binary tree. However, unlike a <code>BinaryHeap</code> in which the underlying binary
+tree is completely defined by the number of elements, there are no
+restrictions on the shape of the binary tree that underlies a
+<code>MeldableHeap</code>; anything goes.</p>
+<p>The <code>add(x)</code> and <code>remove()</code> operations in a <code>MeldableHeap</code> are
+implemented in terms of the <code>merge(h1,h2)</code> operation. This operation takes
+two heap nodes <code>h1</code> and <code>h2</code> and merges them, returning a
+heap node that is the root of a heap that contains all elements in the
+subtree rooted at <code>h1</code> and all elements in the subtree rooted at
+<code>h2</code>.</p>
+<p>The nice thing about a <code>merge(h1,h2)</code> operation is that it can be defined
+recursively. See . If either <code>h1</code> or <code>h2</code> is <code>nil</code>,
+then we are merging with an empty set, so we return <code>h2</code> or
+<code>h1</code>, respectively. Otherwise, assume <span
+class="math inline">\(<code>h1.x</code> \le <code>h2.x</code>\)</span> since, if <span
+class="math inline">\(<code>h1.x</code> &gt; <code>h2.x</code>\)</span>, then we can
+reverse the roles of <code>h1</code> and <code>h2</code>. Then we know that the
+root of the merged heap will contain <code>h1.x</code>, and we can recursively
+merge <code>h2</code> with <code>h1.left</code> or <code>h1.right</code>, as we wish. This is
+where randomization comes in, and we toss a coin to decide whether to
+merge <code>h2</code> with <code>h1.left</code> or <code>h1.right</code>:
+<code>[listing: ods/MeldableHeap.merge(h1,h2)]</code></p>
+<figure>
+
+<figcaption>Merging <code>h1</code> and <code>h2</code> is done by merging
+<code>h2</code> with one of <code>h1.left</code> or <code>h1.right</code>.</figcaption>
+</figure>
+<p>In the next section, we show that <code>merge(h1,h2)</code> runs in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time, where
+<code>n</code> is the total number of elements in <code>h1</code> and
+<code>h2</code>.</p>
+<p>With access to a <code>merge(h1,h2)</code> operation, the <code>add(x)</code> operation is
+easy. We create a new node <code>u</code> containing <code>x</code> and then
+merge <code>u</code> with the root of our heap:
+<code>[listing: ods/MeldableHeap.add(x)]</code> This takes <span
+class="math inline">\(O(\log (<code>n</code>+1)) = O(\log
+<code>n</code>)\)</span> expected time.</p>
+<p>The <code>remove()</code> operation is similarly easy. The node we want to
+remove is the root, so we just merge its two children and make the
+result the root: <code>[listing: ods/MeldableHeap.remove()]</code>
+Again, this takes <span class="math inline">\(O(\log
+<code>n</code>)\)</span> expected time.</p>
+<p>Additionally, a <code>MeldableHeap</code> can implement many other operations in
+<span class="math inline">\(O(\log <code>n</code>)\)</span> expected time,
+including:</p>
+<ul>
+<li><p><code>remove(u)</code>: remove the node <code>u</code> (and its key
+<code>u.x</code>) from the heap.</p></li>
+<li><p><code>absorb(h)</code>: add all the elements of the <code>MeldableHeap</code> <code>h</code>
+to this heap, emptying <code>h</code> in the process.</p></li>
+</ul>
+<p>Each of these operations can be implemented using a constant number
+of <code>merge(h1,h2)</code> operations that each take <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time.</p>
+<h3 id="analysis-of-code121">Analysis of <code>merge(h1,h2)</code></h3>
+<p>The analysis of <code>merge(h1,h2)</code> is based on the analysis of a random walk
+in a binary tree. A <em>random walk</em> in a binary tree starts at the
+root of the tree. At each step in the random walk, a coin is tossed and,
+depending on the result of this coin toss, the walk proceeds to the left
+or to the right child of the current node. The walk ends when it falls
+off the tree (the current node becomes <code>nil</code>).</p>
+<p>The following lemma is somewhat remarkable because it does not depend
+at all on the shape of the binary tree:</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>The expected length of a random walk
+in a binary tree with <code>n</code> nodes is at most <code>\log (n+1)</code>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> The proof is by induction on <code>n</code>. In the base
+case, <span class="math inline">\(<code>n</code>=0\)</span> and the walk
+has length <span class="math inline">\(0=\log (<code>n</code>+1)\)</span>.
+Suppose now that the result is true for all non-negative integers <span
+class="math inline">\(<code>n</code>&#39;&lt; <code>n</code>\)</span>.</p>
+<p>Let <span class="math inline">\(<code>n</code>_1\)</span> denote the
+size of the root’s left subtree, so that <span
+class="math inline">\(<code>n</code>_2=<code>n</code>-<code>n</code>_1-1\)</span>
+is the size of the root’s right subtree. Starting at the root, the walk
+takes one step and then continues in a subtree of size <span
+class="math inline">\(<code>n</code>_1\)</span> or <span
+class="math inline">\(<code>n</code>_2\)</span>. By our inductive
+hypothesis, the expected length of the walk is then <span
+class="math display">\[\E[W] = 1 + \frac{1}{2}\log (<code>n</code>_1+1) +
+\frac{1}{2}\log (<code>n</code>_2+1)  \enspace ,\]</span> since each of
+<span class="math inline">\(<code>n</code>_1\)</span> and <span
+class="math inline">\(<code>n</code>_2\)</span> are less than <span
+class="math inline">\(<code>n</code>\)</span>. Since <span
+class="math inline">\(\log\)</span> is a concave function, <span
+class="math inline">\(\E[W]\)</span> is maximized when <span
+class="math inline">\(<code>n</code>_1=<code>n</code>_2=(<code>n</code>-1)/2\)</span>.
+Therefore, the expected number of steps taken by the random walk is
+<span class="math display">\[\begin{align*}
+    \E[W]
+    &amp; = 1 + \frac{1}{2}\log (<code>n</code>_1+1) + \frac{1}{2}\log
+(<code>n</code>_2+1) \\
+   &amp; \le  1 + \log ((<code>n</code>-1)/2+1) \\
+   &amp; =  1 + \log ((<code>n</code>+1)/2) \\
+   &amp; =  \log (<code>n</code>+1)  \enspace . \qedhere
+\end{align*}\]</span> ◻</p>
+</div>
+<p>We make a quick digression to note that, for readers who know a
+little about information theory, the proof of can be stated in terms of
+entropy.</p>
+<div class="proof">
+<p><em>Information Theoretic Proof of .</em> Let <span
+class="math inline">\(d_i\)</span> denote the depth of the <span
+class="math inline">\(i\)</span>th external node and recall that a
+binary tree with <code>n</code> nodes has <code>n+1</code> external nodes. The
+probability of the random walk reaching the <span
+class="math inline">\(i\)</span>th external node is exactly <span
+class="math inline">\(p_i=1/2^{d_i}\)</span>, so the expected length of
+the random walk is given by <span
+class="math display">\[H=\sum_{i=0}^{<code>n</code>} p_id_i
+    =\sum_{i=0}^{<code>n</code>} p_i\log\left(2^{d_i}\right)
+    = \sum_{i=0}^{<code>n</code>}p_i\log({1/p_i})\]</span> The right hand
+side of this equation is easily recognizable as the entropy of a
+probability distribution over <span
+class="math inline">\(<code>n</code>+1\)</span> elements. A basic fact
+about the entropy of a distribution over <span
+class="math inline">\(<code>n</code>+1\)</span> elements is that it does
+not exceed <span class="math inline">\(\log(<code>n</code>+1)\)</span>,
+which proves the lemma. ◻</p>
+</div>
+<p>With this result on random walks, we can now easily prove that the
+running time of the <code>merge(h1,h2)</code> operation is <span
+class="math inline">\(O(\log <code>n</code>)\)</span>.</p>
+<div class="lem">
+<p><strong>Lemma 1.2</strong>. <em>If <code>h1</code> and <code>h2</code> are
+the roots of two heaps containing <span
+class="math inline">\(<code>n</code>_1\)</span> and <span
+class="math inline">\(<code>n</code>_2\)</span> nodes, respectively, then
+the expected running time of <code>merge(h1,h2)</code> is at most <span
+class="math inline">\(O(\log <code>n</code>)\)</span>, where <span
+class="math inline">\(<code>n</code>=<code>n</code>_1+<code>n</code>_2\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> Each step of the merge algorithm takes one step of a
+random walk, either in the heap rooted at <code>h1</code> or the heap rooted
+at <code>h2</code>. The algorithm terminates when either of these two random
+walks fall out of its corresponding tree (when <span
+class="math inline">\(<code>h1</code>=<code>null</code>\)</span> or <span
+class="math inline">\(<code>h2</code>=<code>null</code>\)</span>). Therefore, the
+expected number of steps performed by the merge algorithm is at most
+<span class="math display">\[\log (<code>n</code>_1+1) + \log
+(<code>n</code>_2+1) \le 2\log <code>n</code> \enspace .
+\qedhere\]</span> ◻</p>
+</div>
+<h3 id="summary-1">Summary</h3>
+<p>The following theorem summarizes the performance of a
+<code>MeldableHeap</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>A <code>MeldableHeap</code> implements the
+(priority) <code>Queue</code> interface. A <code>MeldableHeap</code> supports the operations
+<code>add(x)</code> and <code>remove()</code> in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> expected time per operation.</em></p>
+</div>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>The implicit representation of a complete binary tree as an array, or
+list, seems to have been first proposed by Eytzinger <span
+class="citation" data-cites="e1590"></span>. He used this representation
+in books containing pedigree family trees of noble families. The
+<code>BinaryHeap</code> data structure described here was first introduced by
+Williams <span class="citation" data-cites="w64"></span>.</p>
+<p>The randomized <code>MeldableHeap</code> data structure described here appears to
+have first been proposed by Gambin and Malinowski <span class="citation"
+data-cites="gm98"></span>. Other meldable heap implementations exist,
+including leftist heaps <span class="citation"
+data-cites="c72 k97v3"></span>, binomial heaps <span class="citation"
+data-cites="v78"></span>, Fibonacci heaps <span class="citation"
+data-cites="ft87"></span>, pairing heaps <span class="citation"
+data-cites="fsst86"></span>,  and skew heaps <span class="citation"
+data-cites="st83"></span>, although none of these are as simple as the
+<code>MeldableHeap</code> structure.</p>
+<p>Some of the above structures also support a <code>decreaseKey(u,y)</code> operation in
+which the value stored at node <code>u</code> is decreased to <code>y</code>.
+(It is a pre-condition that <span
+class="math inline">\(<code>y</code>\le<code>u.x</code>\)</span>.) In most of
+the preceding structures, this operation can be supported in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> time by removing node
+<code>u</code> and adding <code>y</code>. However, some of these structures
+can implement <code>decreaseKey(u,y)</code> more efficiently. In particular, <code>decreaseKey(u,y)</code>
+takes <span class="math inline">\(O(1)\)</span> amortized time in
+Fibonacci heaps and <span class="math inline">\(O(\log\log
+<code>n</code>)\)</span> amortized time in a special version of pairing
+heaps <span class="citation" data-cites="e09"></span>. This more
+efficient <code>decreaseKey(u,y)</code> operation has applications in speeding up several
+graph algorithms, including Dijkstra’s shortest path algorithm <span
+class="citation" data-cites="ft87"></span>.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Illustrate the addition of the
+values 7 and then 3 to the <code>BinaryHeap</code> shown at the end of .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Illustrate the removal of the next
+two values (6 and 8) on the <code>BinaryHeap</code> shown at the end of .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Implement the <code>remove(i)</code> method,
+that removes the value stored in <code>a[i]</code> in a <code>BinaryHeap</code>. This
+method should run in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> time. Next, explain why this method is not likely
+to be useful.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>A <span
+class="math inline">\(d\)</span>-ary tree is a generalization of a
+binary tree in which each internal node has <span
+class="math inline">\(d\)</span> children. Using Eytzinger’s method it
+is also possible to represent complete <span
+class="math inline">\(d\)</span>-ary trees using arrays. Work out the
+equations that, given an index <code>i</code>, determine the index of
+<code>i</code>’s parent and each of <code>i</code>’s <span
+class="math inline">\(d\)</span> children in this
+representation.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Using what you learned in , design
+and implement a <em><code>DaryHeap</code></em>, the <span
+class="math inline">\(d\)</span>-ary generalization of a <code>BinaryHeap</code>.
+Analyze the running times of operations on a <code>DaryHeap</code> and test the
+performance of your <code>DaryHeap</code> implementation against that of the
+<code>BinaryHeap</code> implementation given here.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Illustrate the addition of the
+values 17 and then 82 in the <code>MeldableHeap</code> <code>h1</code> shown in . Use a
+coin to simulate a random bit when needed.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Illustrate the removal of the next
+two values (4 and 8) in the <code>MeldableHeap</code> <code>h1</code> shown in . Use a
+coin to simulate a random bit when needed.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Implement the <code>remove(u)</code> method,
+that removes the node <code>u</code> from a <code>MeldableHeap</code>. This method should
+run in <span class="math inline">\(O(\log <code>n</code>)\)</span> expected
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Show how to find the second
+smallest value in a <code>BinaryHeap</code> or <code>MeldableHeap</code> in constant
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>Show how to find the <span
+class="math inline">\(k\)</span>th smallest value in a <code>BinaryHeap</code> or
+<code>MeldableHeap</code> in <span class="math inline">\(O(k\log k)\)</span> time.
+(Hint: Using another heap might help.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Suppose you are given <code>k</code>
+sorted lists, of total length <code>n</code>. Using a heap, show how to
+merge these into a single sorted list in <span
+class="math inline">\(O(n\log
+  k)\)</span> time. (Hint: Starting with the case <span
+class="math inline">\(k=2\)</span> can be instructive.)</em></p>
+</div>

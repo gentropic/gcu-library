@@ -1,0 +1,876 @@
+<h1 id="graphs">Graphs</h1>
+<p>In this chapter, we study two representations of graphs and basic
+algorithms that use these representations.</p>
+<p>Mathematically, a <em>(directed) graph</em> is a pair <span
+class="math inline">\(G=(V,E)\)</span> where <span
+class="math inline">\(V\)</span> is a set of <em>vertices</em> and <span
+class="math inline">\(E\)</span> is a set of ordered pairs of vertices
+called <em>edges</em>. An edge <code>(i,j)</code> is <em>directed</em> from
+<code>i</code> to <code>j</code>; <code>i</code> is called the <em>source</em> of the
+edge and <code>j</code> is called the <em>target</em>. A <em>path</em> in
+<span class="math inline">\(G\)</span> is a sequence of vertices <span
+class="math inline">\(v_0,\ldots,v_k\)</span> such that, for every <span
+class="math inline">\(i\in\{1,\ldots,k\}\)</span>, the edge <span
+class="math inline">\((v_{i-1},v_{i})\)</span> is in <span
+class="math inline">\(E\)</span>. A path <span
+class="math inline">\(v_0,\ldots,v_k\)</span> is a <em>cycle</em> if,
+additionally, the edge <span class="math inline">\((v_k,v_0)\)</span> is
+in <span class="math inline">\(E\)</span>. A path (or cycle) is
+<em>simple</em> if all of its vertices are unique. If there is a path
+from some vertex <span class="math inline">\(v_i\)</span> to some vertex
+<span class="math inline">\(v_j\)</span> then we say that <span
+class="math inline">\(v_j\)</span> is <em>reachable</em> from <span
+class="math inline">\(v_i\)</span>. An example of a graph is shown in
+.</p>
+<figure>
+<div class="center">
+<img src="figs/graph" />
+</div>
+<figcaption>A graph with twelve vertices. Vertices are drawn as numbered
+circles and edges are drawn as pointed curves pointing from source to
+target.</figcaption>
+</figure>
+<p>Due to their ability to model so many phenomena, graphs have an
+enormous number of applications. There are many obvious examples.
+Computer networks can be modelled as graphs, with vertices corresponding
+to computers and edges corresponding to (directed) communication links
+between those computers. City streets can be modelled as graphs, with
+vertices representing intersections and edges representing streets
+joining consecutive intersections.</p>
+<p>Less obvious examples occur as soon as we realize that graphs can
+model any pairwise relationships within a set. For example, in a
+university setting we might have a timetable <em>conflict graph</em>
+whose vertices represent courses offered in the university and in which
+the edge <code>(i,j)</code> is present if and only if there is at least one
+student that is taking both class <code>i</code> and class <code>j</code>. Thus,
+an edge indicates that the exam for class <code>i</code> should not be
+scheduled at the same time as the exam for class <code>j</code>.</p>
+<p>Throughout this section, we will use <code>n</code> to denote the number
+of vertices of <span class="math inline">\(G\)</span> and <code>m</code> to
+denote the number of edges of <span class="math inline">\(G\)</span>.
+That is, <span class="math inline">\(<code>n</code>=|V|\)</span> and <span
+class="math inline">\(<code>m</code>=|E|\)</span>. Furthermore, we will
+assume that <span
+class="math inline">\(V=\{0,\ldots,<code>n</code>-1\}\)</span>. Any other
+data that we would like to associate with the elements of <span
+class="math inline">\(V\)</span> can be stored in an array of length
+<span class="math inline">\(<code>n</code>\)</span>.</p>
+<p>Some typical operations performed on graphs are:</p>
+<ul>
+<li><p><code>addEdge(i,j)</code>: Add the edge <span
+class="math inline">\((<code>i</code>,<code>j</code>)\)</span> to <span
+class="math inline">\(E\)</span>.</p></li>
+<li><p><code>removeEdge(i,j)</code>: Remove the edge <span
+class="math inline">\((<code>i</code>,<code>j</code>)\)</span> from <span
+class="math inline">\(E\)</span>.</p></li>
+<li><p><code>hasEdge(i,j)</code>: Check if the edge <span
+class="math inline">\((<code>i</code>,<code>j</code>)\in E\)</span></p></li>
+<li><p><code>outEdges(i)</code>: Return a <code>List</code> of all integers <span
+class="math inline">\(<code>j</code>\)</span> such that <span
+class="math inline">\((<code>i</code>,<code>j</code>)\in E\)</span></p></li>
+<li><p><code>inEdges(i)</code>: Return a <code>List</code> of all integers <span
+class="math inline">\(<code>j</code>\)</span> such that <span
+class="math inline">\((<code>j</code>,<code>i</code>)\in E\)</span></p></li>
+</ul>
+<p>Note that these operations are not terribly difficult to implement
+efficiently. For example, the first three operations can be implemented
+directly by using a <code>USet</code>, so they can be implemented in constant
+expected time using the hash tables discussed in . The last two
+operations can be implemented in constant time by storing, for each
+vertex, a list of its adjacent vertices.</p>
+<p>However, different applications of graphs have different performance
+requirements for these operations and, ideally, we can use the simplest
+implementation that satisfies all the application’s requirements. For
+this reason, we discuss two broad categories of graph
+representations.</p>
+<h2 id="code36-representing-a-graph-by-a-matrix"><code>AdjacencyMatrix</code>:
+Representing a Graph by a Matrix</h2>
+<p>An <em>adjacency matrix</em> is a way of representing an <code>n</code>
+vertex graph <span class="math inline">\(G=(V,E)\)</span> by an <span
+class="math inline">\(<code>n</code>\times<code>n</code>\)</span> matrix,
+<code>a</code>, whose entries are boolean values.
+<code>[listing: ods/AdjacencyMatrix.a.n.AdjacencyMatrix(n0)]</code></p>
+<p>The matrix entry <code>a[i][j]</code> is defined as <span
+class="math display">\[<code>a[i][j]</code>=
+    \begin{cases}
+      <code>true</code> &amp; \text{if $<code>(i,j)</code>\in E$} \\
+      <code>false</code> &amp; \text{otherwise}
+    \end{cases}\]</span> The adjacency matrix for the graph in is shown
+in .</p>
+<p>In this representation, the operations <code>addEdge(i,j)</code>, <code>removeEdge(i,j)</code>, and
+<code>hasEdge(i,j)</code> just involve setting or reading the matrix entry <code>a[i][j]</code>:
+<code>[listing: ods/AdjacencyMatrix.addEdge(i,j).removeEdge(i,j).hasEdge(i,j)]</code>
+These operations clearly take constant time per operation.</p>
+<figure>
+<div class="center">
+<p><img src="figs/graph" alt="image" /><br />
+</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"></th>
+<th style="text-align: center;">0</th>
+<th style="text-align: center;">1</th>
+<th style="text-align: center;">2</th>
+<th style="text-align: center;">3</th>
+<th style="text-align: center;">4</th>
+<th style="text-align: center;">5</th>
+<th style="text-align: center;">6</th>
+<th style="text-align: center;">7</th>
+<th style="text-align: center;">8</th>
+<th style="text-align: center;">9</th>
+<th style="text-align: center;">10</th>
+<th style="text-align: center;">11</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr>
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>A graph and its adjacency matrix.</figcaption>
+</figure>
+<p>Where the adjacency matrix performs poorly is with the <code>outEdges(i)</code> and
+<code>inEdges(i)</code> operations. To implement these, we must scan all <code>n</code>
+entries in the corresponding row or column of <code>a</code> and gather up
+all the indices, <code>j</code>, where <code>a[i][j]</code>, respectively <code>a[j][i]</code>,
+is true.</p>
+<p>These operations clearly take <span
+class="math inline">\(O(<code>n</code>)\)</span> time per operation.</p>
+<p>Another drawback of the adjacency matrix representation is that it is
+large. It stores an <span class="math inline">\(<code>n</code>\times
+<code>n</code>\)</span> boolean matrix, so it requires at least <span
+class="math inline">\(<code>n</code>^2\)</span> bits of memory. The
+implementation here uses a matrix of values so it actually uses on the
+order of <span class="math inline">\(<code>n</code>^2\)</span> bytes of
+memory. A more careful implementation, which packs <code>w</code> boolean
+values into each word of memory, could reduce this space usage to <span
+class="math inline">\(O(<code>n</code>^2/<code>w</code>)\)</span> words of
+memory.</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>The <code>AdjacencyMatrix</code> data structure
+implements the <code>Graph</code> interface. An <code>AdjacencyMatrix</code> supports the
+operations</em></p>
+<ul>
+<li><p><em><code>addEdge(i,j)</code>, <code>removeEdge(i,j)</code>, and <code>hasEdge(i,j)</code> in constant time per
+operation; and</em></p></li>
+<li><p><em><code>inEdges(i)</code>, and <code>outEdges(i)</code> in <span
+class="math inline">\(O(<code>n</code>)\)</span> time per
+operation.</em></p></li>
+</ul>
+<p><em>The space used by an <code>AdjacencyMatrix</code> is <span
+class="math inline">\(O(<code>n</code>^2)\)</span>.</em></p>
+</div>
+<p>Despite its high memory requirements and poor performance of the
+<code>inEdges(i)</code> and <code>outEdges(i)</code> operations, an <code>AdjacencyMatrix</code> can still be useful
+for some applications. In particular, when the graph <span
+class="math inline">\(G\)</span> is <em>dense</em>, i.e., it has close
+to <span class="math inline">\(<code>n</code>^2\)</span> edges, then a
+memory usage of <span class="math inline">\(<code>n</code>^2\)</span> may be
+acceptable.</p>
+<p>The <code>AdjacencyMatrix</code> data structure is also commonly used because algebraic
+operations on the matrix <code>a</code> can be used to efficiently compute
+properties of the graph <span class="math inline">\(G\)</span>. This is
+a topic for a course on algorithms, but we point out one such property
+here: If we treat the entries of <code>a</code> as integers (1 for
+<code>true</code> and 0 for <code>false</code>) and multiply <code>a</code> by itself using
+matrix multiplication then we get the matrix <span
+class="math inline">\(<code>a</code>^2\)</span>. Recall, from the definition
+of matrix multiplication, that <span class="math display">\[<code>a^2[i][j]</code> =
+\sum_{k=0}^{<code>n</code>-1} <code>a[i][k]</code>\cdot <code>a[k][j]</code> \enspace .\]</span>
+Interpreting this sum in terms of the graph <span
+class="math inline">\(G\)</span>, this formula counts the number of
+vertices, <span class="math inline">\(<code>k</code>\)</span>, such that
+<span class="math inline">\(G\)</span> contains both edges <code>(i,k)</code>
+and <code>(k,j)</code>. That is, it counts the number of paths from <span
+class="math inline">\(<code>i</code>\)</span> to <span
+class="math inline">\(<code>j</code>\)</span> (through intermediate
+vertices, <span class="math inline">\(<code>k</code>\)</span>) whose length
+is exactly two. This observation is the foundation of an algorithm that
+computes the shortest paths between all pairs of vertices in <span
+class="math inline">\(G\)</span> using only <span
+class="math inline">\(O(\log
+<code>n</code>)\)</span> matrix multiplications.</p>
+<h2 id="code101-a-graph-as-a-collection-of-lists"><code>AdjacencyLists</code>: A Graph
+as a Collection of Lists</h2>
+<p><em>Adjacency list</em> representations of graphs take a more
+vertex-centric approach. There are many possible implementations of
+adjacency lists. In this section, we present a simple one. At the end of
+the section, we discuss different possibilities. In an adjacency list
+representation, the graph <span class="math inline">\(G=(V,E)\)</span>
+is represented as an array, <code>adj</code>, of lists. The list <code>adj[i]</code>
+contains a list of all the vertices adjacent to vertex <code>i</code>. That
+is, it contains every index <code>j</code> such that <span
+class="math inline">\(<code>(i,j)</code>\in E\)</span>.
+<code>[listing: ods/AdjacencyLists.adj.n.AdjacencyLists(n0)]</code> (An
+example is shown in .) In this particular implementation, we represent
+each list in <code>adj</code> as <code>ArrayStack</code>, because we would like constant
+time access by position. Other options are also possible. Specifically,
+we could have implemented <code>adj</code> as a <code>DLList</code>.</p>
+<figure>
+<div class="center">
+<p><img src="figs/graph" alt="image" /><br />
+</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">0</th>
+<th style="text-align: center;">1</th>
+<th style="text-align: center;">2</th>
+<th style="text-align: center;">3</th>
+<th style="text-align: center;">4</th>
+<th style="text-align: center;">5</th>
+<th style="text-align: center;">6</th>
+<th style="text-align: center;">7</th>
+<th style="text-align: center;">8</th>
+<th style="text-align: center;">9</th>
+<th style="text-align: center;">10</th>
+<th style="text-align: center;">11</th>
+<th style="text-align: center;"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">11</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">11</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+<tr>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>A graph and its adjacency lists</figcaption>
+</figure>
+<p>The <code>addEdge(i,j)</code> operation just appends the value <code>j</code> to the
+list <code>adj[i]</code>:
+<code>[listing: ods/AdjacencyLists.addEdge(i,j)]</code> This takes
+constant time.</p>
+<p>The <code>removeEdge(i,j)</code> operation searches through the list <code>adj[i]</code> until
+it finds <code>j</code> and then removes it:
+<code>[listing: ods/AdjacencyLists.removeEdge(i,j)]</code> This takes
+<span class="math inline">\(O(\deg(<code>i</code>))\)</span> time, where
+<span class="math inline">\(\deg(<code>i</code>)\)</span> (the
+<em>degree</em> of <span class="math inline">\(<code>i</code>\)</span>)
+counts the number of edges in <span class="math inline">\(E\)</span>
+that have <span class="math inline">\(<code>i</code>\)</span> as their
+source.</p>
+<p>The <code>hasEdge(i,j)</code> operation is similar; it searches through the list
+<code>adj[i]</code> until it finds <code>j</code> (and returns true), or reaches
+the end of the list (and returns false):
+<code>[listing: ods/AdjacencyLists.hasEdge(i,j)]</code> This also takes
+<span class="math inline">\(O(\deg(<code>i</code>))\)</span> time.</p>
+<p>The <code>outEdges(i)</code> operation is very simple; it returns the list
+<code>adj[i]</code></p>
+<p>: <code>[listing: ods/AdjacencyLists.outEdges(i)]</code></p>
+<p>The <code>inEdges(i)</code> operation is much more work. It scans over every
+vertex <span class="math inline">\(j\)</span> checking if the edge
+<code>(i,j)</code> exists and, if so, adding <code>j</code> to the output list:
+<code>[listing: ods/AdjacencyLists.inEdges(i)]</code></p>
+<p>This operation is very slow. It scans the adjacency list of every
+vertex, so it takes <span class="math inline">\(O(<code>n</code> +
+<code>m</code>)\)</span> time.</p>
+<p>The following theorem summarizes the performance of the above data
+structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>The <code>AdjacencyLists</code> data structure
+implements the <code>Graph</code> interface. An <code>AdjacencyLists</code> supports the
+operations</em></p>
+<ul>
+<li><p><em><code>addEdge(i,j)</code> in constant time per operation;</em></p></li>
+<li><p><em><code>removeEdge(i,j)</code> and <code>hasEdge(i,j)</code> in <span
+class="math inline">\(O(\deg(<code>i</code>))\)</span> time per
+operation;</em></p></li>
+<li><p><em><code>inEdges(i)</code> in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time per
+operation.</em></p></li>
+</ul>
+<p><em>The space used by a <code>AdjacencyLists</code> is <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span>.</em></p>
+</div>
+<p>As alluded to earlier, there are many different choices to be made
+when implementing a graph as an adjacency list. Some questions that come
+up include:</p>
+<ul>
+<li><p>What type of collection should be used to store each element of
+<code>adj</code>? One could use an array-based list, a linked-list, or even a
+hashtable.</p></li>
+<li><p>Should there be a second adjacency list, <code>inadj</code>, that
+stores, for each <code>i</code>, the list of vertices, <code>j</code>, such
+that <span class="math inline">\(<code>(j,i)</code>\in E\)</span>? This can
+greatly reduce the running-time of the <code>inEdges(i)</code> operation, but
+requires slightly more work when adding or removing edges.</p></li>
+<li><p>Should the entry for the edge <code>(i,j)</code> in <code>adj[i]</code> be
+linked by a reference to the corresponding entry in
+<code>inadj[j]</code>?</p></li>
+<li><p>Should edges be first-class objects with their own associated
+data? In this way, <code>adj</code> would contain lists of edges rather than
+lists of vertices (integers).</p></li>
+</ul>
+<p>Most of these questions come down to a tradeoff between complexity
+(and space) of implementation and performance features of the
+implementation.</p>
+<h2 id="graph-traversal">Graph Traversal</h2>
+<p>In this section we present two algorithms for exploring a graph,
+starting at one of its vertices, <code>i</code>, and finding all vertices
+that are reachable from <code>i</code>. Both of these algorithms are best
+suited to graphs represented using an adjacency list representation.
+Therefore, when analyzing these algorithms we will assume that the
+underlying representation is an <code>AdjacencyLists</code>.</p>
+<h3 id="breadth-first-search">Breadth-First Search</h3>
+<p>The <em>breadth-first-search</em> algorithm starts at a vertex
+<code>i</code> and visits, first the neighbours of <code>i</code>, then the
+neighbours of the neighbours of <code>i</code>, then the neighbours of the
+neighbours of the neighbours of <code>i</code>, and so on.</p>
+<p>This algorithm is a generalization of the breadth-first traversal
+algorithm for binary trees (), and is very similar; it uses a queue,
+<code>q</code>, that initially contains only <code>i</code>. It then
+repeatedly extracts an element from <code>q</code> and adds its neighbours
+to <code>q</code>, provided that these neighbours have never been in
+<code>q</code> before. The only major difference between the
+breadth-first-search algorithm for graphs and the one for trees is that
+the algorithm for graphs has to ensure that it does not add the same
+vertex to <code>q</code> more than once. It does this by using an auxiliary
+boolean array, <code>seen</code>, that tracks which vertices have already been
+discovered. <code>[listing: ods/Algorithms.bfs(g,r)]</code> An example
+of running <code>bfs(g,0)</code> on the graph from is shown in . Different
+executions are possible, depending on the ordering of the adjacency
+lists; uses the adjacency lists in .</p>
+<figure>
+<div class="center">
+<img src="figs/graph-bfs" />
+</div>
+<figcaption>An example of breadth-first-search starting at node 0. Nodes
+are labelled with the order in which they are added to <code>q</code>.
+Edges that result in nodes being added to <code>q</code> are drawn in
+black, other edges are drawn in grey.</figcaption>
+</figure>
+<p>Analyzing the running-time of the <code>bfs(g,i)</code> routine is fairly
+straightforward. The use of the <code>seen</code> array ensures that no vertex
+is added to <code>q</code> more than once. Adding (and later removing) each
+vertex from <code>q</code> takes constant time per vertex for a total of
+<span class="math inline">\(O(<code>n</code>)\)</span> time. Since each
+vertex is processed by the inner loop at most once, each adjacency list
+is processed at most once, so each edge of <span
+class="math inline">\(G\)</span> is processed at most once. This
+processing, which is done in the inner loop takes constant time per
+iteration, for a total of <span
+class="math inline">\(O(<code>m</code>)\)</span> time. Therefore, the
+entire algorithm runs in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time.</p>
+<p>The following theorem summarizes the performance of the <code>bfs(g,r)</code>
+algorithm.</p>
+<div class="thm">
+<p><strong>Theorem 1.3</strong>. <em>When given as input a <code>Graph</code>,
+<code>g</code>, that is implemented using the <code>AdjacencyLists</code> data structure,
+the <code>bfs(g,r)</code> algorithm runs in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time.</em></p>
+</div>
+<p>A breadth-first traversal has some very special properties. Calling
+<code>bfs(g,r)</code> will eventually enqueue (and eventually dequeue) every
+vertex <code>j</code> such that there is a directed path from <code>r</code>
+to <code>j</code>. Moreover, the vertices at distance 0 from <code>r</code>
+(<code>r</code> itself) will enter <code>q</code> before the vertices at
+distance 1, which will enter <code>q</code> before the vertices at distance
+2, and so on. Thus, the <code>bfs(g,r)</code> method visits vertices in increasing
+order of distance from <code>r</code> and vertices that cannot be reached
+from <code>r</code> are never visited at all.</p>
+<p>A particularly useful application of the breadth-first-search
+algorithm is, therefore, in computing shortest paths. To compute the
+shortest path from <code>r</code> to every other vertex, we use a variant
+of <code>bfs(g,r)</code> that uses an auxilliary array, <code>p</code>, of length
+<code>n</code>. When a new vertex <code>j</code> is added to <code>q</code>, we
+set <code>p[j]=i</code>. In this way, <code>p[j]</code> becomes the second last node
+on a shortest path from <code>r</code> to <code>j</code>. Repeating this, by
+taking <code>p[p[j]</code>, <code>p[p[p[j]]]</code>, and so on we can reconstruct the
+(reversal of) a shortest path from <code>r</code> to <code>j</code>.</p>
+<h3 id="depth-first-search">Depth-First Search</h3>
+<p>The <em>depth-first-search</em> algorithm is similar to the standard
+algorithm for traversing binary trees; it first fully explores one
+subtree before returning to the current node and then exploring the
+other subtree. Another way to think of depth-first-search is by saying
+that it is similar to breadth-first search except that it uses a stack
+instead of a queue.</p>
+<p>During the execution of the depth-first-search algorithm, each
+vertex, <code>i</code>, is assigned a colour, <code>c[i]</code>: <code>white</code> if
+we have never seen the vertex before, <code>grey</code> if we are currently
+visiting that vertex, and <code>black</code> if we are done visiting that
+vertex. The easiest way to think of depth-first-search is as a recursive
+algorithm. It starts by visiting <code>r</code>. When visiting a vertex
+<code>i</code>, we first mark <code>i</code> as <code>grey</code>. Next, we scan
+<code>i</code>’s adjacency list and recursively visit any white vertex we
+find in this list. Finally, we are done processing <code>i</code>, so we
+colour <code>i</code> black and return.
+<code>[listing: ods/Algorithms.dfs(g,r).dfs(g,i,c)]</code> An example of
+the execution of this algorithm is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/graph-dfs" />
+</div>
+<figcaption>An example of depth-first-search starting at node 0. Nodes
+are labelled with the order in which they are processed. Edges that
+result in a recursive call are drawn in black, other edges are drawn in
+<code>grey</code>.</figcaption>
+</figure>
+<p>Although depth-first-search may best be thought of as a recursive
+algorithm, recursion is not the best way to implement it. Indeed, the
+code given above will fail for many large graphs by causing a stack
+overflow. An alternative implementation is to replace the recursion
+stack with an explicit stack, <code>s</code>. The following implementation
+does just that: <code>[listing: ods/Algorithms.dfs2(g,r)]</code> In the
+preceding code, when the next vertex, <code>i</code>, is processed,
+<code>i</code> is coloured <code>grey</code> and then replaced, on the stack,
+with its adjacent vertices. During the next iteration, one of these
+vertices will be visited.</p>
+<p>Not surprisingly, the running times of <code>dfs(g,r)</code> and <code>dfs2(g,r)</code>
+are the same as that of <code>bfs(g,r)</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.4</strong>. <em>When given as input a <code>Graph</code>,
+<code>g</code>, that is implemented using the <code>AdjacencyLists</code> data structure,
+the <code>dfs(g,r)</code> and <code>dfs2(g,r)</code> algorithms each run in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time.</em></p>
+</div>
+<p>As with the breadth-first-search algorithm, there is an underlying
+tree associated with each execution of depth-first-search. When a node
+<span class="math inline">\(<code>i</code>\neq <code>r</code>\)</span> goes
+from <code>white</code> to <code>grey</code>, this is because <code>dfs(g,i,c)</code> was called
+recursively while processing some node <code>i'</code>. (In the case of
+<code>dfs2(g,r)</code> algorithm, <code>i</code> is one of the nodes that replaced
+<code>i'</code> on the stack.) If we think of <code>i'</code> as the parent of
+<code>i</code>, then we obtain a tree rooted at <code>r</code>. In , this tree
+is a path from vertex 0 to vertex 11.</p>
+<p>An important property of the depth-first-search algorithm is the
+following: Suppose that when node <code>i</code> is coloured <code>grey</code>,
+there exists a path from <code>i</code> to some other node <code>j</code> that
+uses only white vertices. Then <code>j</code> will be coloured first
+<code>grey</code> then <code>black</code> before <code>i</code> is coloured <code>black</code>.
+(This can be proven by contradiction, by considering any path <span
+class="math inline">\(P\)</span> from <code>i</code> to <code>j</code>.)</p>
+<p>One application of this property is the detection of cycles. Refer to
+. Consider some cycle, <span class="math inline">\(C\)</span>, that can
+be reached from <code>r</code>. Let <code>i</code> be the first node of <span
+class="math inline">\(C\)</span> that is coloured <code>grey</code>, and let
+<code>j</code> be the node that precedes <code>i</code> on the cycle <span
+class="math inline">\(C\)</span>. Then, by the above property,
+<code>j</code> will be coloured <code>grey</code> and the edge <code>(j,i)</code> will
+be considered by the algorithm while <code>i</code> is still <code>grey</code>.
+Thus, the algorithm can conclude that there is a path, <span
+class="math inline">\(P\)</span>, from <code>i</code> to <code>j</code> in the
+depth-first-search tree and the edge <code>(j,i)</code> exists. Therefore,
+<span class="math inline">\(P\)</span> is also a cycle.</p>
+<figure>
+<div class="center">
+<img src="figs/dfs-cycle" />
+</div>
+<figcaption>The depth-first-search algorithm can be used to detect
+cycles in <span class="math inline">\(G\)</span>. The node <code>j</code>
+is coloured <code>grey</code> while <code>i</code> is still <code>grey</code>. This
+implies that there is a path, <span class="math inline">\(P\)</span>,
+from <code>i</code> to <code>j</code> in the depth-first-search tree, and the
+edge <code>(j,i)</code> implies that <span class="math inline">\(P\)</span> is
+also a cycle.</figcaption>
+</figure>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>The running times of the depth-first-search and breadth-first-search
+algorithms are somewhat overstated by the Theorems <a
+href="#thm:bfs-graph" data-reference-type="ref"
+data-reference="thm:bfs-graph">[thm:bfs-graph]</a> and <a
+href="#thm:dfs-graph" data-reference-type="ref"
+data-reference="thm:dfs-graph">[thm:dfs-graph]</a>. Define <span
+class="math inline">\(<code>n</code>_{<code>r</code>}\)</span> as the number
+of vertices, <code>i</code>, of <span class="math inline">\(G\)</span>, for
+which there exists a path from <code>r</code> to <code>i</code>. Define <span
+class="math inline">\(<code>m</code>_<code>r</code>\)</span> as the number of
+edges that have these vertices as their sources. Then the following
+theorem is a more precise statement of the running times of the
+breadth-first-search and depth-first-search algorithms. (This more
+refined statement of the running time is useful in some of the
+applications of these algorithms outlined in the exercises.)</p>
+<div class="thm">
+<p><strong>Theorem 1.5</strong>. <em>When given as input a <code>Graph</code>,
+<code>g</code>, that is implemented using the <code>AdjacencyLists</code> data structure,
+the <code>bfs(g,r)</code>, <code>dfs(g,r)</code> and <code>dfs2(g,r)</code> algorithms each run in
+<span
+class="math inline">\(O(<code>n</code>_{<code>r</code>}+<code>m</code>_{<code>r</code>})\)</span>
+time.</em></p>
+</div>
+<p>Breadth-first search seems to have been discovered independently by
+Moore <span class="citation" data-cites="m59"></span> and Lee <span
+class="citation" data-cites="l61"></span> in the contexts of maze
+exploration and circuit routing, respectively.</p>
+<p>Adjacency-list representations of graphs were presented by Hopcroft
+and Tarjan <span class="citation" data-cites="ht73"></span> as an
+alternative to the (then more common) adjacency-matrix representation.
+This representation, as well as depth-first-search, played a major part
+in the celebrated Hopcroft-Tarjan planarity testing algorithm that can
+determine, in <span class="math inline">\(O(<code>n</code>)\)</span> time,
+if a graph can be drawn, in the plane, and in such a way that no pair of
+edges cross each other <span class="citation"
+data-cites="ht74"></span>.</p>
+<p>In the following exercises, an undirected graph is one in which, for
+every <code>i</code> and <code>j</code>, the edge <span
+class="math inline">\((<code>i</code>,<code>j</code>)\)</span> is present if
+and only if the edge <span
+class="math inline">\((<code>j</code>,<code>i</code>)\)</span> is present.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Draw an adjacency list
+representation and an adjacency matrix representation of the graph in
+.</em></p>
+</div>
+<figure>
+
+<figcaption>An example graph.</figcaption>
+</figure>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>The <em>incidence matrix</em>
+representation of a graph, <span class="math inline">\(G\)</span>, is an
+<span class="math inline">\(<code>n</code>\times<code>m</code>\)</span>
+matrix, <span class="math inline">\(A\)</span>, where <span
+class="math display">\[A_{i,j} = \begin{cases}
+        -1 &amp; \text{if vertex $i$ the source of edge $j$} \\
+        +1 &amp; \text{if vertex $i$ the target of edge $j$} \\
+        0 &amp; \text{otherwise.}
+     \end{cases}\]</span></em></p>
+<ol>
+<li><p><em>Draw the incident matrix representation of the graph in
+.</em></p></li>
+<li><p><em>Design, analyze and implement an incidence matrix
+representation of a graph. Be sure to analyze the space, the cost of
+<code>addEdge(i,j)</code>, <code>removeEdge(i,j)</code>, <code>hasEdge(i,j)</code>, <code>inEdges(i)</code>, and
+<code>outEdges(i)</code>.</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Illustrate an execution of the
+<code>bfs(G,0)</code> and <code>dfs(G,0)</code> on the graph, <span
+class="math inline">\(<code>G</code>\)</span>, in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>Let <span
+class="math inline">\(G\)</span> be an undirected graph. We say <span
+class="math inline">\(G\)</span> is <em>connected</em> if, for every
+pair of vertices <code>i</code> and <code>j</code> in <span
+class="math inline">\(G\)</span>, there is a path from <span
+class="math inline">\(<code>i</code>\)</span> to <span
+class="math inline">\(<code>j</code>\)</span> (since <span
+class="math inline">\(G\)</span> is undirected, there is also a path
+from <code>j</code> to <code>i</code>). Show how to test if <span
+class="math inline">\(G\)</span> is connected in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Let <span
+class="math inline">\(G\)</span> be an undirected graph. A
+<em>connected-component labelling</em> of <span
+class="math inline">\(G\)</span> partitions the vertices of <span
+class="math inline">\(G\)</span> into maximal sets, each of which forms
+a connected subgraph. Show how to compute a connected component
+labelling of <span class="math inline">\(G\)</span> in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Let <span
+class="math inline">\(G\)</span> be an undirected graph. A <em>spanning
+forest</em> of <span class="math inline">\(G\)</span> is a collection of
+trees, one per component, whose edges are edges of <span
+class="math inline">\(G\)</span> and whose vertices contain all vertices
+of <span class="math inline">\(G\)</span>. Show how to compute a
+spanning forest of of <span class="math inline">\(G\)</span> in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>We say that a graph <span
+class="math inline">\(G\)</span> is <em>strongly-connected</em> if, for
+every pair of vertices <code>i</code> and <code>j</code> in <span
+class="math inline">\(G\)</span>, there is a path from <span
+class="math inline">\(<code>i</code>\)</span> to <span
+class="math inline">\(<code>j</code>\)</span>. Show how to test if <span
+class="math inline">\(G\)</span> is strongly-connected in <span
+class="math inline">\(O(<code>n</code>+<code>m</code>)\)</span> time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Given a graph <span
+class="math inline">\(G=(V,E)\)</span> and some special vertex <span
+class="math inline">\(<code>r</code>\in V\)</span>, show how to compute the
+length of the shortest path from <span
+class="math inline">\(<code>r</code>\)</span> to <code>i</code> for every
+vertex <span class="math inline">\(<code>i</code>\in V\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Give a (simple) example where the
+<code>dfs(g,r)</code> code visits the nodes of a graph in an order that is
+different from that of the <code>dfs2(g,r)</code> code. Write a version of
+<code>dfs2(g,r)</code> that always visits nodes in exactly the same order as
+<code>dfs(g,r)</code>. (Hint: Just start tracing the execution of each algorithm
+on some graph where <code>r</code> is the source of more than 1
+edge.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>A <em>universal sink</em> in a
+graph <span class="math inline">\(G\)</span> is a vertex that is the
+target of <span class="math inline">\(<code>n</code>-1\)</span> edges and
+the source of no edges.<a href="#fn1" class="footnote-ref" id="fnref1"
+role="doc-noteref"><sup>1</sup></a> Design and implement an algorithm
+that tests if a graph <span class="math inline">\(G\)</span>,
+represented as an <code>AdjacencyMatrix</code>, has a universal sink. Your algorithm
+should run in <span class="math inline">\(O(<code>n</code>)\)</span>
+time.</em></p>
+</div>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p><em>A universal sink, <code>v</code>, is also sometimes
+called a <em>celebrity</em>: Everyone in the room recognizes
+<code>v</code>, but <code>v</code> doesn’t recognize anyone else in the
+room.</em><a href="#fnref1" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>

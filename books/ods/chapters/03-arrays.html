@@ -1,0 +1,986 @@
+<h1 id="array-based-lists">Array-Based Lists</h1>
+<p>In this chapter, we will study implementations of the <code>List</code> and
+<code>Queue</code> interfaces where the underlying data is stored in an array,
+called the <em>backing array</em>. The following table summarizes the
+running times of operations for the data structures presented in this
+chapter:</p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;"><code>get(i)</code>/<code>set(i,x)</code></th>
+<th style="text-align: left;"><code>add(i,x)</code>/<code>remove(i)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>ArrayStack</code></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(1)\)</span></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(<code>n</code>-<code>i</code>)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>ArrayDeque</code></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(1)\)</span></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>DualArrayDeque</code></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(1)\)</span></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>RootishArrayStack</code></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(1)\)</span></td>
+<td style="text-align: left;"><span
+class="math inline">\(O(<code>n</code>-<code>i</code>)\)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Data structures that work by storing data in a single array have many
+advantages and limitations in common:</p>
+<ul>
+<li><p>Arrays offer constant time access to any value in the array. This
+is what allows <code>get(i)</code> and <code>set(i,x)</code> to run in constant
+time.</p></li>
+<li><p>Arrays are not very dynamic. Adding or removing an element near
+the middle of a list means that a large number of elements in the array
+need to be shifted to make room for the newly added element or to fill
+in the gap created by the deleted element. This is why the operations
+<code>add(i,x)</code> and <code>remove(i)</code> have running times that depend on <code>n</code>
+and <code>i</code>.</p></li>
+<li><p>Arrays cannot expand or shrink. When the number of elements in
+the data structure exceeds the size of the backing array, a new array
+needs to be allocated and the data from the old array needs to be copied
+into the new array. This is an expensive operation.</p></li>
+</ul>
+<p>The third point is important. The running times cited in the table
+above do not include the cost associated with growing and shrinking the
+backing array. We will see that, if carefully managed, the cost of
+growing and shrinking the backing array does not add much to the cost of
+an <em>average</em> operation. More precisely, if we start with an empty
+data structure, and perform any sequence of <span
+class="math inline">\(m\)</span> <code>add(i,x)</code> or <code>remove(i)</code> operations,
+then the total cost of growing and shrinking the backing array, over the
+entire sequence of <span class="math inline">\(m\)</span> operations is
+<span class="math inline">\(O(m)\)</span>. Although some individual
+operations are more expensive, the amortized cost, when amortized over
+all <span class="math inline">\(m\)</span> operations, is only <span
+class="math inline">\(O(1)\)</span> per operation.</p>
+<h2 id="code32-fast-stack-operations-using-an-array"><code>ArrayStack</code>: Fast
+Stack Operations Using an Array</h2>
+<p>An <code>ArrayStack</code> implements the list interface using an array
+<code>a</code>, called the <em>backing array</em>. The list element with
+index <code>i</code> is stored in <code>a[i]</code>. At most times, <code>a</code> is
+larger than strictly necessary, so an integer <code>n</code> is used to keep
+track of the number of elements actually stored in <code>a</code>. In this
+way, the list elements are stored in <code>a[0]</code>,…,<code>a[n-1]</code> and, at all
+times, <span class="math inline">\(<code>a.length</code> \ge
+<code>n</code>\)</span>.</p>
+<p><code>[listing: ods/ArrayStack.a.n.size()]</code></p>
+<h3 id="the-basics">The Basics</h3>
+<p>Accessing and modifying the elements of an <code>ArrayStack</code> using
+<code>get(i)</code> and <code>set(i,x)</code> is trivial. After performing any necessary
+bounds-checking we simply return or set, respectively, <code>a[i]</code>.</p>
+<p><code>[listing: ods/ArrayStack.get(i).set(i,x)]</code></p>
+<p>The operations of adding and removing elements from an <code>ArrayStack</code> are
+illustrated in . To implement the <code>add(i,x)</code> operation, we first check
+if <code>a</code> is already full. If so, we call the method <code>resize()</code> to
+increase the size of <code>a</code>. How <code>resize()</code> is implemented will be
+discussed later. For now, it is sufficient to know that, after a call to
+<code>resize()</code>, we can be sure that <span class="math inline">\(<code>a.length</code>
+&gt; <code>n</code>\)</span>. With this out of the way, we now shift the
+elements <span
+class="math inline">\(<code>a[i]</code>,\ldots,<code>a[n-1]</code>\)</span> right by one
+position to make room for <code>x</code>, set <code>a[i]</code> equal to
+<code>x</code>, and increment <code>n</code>.</p>
+<figure>
+<div class="center">
+<img src="figs/arraystack" />
+</div>
+<figcaption>A sequence of <code>add(i,x)</code> and <code>remove(i)</code> operations on an
+<code>ArrayStack</code>. Arrows denote elements being copied. Operations that result
+in a call to <code>resize()</code> are marked with an asterisk.</figcaption>
+</figure>
+<p><code>[listing: ods/ArrayStack.add(i,x)]</code> If we ignore the cost
+of the potential call to <code>resize()</code>, then the cost of the <code>add(i,x)</code>
+operation is proportional to the number of elements we have to shift to
+make room for <code>x</code>. Therefore the cost of this operation (ignoring
+the cost of resizing <code>a</code>) is <span
+class="math inline">\(O(<code>n</code>-<code>i</code>)\)</span>.</p>
+<p>Implementing the <code>remove(i)</code> operation is similar. We shift the
+elements <span
+class="math inline">\(<code>a[i+1]</code>,\ldots,<code>a[n-1]</code>\)</span> left by one
+position (overwriting <code>a[i]</code>) and decrease the value of <code>n</code>.
+After doing this, we check if <code>n</code> is getting much smaller than
+<code>a.length</code> by checking if <span class="math inline">\(<code>a.length</code> \ge
+3<code>n</code>\)</span>. If so, then we call <code>resize()</code> to reduce the size
+of <code>a</code>.</p>
+<p><code>[listing: ods/ArrayStack.remove(i)]</code> If we ignore the
+cost of the <code>resize()</code> method, the cost of a <code>remove(i)</code> operation is
+proportional to the number of elements we shift, which is <span
+class="math inline">\(O(<code>n</code>-<code>i</code>)\)</span>.</p>
+<h3 id="growing-and-shrinking">Growing and Shrinking</h3>
+<p>The <code>resize()</code> method is fairly straightforward; it allocates a new
+array <code>b</code> whose size is <span
+class="math inline">\(2<code>n</code>\)</span> and copies the <code>n</code>
+elements of <code>a</code> into the first <code>n</code> positions in
+<code>b</code>, and then sets <code>a</code> to <code>b</code>. Thus, after a call
+to <code>resize()</code>, <span class="math inline">\(<code>a.length</code> =
+2<code>n</code>\)</span>.</p>
+<p><code>[listing: ods/ArrayStack.resize()]</code></p>
+<p>Analyzing the actual cost of the <code>resize()</code> operation is easy. It
+allocates an array <code>b</code> of size <span
+class="math inline">\(2<code>n</code>\)</span> and copies the <code>n</code>
+elements of <code>a</code> into <code>b</code>. This takes <span
+class="math inline">\(O(<code>n</code>)\)</span> time.</p>
+<p>The running time analysis from the previous section ignored the cost
+of calls to <code>resize()</code>. In this section we analyze this cost using a
+technique known as <em>amortized analysis</em>. This technique does not
+try to determine the cost of resizing during each individual <code>add(i,x)</code>
+and <code>remove(i)</code> operation. Instead, it considers the cost of all calls
+to <code>resize()</code> during a sequence of <span
+class="math inline">\(m\)</span> calls to <code>add(i,x)</code> or <code>remove(i)</code>. In
+particular, we will show:</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>If an empty <code>ArrayStack</code> is created
+and any sequence of <span class="math inline">\(m\ge 1\)</span> calls to
+<code>add(i,x)</code> and <code>remove(i)</code> are performed, then the total time spent
+during all calls to <code>resize()</code> is <span
+class="math inline">\(O(m)\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> We will show that any time <code>resize()</code> is called, the
+number of calls to <code>add</code> or <code>remove</code> since the last call to
+<code>resize()</code> is at least <span
+class="math inline">\(<code>n</code>/2-1\)</span>. Therefore, if <span
+class="math inline">\(<code>n</code>_i\)</span> denotes the value of
+<code>n</code> during the <span class="math inline">\(i\)</span>th call to
+<code>resize()</code> and <span class="math inline">\(r\)</span> denotes the
+number of calls to <code>resize()</code>, then the total number of calls to
+<code>add(i,x)</code> or <code>remove(i)</code> is at least <span
+class="math display">\[\sum_{i=1}^{r} (<code>n</code>_i/2-1) \le
+m  \enspace ,\]</span> which is equivalent to <span
+class="math display">\[\sum_{i=1}^{r} <code>n</code>_i \le 2m +
+2r  \enspace .\]</span> On the other hand, the total time spent during
+all calls to <code>resize()</code> is <span class="math display">\[\sum_{i=1}^{r}
+O(<code>n</code>_i) \le O(m+r) = O(m)  \enspace ,\]</span> since <span
+class="math inline">\(r\)</span> is not more than <span
+class="math inline">\(m\)</span>. All that remains is to show that the
+number of calls to <code>add(i,x)</code> or <code>remove(i)</code> between the <span
+class="math inline">\((i-1)\)</span>th and the <span
+class="math inline">\(i\)</span>th call to <code>resize()</code> is at least <span
+class="math inline">\(<code>n</code>_i/2\)</span>.</p>
+<p>There are two cases to consider. In the first case, <code>resize()</code> is
+being called by <code>add(i,x)</code> because the backing array <code>a</code> is
+full, i.e., <span class="math inline">\(<code>a.length</code> =
+<code>n</code>=<code>n</code>_i\)</span>. Consider the previous call to
+<code>resize()</code>: after this previous call, the size of <code>a</code> was
+<code>a.length</code>, but the number of elements stored in <code>a</code> was at
+most <span class="math inline">\(<code>a.length</code>/2=<code>n</code>_i/2\)</span>.
+But now the number of elements stored in <code>a</code> is <span
+class="math inline">\(<code>n</code>_i=<code>a.length</code>\)</span>, so there must
+have been at least <span class="math inline">\(<code>n</code>_i/2\)</span>
+calls to <code>add(i,x)</code> since the previous call to <code>resize()</code>.</p>
+<p>The second case occurs when <code>resize()</code> is being called by
+<code>remove(i)</code> because <span class="math inline">\(<code>a.length</code> \ge
+3<code>n</code>=3<code>n</code>_i\)</span>. Again, after the previous call to
+<code>resize()</code> the number of elements stored in <code>a</code> was at least
+<span class="math inline">\(<code>a.length/2</code>-1\)</span>.<a href="#fn1"
+class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Now
+there are <span
+class="math inline">\(<code>n</code>_i\le<code>a.length</code>/3\)</span> elements
+stored in <code>a</code>. Therefore, the number of <code>remove(i)</code> operations
+since the last call to <code>resize()</code> is at least <span
+class="math display">\[\begin{align*}
+      R &amp; \ge <code>a.length</code>/2 - 1 - <code>a.length</code>/3 \\
+        &amp; = <code>a.length</code>/6 - 1 \\
+        &amp; = (<code>a.length</code>/3)/2 - 1 \\
+        &amp; \ge <code>n</code>_i/2 -1\enspace .
+\end{align*}\]</span> In either case, the number of calls to <code>add(i,x)</code>
+or <code>remove(i)</code> that occur between the <span
+class="math inline">\((i-1)\)</span>th call to <code>resize()</code> and the <span
+class="math inline">\(i\)</span>th call to <code>resize()</code> is at least <span
+class="math inline">\(<code>n</code>_i/2-1\)</span>, as required to
+complete the proof. ◻</p>
+</div>
+<h3 id="summary">Summary</h3>
+<p>The following theorem summarizes the performance of an
+<code>ArrayStack</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>An <code>ArrayStack</code> implements the
+<code>List</code> interface. Ignoring the cost of calls to <code>resize()</code>, an
+<code>ArrayStack</code> supports the operations</em></p>
+<ul>
+<li><p><em><code>get(i)</code> and <code>set(i,x)</code> in <span
+class="math inline">\(O(1)\)</span> time per operation;
+and</em></p></li>
+<li><p><em><code>add(i,x)</code> and <code>remove(i)</code> in <span
+class="math inline">\(O(1+<code>n</code>-<code>i</code>)\)</span> time per
+operation.</em></p></li>
+</ul>
+<p><em>Furthermore, beginning with an empty <code>ArrayStack</code> and performing
+any sequence of <span class="math inline">\(m\)</span> <code>add(i,x)</code> and
+<code>remove(i)</code> operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls to
+<code>resize()</code>.</em></p>
+</div>
+<p>The <code>ArrayStack</code> is an efficient way to implement a <code>Stack</code>. In
+particular, we can implement <code>push(x)</code> as <code>add(n,x)</code> and <code>pop()</code>
+as <code>remove(n-1)</code>, in which case these operations will run in <span
+class="math inline">\(O(1)\)</span> amortized time.</p>
+<h2 id="code201-an-optimized-arraystack"><code>FastArrayStack</code>: An Optimized
+ArrayStack</h2>
+<p>Much of the work done by an <code>ArrayStack</code> involves shifting (by
+<code>add(i,x)</code> and <code>remove(i)</code>) and copying (by <code>resize()</code>) of data. In a
+naive implementation, this would be done using <code>for</code> loops. It
+turns out that many programming environments have specific functions
+that are very efficient at copying and moving blocks of data. In the C
+programming language, there are the <code>memcpy(d,s,n)</code> and <code>memmove(d,s,n)</code>
+functions. In the C++ language there is the <code>std::copy(a0,a1,b)</code> algorithm. In
+Java there is the <code>System.arraycopy(s,i,d,j,n)</code> method.</p>
+<p>These functions are usually highly optimized and may even use special
+machine instructions that can do this copying much faster than we could
+by using a <code>for</code> loop. Although using these functions does not
+asymptotically decrease the running times, it can still be a worthwhile
+optimization.</p>
+<p>In our C++ and Java implementations, the use of fast array copying
+functions</p>
+<p>resulted in speedups of a factor between 2 and 3, depending on the
+types of operations performed. Your mileage may vary.</p>
+<h2 id="code219-an-array-based-queue"><code>ArrayQueue</code>: An Array-Based
+Queue</h2>
+<p>In this section, we present the <code>ArrayQueue</code> data structure, which
+implements a FIFO (first-in-first-out) queue; elements are removed
+(using the <code>remove()</code> operation) from the queue in the same order they
+are added (using the <code>add(x)</code> operation).</p>
+<p>Notice that an <code>ArrayStack</code> is a poor choice for an implementation of
+a FIFO queue. It is not a good choice because we must choose one end of
+the list upon which to add elements and then remove elements from the
+other end. One of the two operations must work on the head of the list,
+which involves calling <code>add(i,x)</code> or <code>remove(i)</code> with a value of <span
+class="math inline">\(<code>i</code>=0\)</span>. This gives a running time
+proportional to <code>n</code>.</p>
+<p>To obtain an efficient array-based implementation of a queue, we
+first notice that the problem would be easy if we had an infinite array
+<code>a</code>. We could maintain one index <code>j</code> that keeps track of
+the next element to remove and an integer <code>n</code> that counts the
+number of elements in the queue. The queue elements would always be
+stored in <span
+class="math display">\[<code>a[j]</code>,<code>a[j+1]</code>,\ldots,<code>a[j+n-1]</code>
+\enspace .\]</span> Initially, both <code>j</code> and <code>n</code> would be
+set to 0. To add an element, we would place it in <code>a[j+n]</code> and
+increment <code>n</code>. To remove an element, we would remove it from
+<code>a[j]</code>, increment <code>j</code>, and decrement <code>n</code>.</p>
+<p>Of course, the problem with this solution is that it requires an
+infinite array. An <code>ArrayQueue</code> simulates this by using a finite array
+<code>a</code> and <em>modular arithmetic</em>. This is the kind of
+arithmetic used when we are talking about the time of day. For example
+10:00 plus five hours gives 3:00. Formally, we say that <span
+class="math display">\[10 + 5 = 15 \equiv 3 \pmod{12} \enspace
+.\]</span> We read the latter part of this equation as “15 is congruent
+to 3 modulo 12.” We can also treat <span
+class="math inline">\(\bmod\)</span> as a binary operator, so that <span
+class="math display">\[15 \bmod 12 = 3 \enspace .\]</span></p>
+<p>More generally, for an integer <span class="math inline">\(a\)</span>
+and positive integer <span class="math inline">\(m\)</span>, <span
+class="math inline">\(a \bmod m\)</span> is the unique integer <span
+class="math inline">\(r\in\{0,\ldots,m-1\}\)</span> such that <span
+class="math inline">\(a = r + km\)</span> for some integer <span
+class="math inline">\(k\)</span>. Less formally, the value <span
+class="math inline">\(r\)</span> is the remainder we get when we divide
+<span class="math inline">\(a\)</span> by <span
+class="math inline">\(m\)</span>. In many programming languages,
+including C, C++, and Java, the mod operate is represented using the %
+symbol.</p>
+<p>Modular arithmetic is useful for simulating an infinite array, since
+<span class="math inline">\(<code>i</code>\bmod <code>a.length</code>\)</span> always
+gives a value in the range <span
+class="math inline">\(0,\ldots,<code>a.length-1</code>\)</span>. Using modular
+arithmetic we can store the queue elements at array locations <span
+class="math display">\[<code>a[j%a.length]</code>,<code>a[(j+1)%a.length]</code>,\ldots,<code>a[(j+n-1)%a.length]</code>
+\enspace.\]</span> This treats the array <code>a</code> like a <em>circular
+array</em> in which array indices larger than <span
+class="math inline">\(<code>a.length</code>-1\)</span> “wrap around” to the
+beginning of the array.</p>
+<p>The only remaining thing to worry about is taking care that the
+number of elements in the <code>ArrayQueue</code> does not exceed the size of
+<code>a</code>.</p>
+<p><code>[listing: ods/ArrayQueue.a.j.n]</code></p>
+<p>A sequence of <code>add(x)</code> and <code>remove()</code> operations on an
+<code>ArrayQueue</code> is illustrated in . To implement <code>add(x)</code>, we first check
+if <code>a</code> is full and, if necessary, call <code>resize()</code> to increase
+the size of <code>a</code>. Next, we store <code>x</code> in <code>a[(j+n)%a.length]</code> and
+increment <code>n</code>.</p>
+<figure>
+<div class="center">
+<img src="figs/arrayqueue" />
+</div>
+<figcaption>A sequence of <code>add(x)</code> and <code>remove(i)</code> operations on an
+<code>ArrayQueue</code>. Arrows denote elements being copied. Operations that result
+in a call to <code>resize()</code> are marked with an asterisk.</figcaption>
+</figure>
+<p><code>[listing: ods/ArrayQueue.add(x)]</code></p>
+<p>To implement <code>remove()</code>, we first store <code>a[j]</code> so that we can
+return it later. Next, we decrement <code>n</code> and increment
+<code>j</code> (modulo <code>a.length</code>) by setting <span
+class="math inline">\(<code>j</code>=(<code>j</code>+1)\bmod
+<code>a.length</code>\)</span>. Finally, we return the stored value of
+<code>a[j]</code>. If necessary, we may call <code>resize()</code> to decrease the size
+of <code>a</code>.</p>
+<p><code>[listing: ods/ArrayQueue.remove()]</code></p>
+<p>Finally, the <code>resize()</code> operation is very similar to the <code>resize()</code>
+operation of <code>ArrayStack</code>. It allocates a new array, <code>b</code>, of size
+<span class="math inline">\(2<code>n</code>\)</span> and copies <span
+class="math display">\[<code>a[j]</code>,<code>a[(j+1)%a.length]</code>,\ldots,<code>a[(j+n-1)%a.length]</code>\]</span>
+onto <span
+class="math display">\[<code>b[0]</code>,<code>b[1]</code>,\ldots,<code>b[n-1]</code>\]</span>
+and sets <span class="math inline">\(<code>j</code>=0\)</span>.</p>
+<p><code>[listing: ods/ArrayQueue.resize()]</code></p>
+<h3 id="summary-1">Summary</h3>
+<p>The following theorem summarizes the performance of the <code>ArrayQueue</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>An <code>ArrayQueue</code> implements the
+(FIFO) <code>Queue</code> interface. Ignoring the cost of calls to <code>resize()</code>,
+an <code>ArrayQueue</code> supports the operations <code>add(x)</code> and <code>remove()</code> in
+<span class="math inline">\(O(1)\)</span> time per operation.
+Furthermore, beginning with an empty <code>ArrayQueue</code>, any sequence of <span
+class="math inline">\(m\)</span> <code>add(i,x)</code> and <code>remove(i)</code> operations
+results in a total of <span class="math inline">\(O(m)\)</span> time
+spent during all calls to <code>resize()</code>.</em></p>
+</div>
+<h2 id="code303-fast-deque-operations-using-an-array"><code>ArrayDeque</code>: Fast
+Deque Operations Using an Array</h2>
+<p>The <code>ArrayQueue</code> from the previous section is a data structure for
+representing a sequence that allows us to efficiently add to one end of
+the sequence and remove from the other end. The <code>ArrayDeque</code> data
+structure allows for efficient addition and removal at both ends. This
+structure implements the <code>List</code> interface by using the same
+circular array technique used to represent an <code>ArrayQueue</code>.</p>
+<p><code>[listing: ods/ArrayDeque.a.j.n]</code></p>
+<p>The <code>get(i)</code> and <code>set(i,x)</code> operations on an <code>ArrayDeque</code> are
+straightforward. They get or set the array element <span
+class="math inline">\(<code>a[</code>{<code>(j+i)</code>\bmod
+<code>a.length</code>}<code>]</code>\)</span>.</p>
+<p><code>[listing: ods/ArrayDeque.get(i).set(i,x)]</code></p>
+<p>The implementation of <code>add(i,x)</code> is a little more interesting. As
+usual, we first check if <code>a</code> is full and, if necessary, call
+<code>resize()</code> to resize <code>a</code>. Remember that we want this operation
+to be fast when <code>i</code> is small (close to 0) or when <code>i</code> is
+large (close to <code>n</code>). Therefore, we check if <span
+class="math inline">\(<code>i</code>&lt;<code>n</code>/2\)</span>. If so, we
+shift the elements <span
+class="math inline">\(<code>a[0]</code>,\ldots,<code>a[i-1]</code>\)</span> left by
+one position. Otherwise (<span
+class="math inline">\(<code>i</code>\ge<code>n</code>/2\)</span>), we shift
+the elements <span
+class="math inline">\(<code>a[i]</code>,\ldots,<code>a[n-1]</code>\)</span> right by
+one position. See for an illustration of <code>add(i,x)</code> and <code>remove(x)</code>
+operations on an <code>ArrayDeque</code>.</p>
+<figure>
+<div class="center">
+<img src="figs/arraydeque" />
+</div>
+<figcaption>A sequence of <code>add(i,x)</code> and <code>remove(i)</code> operations on an
+<code>ArrayDeque</code>. Arrows denote elements being copied.</figcaption>
+</figure>
+<p><code>[listing: ods/ArrayDeque.add(i,x)]</code></p>
+<p>By doing the shifting in this way, we guarantee that <code>add(i,x)</code>
+never has to shift more than <span class="math inline">\(\min\{
+<code>i</code>, <code>n</code>-<code>i</code> \}\)</span> elements. Thus, the
+running time of the <code>add(i,x)</code> operation (ignoring the cost of a
+<code>resize()</code> operation) is <span
+class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>.</p>
+<p>The implementation of the <code>remove(i)</code> operation is similar. It either
+shifts elements <span
+class="math inline">\(<code>a[0]</code>,\ldots,<code>a[i-1]</code>\)</span> right by
+one position or shifts the elements <span
+class="math inline">\(<code>a[i+1]</code>,\ldots,<code>a[n-1]</code>\)</span> left by
+one position depending on whether <span
+class="math inline">\(<code>i</code>&lt;<code>n</code>/2\)</span>. Again, this
+means that <code>remove(i)</code> never spends more than <span
+class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>
+time to shift elements.</p>
+<p><code>[listing: ods/ArrayDeque.remove(i)]</code></p>
+<h3 id="summary-2">Summary</h3>
+<p>The following theorem summarizes the performance of the <code>ArrayDeque</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.3</strong>. <em>An <code>ArrayDeque</code> implements the
+<code>List</code> interface. Ignoring the cost of calls to <code>resize()</code>, an
+<code>ArrayDeque</code> supports the operations</em></p>
+<ul>
+<li><p><em><code>get(i)</code> and <code>set(i,x)</code> in <span
+class="math inline">\(O(1)\)</span> time per operation;
+and</em></p></li>
+<li><p><em><code>add(i,x)</code> and <code>remove(i)</code> in <span
+class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>
+time per operation.</em></p></li>
+</ul>
+<p><em>Furthermore, beginning with an empty <code>ArrayDeque</code>, performing any
+sequence of <span class="math inline">\(m\)</span> <code>add(i,x)</code> and
+<code>remove(i)</code> operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls to
+<code>resize()</code>.</em></p>
+</div>
+<h2 id="code373-building-a-deque-from-two-stacks"><code>DualArrayDeque</code>: Building
+a Deque from Two Stacks</h2>
+<p>Next, we present a data structure, the <code>DualArrayDeque</code> that achieves the
+same performance bounds as an <code>ArrayDeque</code> by using two <code>ArrayStack</code>s.
+Although the asymptotic performance of the <code>DualArrayDeque</code> is no better than
+that of the <code>ArrayDeque</code>, it is still worth studying, since it offers a
+good example of how to make a sophisticated data structure by combining
+two simpler data structures.</p>
+<p>A <code>DualArrayDeque</code> represents a list using two <code>ArrayStack</code>s. Recall that
+an <code>ArrayStack</code> is fast when the operations on it modify elements near
+the end. A <code>DualArrayDeque</code> places two <code>ArrayStack</code>s, called <code>front</code> and
+<code>back</code>, back-to-back so that operations are fast at either end.</p>
+<p><code>[listing: ods/DualArrayDeque.front.back]</code></p>
+<p>A <code>DualArrayDeque</code> does not explicitly store the number, <code>n</code>, of
+elements it contains. It doesn’t need to, since it contains <span
+class="math inline">\(<code>n</code>=<code>front.size()</code> + <code>back.size()</code>\)</span>
+elements. Nevertheless, when analyzing the <code>DualArrayDeque</code> we will still use
+<code>n</code> to denote the number of elements it contains.</p>
+<p><code>[listing: ods/DualArrayDeque.size()]</code></p>
+<p>The <code>front</code> <code>ArrayStack</code> stores the list elements that whose
+indices are <span class="math inline">\(0,\ldots,<code>front.size()</code>-1\)</span>,
+but stores them in reverse order. The <code>back</code> <code>ArrayStack</code> contains
+list elements with indices in <span
+class="math inline">\(<code>front.size()</code>,\ldots,<code>size()</code>-1\)</span> in the
+normal order. In this way, <code>get(i)</code> and <code>set(i,x)</code> translate into
+appropriate calls to <code>get(i)</code> or <code>set(i,x)</code> on either <code>front</code> or
+<code>back</code>, which take <span class="math inline">\(O(1)\)</span> time
+per operation.</p>
+<p><code>[listing: ods/DualArrayDeque.get(i).set(i,x)]</code></p>
+<p>Note that if an index <span
+class="math inline">\(<code>i</code>&lt;<code>front.size()</code>\)</span>, then it
+corresponds to the element of <code>front</code> at position <span
+class="math inline">\(<code>front.size()</code>-<code>i</code>-1\)</span>, since the
+elements of <code>front</code> are stored in reverse order.</p>
+<p>Adding and removing elements from a <code>DualArrayDeque</code> is illustrated in .
+The <code>add(i,x)</code> operation manipulates either <code>front</code> or <code>back</code>,
+as appropriate:</p>
+<figure>
+<div class="center">
+<img src="figs/dualarraydeque" />
+</div>
+<figcaption>A sequence of <code>add(i,x)</code> and <code>remove(i)</code> operations on a
+<code>DualArrayDeque</code>. Arrows denote elements being copied. Operations that result
+in a rebalancing by <code>balance()</code> are marked with an
+asterisk.</figcaption>
+</figure>
+<p><code>[listing: ods/DualArrayDeque.add(i,x)]</code></p>
+<p>The <code>add(i,x)</code> method performs rebalancing of the two <code>ArrayStack</code>s
+<code>front</code> and <code>back</code>, by calling the <code>balance()</code> method. The
+implementation of <code>balance()</code> is described below, but for now it is
+sufficient to know that <code>balance()</code> ensures that, unless <span
+class="math inline">\(<code>size()</code>&lt;2\)</span>, <code>front.size()</code> and
+<code>back.size()</code> do not differ by more than a factor of 3. In particular,
+<span class="math inline">\(3\cdot<code>front.size()</code> \ge <code>back.size()</code>\)</span>
+and <span class="math inline">\(3\cdot<code>back.size()</code> \ge
+<code>front.size()</code>\)</span>.</p>
+<p>Next we analyze the cost of <code>add(i,x)</code>, ignoring the cost of calls
+to <code>balance()</code>. If <span
+class="math inline">\(<code>i</code>&lt;<code>front.size()</code>\)</span>, then
+<code>add(i,x)</code> gets implemented by the call to <span
+class="math inline">\(<code>front.add(front.size()-i-1,x)</code>\)</span>. Since <code>front</code> is an
+<code>ArrayStack</code>, the cost of this is <span
+class="math display">\[\begin{equation}
+  O(<code>front.size()</code>-(<code>front.size()</code>-<code>i</code>-1)+1) = O(<code>i</code>+1)
+\enspace .
+  \eqlabel{das-front}
+\end{equation}\]</span> On the other hand, if <span
+class="math inline">\(<code>i</code>\ge<code>front.size()</code>\)</span>, then
+<code>add(i,x)</code> gets implemented as <span
+class="math inline">\(<code>back.add(i-front.size(),x)</code>\)</span>. The cost of this is <span
+class="math display">\[\begin{equation}
+  O(<code>back.size()</code>-(<code>i</code>-<code>front.size()</code>)+1) =
+O(<code>n</code>-<code>i</code>+1) \enspace .
+  \eqlabel{das-back}
+\end{equation}\]</span></p>
+<p>Notice that the first case occurs when <span
+class="math inline">\(<code>i</code>&lt;<code>n</code>/4\)</span>. The second
+case occurs when <span class="math inline">\(<code>i</code>\ge
+3<code>n</code>/4\)</span>. When <span
+class="math inline">\(<code>n</code>/4\le<code>i</code>&lt;3<code>n</code>/4\)</span>,
+we cannot be sure whether the operation affects <code>front</code> or
+<code>back</code>, but in either case, the operation takes <span
+class="math inline">\(O(<code>n</code>)=O(<code>i</code>)=O(<code>n</code>-<code>i</code>)\)</span>
+time, since <span class="math inline">\(<code>i</code>\ge
+<code>n</code>/4\)</span> and <span
+class="math inline">\(<code>n</code>-<code>i</code>&gt;
+<code>n</code>/4\)</span>. Summarizing the situation, we have <span
+class="math display">\[\mbox{Running time of } <code>add(i,x)</code> \le
+          \begin{cases}
+            O(1+ <code>i</code>) &amp; \mbox{if $<code>i</code>&lt;
+<code>n</code>/4$} \\
+            O(<code>n</code>) &amp; \mbox{if $<code>n</code>/4 \le <code>i</code>
+&lt; 3<code>n</code>/4$} \\
+            O(1+<code>n</code>-<code>i</code>) &amp; \mbox{if $<code>i</code> \ge
+3<code>n</code>/4$}
+          \end{cases}\]</span> Thus, the running time of <code>add(i,x)</code>, if
+we ignore the cost of the call to <code>balance()</code>, is <span
+class="math inline">\(O(1+\min\{<code>i</code>,
+<code>n</code>-<code>i</code>\})\)</span>.</p>
+<p>The <code>remove(i)</code> operation and its analysis resemble the <code>add(i,x)</code>
+operation and analysis.</p>
+<p><code>[listing: ods/DualArrayDeque.remove(i)]</code></p>
+<h3 id="balancing">Balancing</h3>
+<p>Finally, we turn to the <code>balance()</code> operation performed by
+<code>add(i,x)</code> and <code>remove(i)</code>. This operation ensures that neither
+<code>front</code> nor <code>back</code> becomes too big (or too small). It ensures
+that, unless there are fewer than two elements, each of <code>front</code> and
+<code>back</code> contain at least <span
+class="math inline">\(<code>n</code>/4\)</span> elements. If this is not
+the case, then it moves elements between them so that <code>front</code> and
+<code>back</code> contain exactly <span
+class="math inline">\(\lfloor<code>n</code>/2\rfloor\)</span> elements and
+<span class="math inline">\(\lceil<code>n</code>/2\rceil\)</span> elements,
+respectively.</p>
+<p><code>[listing: ods/DualArrayDeque.balance()]</code></p>
+<p>Here there is little to analyze. If the <code>balance()</code> operation does
+rebalancing, then it moves <span
+class="math inline">\(O(<code>n</code>)\)</span> elements and this takes
+<span class="math inline">\(O(<code>n</code>)\)</span> time. This is bad,
+since <code>balance()</code> is called with each call to <code>add(i,x)</code> and
+<code>remove(i)</code>. However, the following lemma shows that, on average,
+<code>balance()</code> only spends a constant amount of time per operation.</p>
+<div class="lem">
+<p><strong>Lemma 1.2</strong>. <em>If an empty <code>DualArrayDeque</code> is created
+and any sequence of <span class="math inline">\(m\ge 1\)</span> calls to
+<code>add(i,x)</code> and <code>remove(i)</code> are performed, then the total time spent
+during all calls to <code>balance()</code> is <span
+class="math inline">\(O(m)\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> We will show that, if <code>balance()</code> is forced to shift
+elements, then the number of <code>add(i,x)</code> and <code>remove(i)</code> operations
+since the last time any elements were shifted by <code>balance()</code> is at least
+<span class="math inline">\(<code>n</code>/2-1\)</span>. As in the proof of
+, this is sufficient to prove that the total time spent by <code>balance()</code>
+is <span class="math inline">\(O(m)\)</span>.</p>
+<p>We will perform our analysis using a technique knows as the
+<em>potential method</em>. Define the <em>potential</em>, <span
+class="math inline">\(\Phi\)</span>, of the <code>DualArrayDeque</code> as the
+difference in size between <code>front</code> and <code>back</code>: <span
+class="math display">\[\Phi = |<code>front.size()</code> - <code>back.size()</code>| \enspace
+.\]</span> The interesting thing about this potential is that a call to
+<code>add(i,x)</code> or <code>remove(i)</code> that does not do any balancing can increase
+the potential by at most 1.</p>
+<p>Observe that, immediately after a call to <code>balance()</code> that shifts
+elements, the potential, <span class="math inline">\(\Phi_0\)</span>, is
+at most 1, since <span class="math display">\[\Phi_0 =
+\left|\lfloor<code>n</code>/2\rfloor-\lceil<code>n</code>/2\rceil\right|\le
+1  \enspace .\]</span></p>
+<p>Consider the situation immediately before a call to <code>balance()</code> that
+shifts elements and suppose, without loss of generality, that
+<code>balance()</code> is shifting elements because <span
+class="math inline">\(3<code>front.size()</code> &lt; <code>back.size()</code>\)</span>. Notice
+that, in this case, <span class="math display">\[\begin{eqnarray*}
+   <code>n</code> &amp; = &amp; <code>front.size()</code>+<code>back.size()</code> \\
+       &amp; &lt; &amp; <code>back.size()</code>/3+<code>back.size()</code> \\
+       &amp; = &amp; \frac{4}{3}<code>back.size()</code>
+\end{eqnarray*}\]</span> Furthermore, the potential at this point in
+time is <span class="math display">\[\begin{eqnarray*}
+  \Phi_1 &amp; = &amp; <code>back.size()</code> - <code>front.size()</code> \\
+      &amp;&gt;&amp; <code>back.size()</code> - <code>back.size()</code>/3 \\
+      &amp;=&amp; \frac{2}{3}<code>back.size()</code> \\
+      &amp;&gt;&amp; \frac{2}{3}\times\frac{3}{4}<code>n</code> \\
+      &amp;=&amp; <code>n</code>/2
+\end{eqnarray*}\]</span> Therefore, the number of calls to <code>add(i,x)</code>
+or <code>remove(i)</code> since the last time <code>balance()</code> shifted elements is at
+least <span class="math inline">\(\Phi_1-\Phi_0
+  &gt; <code>n</code>/2-1\)</span>. This completes the proof. ◻</p>
+</div>
+<h3 id="summary-3">Summary</h3>
+<p>The following theorem summarizes the properties of a <code>DualArrayDeque</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.4</strong>. <em>A <code>DualArrayDeque</code> implements the
+<code>List</code> interface. Ignoring the cost of calls to <code>resize()</code> and
+<code>balance()</code>, a <code>DualArrayDeque</code> supports the operations</em></p>
+<ul>
+<li><p><em><code>get(i)</code> and <code>set(i,x)</code> in <span
+class="math inline">\(O(1)\)</span> time per operation;
+and</em></p></li>
+<li><p><em><code>add(i,x)</code> and <code>remove(i)</code> in <span
+class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>
+time per operation.</em></p></li>
+</ul>
+<p><em>Furthermore, beginning with an empty <code>DualArrayDeque</code>, any sequence of
+<span class="math inline">\(m\)</span> <code>add(i,x)</code> and <code>remove(i)</code>
+operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls to
+<code>resize()</code> and <code>balance()</code>.</em></p>
+</div>
+<h2 id="code571-a-space-efficient-array-stack"><code>RootishArrayStack</code>: A
+Space-Efficient Array Stack</h2>
+<p>One of the drawbacks of all previous data structures in this chapter
+is that, because they store their data in one or two arrays and they
+avoid resizing these arrays too often, the arrays frequently are not
+very full. For example, immediately after a <code>resize()</code> operation on an
+<code>ArrayStack</code>, the backing array <code>a</code> is only half full. Even
+worse, there are times when only one third of <code>a</code> contains
+data.</p>
+<p>In this section, we discuss the <code>RootishArrayStack</code> data structure, that
+addresses the problem of wasted space. The <code>RootishArrayStack</code> stores
+<code>n</code> elements using <span
+class="math inline">\(O(\sqrt{<code>n</code>})\)</span> arrays. In these
+arrays, at most <span
+class="math inline">\(O(\sqrt{<code>n</code>})\)</span> array locations are
+unused at any time. All remaining array locations are used to store
+data. Therefore, these data structures waste at most <span
+class="math inline">\(O(\sqrt{<code>n</code>})\)</span> space when storing
+<code>n</code> elements.</p>
+<p>A <code>RootishArrayStack</code> stores its elements in a list of <code>r</code> arrays
+called <em>blocks</em> that are numbered <span
+class="math inline">\(0,1,\ldots,<code>r</code>-1\)</span>. See . Block
+<span class="math inline">\(b\)</span> contains <span
+class="math inline">\(b+1\)</span> elements. Therefore, all <code>r</code>
+blocks contain a total of <span class="math display">\[1+ 2+ 3+\cdots
++<code>r</code> = <code>r</code>(<code>r</code>+1)/2\]</span> elements. The above
+formula can be obtained as shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/rootisharraystack" />
+</div>
+<figcaption>A sequence of <code>add(i,x)</code> and <code>remove(i)</code> operations on a
+<code>RootishArrayStack</code>. Arrows denote elements being copied. </figcaption>
+</figure>
+<p><code>[listing: ods/RootishArrayStack.blocks.n]</code></p>
+<figure>
+<div class="center">
+<img src="figs/gauss" />
+</div>
+<figcaption>The number of white squares is <span
+class="math inline">\(1+2+3+\cdots+<code>r</code>\)</span>. The number of
+shaded squares is the same. Together the white and shaded squares make a
+rectangle consisting of <span
+class="math inline">\(<code>r</code>(<code>r</code>+1)\)</span>
+squares.</figcaption>
+</figure>
+<p>As we might expect, the elements of the list are laid out in order
+within the blocks. The list element with index 0 is stored in block 0,
+elements with list indices 1 and 2 are stored in block 1, elements with
+list indices 3, 4, and 5 are stored in block 2, and so on. The main
+problem we have to address is that of determining, given an index <span
+class="math inline">\(<code>i</code>\)</span>, which block contains
+<code>i</code> as well as the index corresponding to <code>i</code> within
+that block.</p>
+<p>Determining the index of <code>i</code> within its block turns out to be
+easy. If index <code>i</code> is in block <code>b</code>, then the number of
+elements in blocks <span
+class="math inline">\(0,\ldots,<code>b</code>-1\)</span> is <span
+class="math inline">\(<code>b</code>(<code>b</code>+1)/2\)</span>. Therefore,
+<code>i</code> is stored at location <span
+class="math display">\[<code>j</code> = <code>i</code> -
+<code>b</code>(<code>b</code>+1)/2\]</span> within block <code>b</code>. Somewhat
+more challenging is the problem of determining the value of <code>b</code>.
+The number of elements that have indices less than or equal to
+<code>i</code> is <span class="math inline">\(<code>i</code>+1\)</span>. On
+the other hand, the number of elements in blocks <span
+class="math inline">\(0,\ldots,b\)</span> is <span
+class="math inline">\((<code>b</code>+1)(<code>b</code>+2)/2\)</span>.
+Therefore, <code>b</code> is the smallest integer such that <span
+class="math display">\[(<code>b</code>+1)(<code>b</code>+2)/2 \ge
+<code>i</code>+1 \enspace .\]</span> We can rewrite this equation as <span
+class="math display">\[<code>b</code>^2 + 3<code>b</code> - 2<code>i</code>
+\ge  0 \enspace .\]</span> The corresponding quadratic equation <span
+class="math inline">\(<code>b</code>^2 + 3<code>b</code> - 2<code>i</code>
+=  0\)</span> has two solutions: <span
+class="math inline">\(<code>b</code>=(-3 + \sqrt{9+8<code>i</code>}) /
+2\)</span> and <span class="math inline">\(<code>b</code>=(-3 -
+\sqrt{9+8<code>i</code>}) / 2\)</span>. The second solution makes no sense
+in our application since it always gives a negative value. Therefore, we
+obtain the solution <span class="math inline">\(<code>b</code> = (-3 +
+\sqrt{9+8i}) / 2\)</span>. In general, this solution is not an integer,
+but going back to our inequality, we want the smallest integer <span
+class="math inline">\(<code>b</code>\)</span> such that <span
+class="math inline">\(<code>b</code> \ge (-3 + \sqrt{9+8i}) / 2\)</span>.
+This is simply <span class="math display">\[<code>b</code> = \left\lceil(-3
++ \sqrt{9+8i}) / 2\right\rceil \enspace .\]</span></p>
+<p><code>[listing: ods/RootishArrayStack.i2b(i)]</code></p>
+<p>With this out of the way, the <code>get(i)</code> and <code>set(i,x)</code> methods are
+straightforward. We first compute the appropriate block <code>b</code> and
+the appropriate index <code>j</code> within the block and then perform the
+appropriate operation:</p>
+<p><code>[listing: ods/RootishArrayStack.get(i).set(i,x)]</code></p>
+<p>If we use any of the data structures in this chapter for representing
+the <code>blocks</code> list, then <code>get(i)</code> and <code>set(i,x)</code> will each run in
+constant time.</p>
+<p>The <code>add(i,x)</code> method will, by now, look familiar. We first check to
+see if our data structure is full, by checking if the number of blocks,
+<code>r</code>, is such that <span
+class="math inline">\(<code>r</code>(<code>r</code>+1)/2 =
+<code>n</code>\)</span>. If so, we call <code>grow()</code> to add another block.
+With this done, we shift elements with indices <span
+class="math inline">\(<code>i</code>,\ldots,<code>n</code>-1\)</span> to the
+right by one position to make room for the new element with index
+<code>i</code>:</p>
+<p><code>[listing: ods/RootishArrayStack.add(i,x)]</code></p>
+<p>The <code>grow()</code> method does what we expect. It adds a new block:</p>
+<p><code>[listing: ods/RootishArrayStack.grow()]</code></p>
+<p>Ignoring the cost of the <code>grow()</code> operation, the cost of an
+<code>add(i,x)</code> operation is dominated by the cost of shifting and is
+therefore <span
+class="math inline">\(O(1+<code>n</code>-<code>i</code>)\)</span>, just like
+an <code>ArrayStack</code>.</p>
+<p>The <code>remove(i)</code> operation is similar to <code>add(i,x)</code>. It shifts the
+elements with indices <span
+class="math inline">\(<code>i</code>+1,\ldots,<code>n</code>\)</span> left by
+one position and then, if there is more than one empty block, it calls
+the <code>shrink()</code> method to remove all but one of the unused blocks:</p>
+<p><code>[listing: ods/RootishArrayStack.remove(i)]</code>
+<code>[listing: ods/RootishArrayStack.shrink()]</code></p>
+<p>Once again, ignoring the cost of the <code>shrink()</code> operation, the cost
+of a <code>remove(i)</code> operation is dominated by the cost of shifting and is
+therefore <span
+class="math inline">\(O(<code>n</code>-<code>i</code>)\)</span>.</p>
+<h3 id="analysis-of-growing-and-shrinking">Analysis of Growing and
+Shrinking</h3>
+<p>The above analysis of <code>add(i,x)</code> and <code>remove(i)</code> does not account
+for the cost of <code>grow()</code> and <code>shrink()</code>. Note that, unlike the
+<code>ArrayStack.resize()</code> operation, <code>grow()</code> and <code>shrink()</code> do not copy any data.
+They only allocate or free an array of size <code>r</code>. In some
+environments, this takes only constant time, while in others, it may
+require time proportional to <code>r</code>.</p>
+<p>We note that, immediately after a call to <code>grow()</code> or <code>shrink()</code>,
+the situation is clear. The final block is completely empty, and all
+other blocks are completely full. Another call to <code>grow()</code> or
+<code>shrink()</code> will not happen until at least <span
+class="math inline">\(<code>r</code>-1\)</span> elements have been added or
+removed. Therefore, even if <code>grow()</code> and <code>shrink()</code> take <span
+class="math inline">\(O(<code>r</code>)\)</span> time, this cost can be
+amortized over at least <span
+class="math inline">\(<code>r</code>-1\)</span> <code>add(i,x)</code> or <code>remove(i)</code>
+operations, so that the amortized cost of <code>grow()</code> and <code>shrink()</code> is
+<span class="math inline">\(O(1)\)</span> per operation.</p>
+<h3 id="space-usage">Space Usage</h3>
+<p>Next, we analyze the amount of extra space used by a <code>RootishArrayStack</code>. In
+particular, we want to count any space used by a <code>RootishArrayStack</code> that is not
+an array element currently used to hold a list element. We call all such
+space <em>wasted space</em>.</p>
+<p>The <code>remove(i)</code> operation ensures that a <code>RootishArrayStack</code> never has more
+than two blocks that are not completely full. The number of blocks,
+<code>r</code>, used by a <code>RootishArrayStack</code> that stores <code>n</code> elements
+therefore satisfies <span
+class="math display">\[(<code>r</code>-2)(<code>r</code>-1)/2 \le <code>n</code>
+\enspace .\]</span> Again, using the quadratic equation on this gives
+<span class="math display">\[<code>r</code> \le
+\frac{1}{2}\left(3+\sqrt{8<code>n</code>+1}\right) = O(\sqrt{<code>n</code>})
+\enspace .\]</span> The last two blocks have sizes <code>r</code> and
+<code>r-1</code>, so the space wasted by these two blocks is at most <span
+class="math inline">\(2<code>r</code>-1 = O(\sqrt{<code>n</code>})\)</span>.
+If we store the blocks in (for example) an <code>ArrayStack</code>, then the amount
+of space wasted by the <code>List</code> that stores those <code>r</code> blocks
+is also <span
+class="math inline">\(O(<code>r</code>)=O(\sqrt{<code>n</code>})\)</span>. The
+other space needed for storing <code>n</code> and other accounting
+information is <span class="math inline">\(O(1)\)</span>. Therefore, the
+total amount of wasted space in a <code>RootishArrayStack</code> is <span
+class="math inline">\(O(\sqrt{<code>n</code>})\)</span>.</p>
+<p>Next, we argue that this space usage is optimal for any data
+structure that starts out empty and can support the addition of one item
+at a time. More precisely, we will show that, at some point during the
+addition of <code>n</code> items, the data structure is wasting at least in
+<span class="math inline">\(\sqrt{<code>n</code>}\)</span> space (though it
+may be only wasted for a moment).</p>
+<p>Suppose we start with an empty data structure and we add <code>n</code>
+items one at a time. At the end of this process, all <code>n</code> items
+are stored in the structure and distributed among a collection of
+<code>r</code> memory blocks. If <span class="math inline">\(<code>r</code>\ge
+\sqrt{<code>n</code>}\)</span>, then the data structure must be using
+<code>r</code> pointers (or references) to keep track of these <code>r</code>
+blocks, and these pointers are wasted space. On the other hand, if <span
+class="math inline">\(<code>r</code> &lt; \sqrt{<code>n</code>}\)</span> then,
+by the pigeonhole principle, some block must have size at least <span
+class="math inline">\(<code>n</code>/<code>r</code> &gt;
+\sqrt{<code>n</code>}\)</span>. Consider the moment at which this block was
+first allocated. Immediately after it was allocated, this block was
+empty, and was therefore wasting <span
+class="math inline">\(\sqrt{<code>n</code>}\)</span> space. Therefore, at
+some point in time during the insertion of <code>n</code> elements, the
+data structure was wasting <span
+class="math inline">\(\sqrt{<code>n</code>}\)</span> space.</p>
+<h3 id="summary-4">Summary</h3>
+<p>The following theorem summarizes our discussion of the <code>RootishArrayStack</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.5</strong>. <em>A <code>RootishArrayStack</code> implements the
+<code>List</code> interface. Ignoring the cost of calls to <code>grow()</code> and
+<code>shrink()</code>, a <code>RootishArrayStack</code> supports the operations</em></p>
+<ul>
+<li><p><em><code>get(i)</code> and <code>set(i,x)</code> in <span
+class="math inline">\(O(1)\)</span> time per operation;
+and</em></p></li>
+<li><p><em><code>add(i,x)</code> and <code>remove(i)</code> in <span
+class="math inline">\(O(1+<code>n</code>-<code>i</code>)\)</span> time per
+operation.</em></p></li>
+</ul>
+<p><em>Furthermore, beginning with an empty <code>RootishArrayStack</code>, any sequence of
+<span class="math inline">\(m\)</span> <code>add(i,x)</code> and <code>remove(i)</code>
+operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls to
+<code>grow()</code> and <code>shrink()</code>.</em></p>
+<p><em>The space (measured in words)<a href="#fn2" class="footnote-ref"
+id="fnref2" role="doc-noteref"><sup>2</sup></a> used by a <code>RootishArrayStack</code>
+that stores <code>n</code> elements is <span
+class="math inline">\(<code>n</code>
++O(\sqrt{<code>n</code>})\)</span>.</em></p>
+</div>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>Most of the data structures described in this chapter are folklore.
+They can be found in implementations dating back over 30 years. For
+example, implementations of stacks, queues, and deques, which generalize
+easily to the <code>ArrayStack</code>, <code>ArrayQueue</code> and <code>ArrayDeque</code> structures
+described here, are discussed by Knuth <span class="citation"
+data-cites="k97v1"></span>.</p>
+<p>Brodnik  <span class="citation" data-cites="bcdms99"></span> seem to
+have been the first to describe the <code>RootishArrayStack</code> and prove a <span
+class="math inline">\(\sqrt{n}\)</span> lower-bound like that in . They
+also present a different structure that uses a more sophisticated choice
+of block sizes in order to avoid computing square roots in the
+<code>i2b(i)</code> method. Within their scheme, the block containing
+<code>i</code> is block <span class="math inline">\(\lfloor\log
+(<code>i</code>+1)\rfloor\)</span>, which is simply the index of the
+leading 1 bit in the binary representation of <span
+class="math inline">\(<code>i</code>+1\)</span>. Some computer
+architectures provide an instruction for computing the index of the
+leading 1-bit in an integer.</p>
+<p>A structure related to the <code>RootishArrayStack</code> is the two-level
+<em>tiered-vector</em> of Goodrich and Kloss <span class="citation"
+data-cites="gk99"></span>. This structure supports the <code>get(i,x)</code> and
+<code>set(i,x)</code> operations in constant time and <code>add(i,x)</code> and <code>remove(i)</code>
+in <span class="math inline">\(O(\sqrt{<code>n</code>})\)</span> time.
+These running times are similar to what can be achieved with the more
+careful implementation of a <code>RootishArrayStack</code> discussed in .</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>The <code>List</code> method <code>addAll(i,c)</code>
+inserts all elements of the <code>Collection</code> <code>c</code> into the list at
+position <code>i</code>. (The <code>add(i,x)</code> method is a special case where
+<span class="math inline">\(<code>c</code>=\{<code>x</code>\}\)</span>.)
+Explain why, for the data structures in this chapter, it is not
+efficient to implement <code>addAll(i,c)</code> by repeated calls to <code>add(i,x)</code>.
+Design and implement a more efficient implementation.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Design and implement a
+<em><code>RandomQueue</code></em>. This is an implementation of the <code>Queue</code>
+interface in which the <code>remove()</code> operation removes an element that is
+chosen uniformly at random among all the elements currently in the
+queue. (Think of a <code>RandomQueue</code> as a bag in which we can add elements or
+reach in and blindly remove some random element.) The <code>add(x)</code> and
+<code>remove()</code> operations in a <code>RandomQueue</code> should run in amortized constant
+time per operation.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Design and implement a <code>Treque</code>
+(triple-ended queue). This is a <code>List</code> implementation in which
+<code>get(i)</code> and <code>set(i,x)</code> run in constant time and <code>add(i,x)</code> and
+<code>remove(i)</code> run in time <span
+class="math display">\[O(1+\min\{<code>i</code>, <code>n</code>-<code>i</code>,
+|<code>n</code>/2-<code>i</code>|\}) \enspace .\]</span> In other words,
+modifications are fast if they are near either end or near the middle of
+the list.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>Implement a method <code>rotate(a,r)</code>
+that “rotates” the array <code>a</code> so that <code>a[i]</code> moves to <span
+class="math inline">\(<code>a</code>[(<code>i</code>+<code>r</code>)\bmod
+<code>a.length</code>]\)</span>, for all <span
+class="math inline">\(<code>i</code>\in\{0,\ldots,<code>a.length</code>\}\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Implement a method <code>rotate(r)</code>
+that “rotates” a <code>List</code> so that list item <code>i</code> becomes list
+item <span class="math inline">\((<code>i</code>+<code>r</code>)\bmod
+<code>n</code>\)</span>. When run on an <code>ArrayDeque</code>, or a <code>DualArrayDeque</code>,
+<code>rotate(r)</code> should run in <span
+class="math inline">\(O(1+\min\{<code>r</code>,<code>n</code>-<code>r</code>\})\)</span>
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>This exercise is left out of the
+ edition.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Modify the <code>ArrayDeque</code>
+implementation so that it does not use the <code>%</code> operator (which
+is expensive on some systems). Instead, it should make use of the fact
+that, if <code>a.length</code> is a power of 2, then <span
+class="math display">\[<code>k%a.length</code>=<code>k&amp;(a.length-1)</code> \enspace .\]</span>
+(Here, <code>&amp;</code> is the bitwise-and operator.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Design and implement a variant of
+<code>ArrayDeque</code> that does not do any modular arithmetic at all. Instead, all
+the data sits in a consecutive block, in order, inside an array. When
+the data overruns the beginning or the end of this array, a modified
+<code>rebuild()</code> operation is performed. The amortized cost of all operations
+should be the same as in an <code>ArrayDeque</code>.</em></p>
+<p><em>Hint: Getting this to work is really all about how you implement
+the <code>rebuild()</code> operation. You would like <code>rebuild()</code> to put the data
+structure into a state where the data cannot run off either end until at
+least <span class="math inline">\(<code>n</code>/2\)</span> operations have
+been performed.</em></p>
+<p><em>Test the performance of your implementation against the
+<code>ArrayDeque</code>. Optimize your implementation (by using <code>System.arraycopy(a,i,b,i,n)</code>) and see
+if you can get it to outperform the <code>ArrayDeque</code> implementation.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Design and implement a version of
+a <code>RootishArrayStack</code> that has only <span
+class="math inline">\(O(\sqrt{<code>n</code>})\)</span> wasted space, but
+that can perform <code>add(i,x)</code> and <code>remove(i,x)</code> operations in <span
+class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>
+time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>Design and implement a version of
+a <code>RootishArrayStack</code> that has only <span
+class="math inline">\(O(\sqrt{<code>n</code>})\)</span> wasted space, but
+that can perform <code>add(i,x)</code> and <code>remove(i,x)</code> operations in <span
+class="math inline">\(O(1+\min\{\sqrt{<code>n</code>},<code>n</code>-<code>i</code>\})\)</span>
+time. (For an idea on how to do this, see .)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Design and implement a version of
+a <code>RootishArrayStack</code> that has only <span
+class="math inline">\(O(\sqrt{<code>n</code>})\)</span> wasted space, but
+that can perform <code>add(i,x)</code> and <code>remove(i,x)</code> operations in <span
+class="math inline">\(O(1+\min\{<code>i</code>,\sqrt
+{<code>n</code>},<code>n</code>-<code>i</code>\})\)</span> time. (See for ideas
+on how to achieve this.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.12</strong>. <em>Design and implement a
+<code>CubishArrayStack</code>. This three level structure implements the <code>List</code>
+interface using <span
+class="math inline">\(O(<code>n</code>^{2/3})\)</span> wasted space. In
+this structure, <code>get(i)</code> and <code>set(i,x)</code> take constant time; while
+<code>add(i,x)</code> and <code>remove(i)</code> take <span
+class="math inline">\(O(<code>n</code>^{1/3})\)</span> amortized
+time.</em></p>
+</div>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>The <span class="math inline">\({}-1\)</span> in this
+formula accounts for the special case that occurs when <span
+class="math inline">\(<code>n</code>=0\)</span> and <span
+class="math inline">\(<code>a.length</code> = 1\)</span>.<a href="#fnref1"
+class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><em>Recall for a discussion of how memory is
+measured.</em><a href="#fnref2" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>

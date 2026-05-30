@@ -1,0 +1,719 @@
+<h1 id="random-binary-search-trees">Random Binary Search Trees</h1>
+<p>In this chapter, we present a binary search tree structure that uses
+randomization to achieve <span class="math inline">\(O(\log
+<code>n</code>)\)</span> expected time for all operations.</p>
+<h2 id="random-binary-search-trees-1">Random Binary Search Trees</h2>
+<p>Consider the two binary search trees shown in , each of which has
+<span class="math inline">\(<code>n</code>=15\)</span> nodes. The one on the
+left is a list and the other is a perfectly balanced binary search tree.
+The one on the left has a height of <span
+class="math inline">\(<code>n</code>-1=14\)</span> and the one on the right
+has a height of three.</p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/bst-path"
+alt="image" /></td>
+<td style="text-align: center;"><img src="figs/bst-balanced"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>Two binary search trees containing the integers <span
+class="math inline">\(0,\ldots,14\)</span>.</figcaption>
+</figure>
+<p>Imagine how these two trees could have been constructed. The one on
+the left occurs if we start with an empty <code>BinarySearchTree</code> and add the sequence
+<span class="math display">\[\langle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
+\rangle \enspace .\]</span> No other sequence of additions will create
+this tree (as you can prove by induction on <code>n</code>). On the other
+hand, the tree on the right can be created by the sequence <span
+class="math display">\[\langle 7,3,11,1,5,9,13,0,2,4,6,8,10,12,14
+\rangle  \enspace .\]</span> Other sequences work as well, including
+<span class="math display">\[\langle 7,3,1,5,0,2,4,6,11,9,13,8,10,12,14
+\rangle  \enspace ,\]</span> and <span class="math display">\[\langle
+7,3,1,11,5,0,2,4,6,9,13,8,10,12,14 \rangle \enspace .\]</span> In fact,
+there are <span class="math inline">\(21,964,800\)</span> addition
+sequences that generate the tree on the right and only one that
+generates the tree on the left.</p>
+<p>The above example gives some anecdotal evidence that, if we choose a
+random permutation of <span class="math inline">\(0,\ldots,14\)</span>,
+and add it into a binary search tree, then we are more likely to get a
+very balanced tree (the right side of ) than we are to get a very
+unbalanced tree (the left side of ).</p>
+<p>We can formalize this notion by studying random binary search trees.
+A <em>random binary search tree</em> of size <code>n</code> is obtained in
+the following way: Take a random permutation, <span
+class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{<code>n</code>-1}\)</span>,
+of the integers <span
+class="math inline">\(0,\ldots,<code>n</code>-1\)</span> and add its
+elements, one by one, into a <code>BinarySearchTree</code>. By <em>random permutation</em>
+we mean that each of the possible <span
+class="math inline">\(<code>n</code>!\)</span> permutations (orderings) of
+<span class="math inline">\(0,\ldots,<code>n</code>-1\)</span> is equally
+likely, so that the probability of obtaining any particular permutation
+is <span class="math inline">\(1/<code>n</code>!\)</span>.</p>
+<p>Note that the values <span
+class="math inline">\(0,\ldots,<code>n</code>-1\)</span> could be replaced
+by any ordered set of <code>n</code> elements without changing any of the
+properties of the random binary search tree. The element <span
+class="math inline">\(<code>x</code>\in\{0,\ldots,<code>n</code>-1\}\)</span> is
+simply standing in for the element of rank <code>x</code> in an ordered set
+of size <code>n</code>.</p>
+<p>Before we can present our main result about random binary search
+trees, we must take some time for a short digression to discuss a type
+of number that comes up frequently when studying randomized structures.
+For a non-negative integer, <span class="math inline">\(k\)</span>, the
+<span class="math inline">\(k\)</span>-th <em>harmonic number</em>,
+denoted <span class="math inline">\(H_k\)</span>, is defined as <span
+class="math display">\[H_k = 1 + 1/2 + 1/3 + \cdots + 1/k \enspace
+.\]</span> The harmonic number <span class="math inline">\(H_k\)</span>
+has no simple closed form, but it is very closely related to the natural
+logarithm of <span class="math inline">\(k\)</span>. In particular,
+<span class="math display">\[\ln k &lt; H_k \le \ln k + 1  \enspace
+.\]</span> Readers who have studied calculus might notice that this is
+because the integral <span class="math inline">\(\int_1^k\! (1/x)\,
+\mathrm{d}x= \ln k\)</span>. Keeping in mind that an integral can be
+interpreted as the area between a curve and the <span
+class="math inline">\(x\)</span>-axis, the value of <span
+class="math inline">\(H_k\)</span> can be lower-bounded by the integral
+<span class="math inline">\(\int_1^k\! (1/x)\, \mathrm{d}x\)</span> and
+upper-bounded by <span class="math inline">\(1+ \int_1^k\! (1/x)\,
+\mathrm{d}x\)</span>. (See for a graphical explanation.)</p>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/harmonic-2"
+alt="image" /></td>
+<td style="text-align: center;"><img src="figs/harmonic-3"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>The <span class="math inline">\(k\)</span>th harmonic number
+<span class="math inline">\(H_k=\sum_{i=1}^k 1/i\)</span> is upper- and
+lower-bounded by two integrals. The value of these integrals is given by
+the area of the shaded region, while the value of <span
+class="math inline">\(H_k\)</span> is given by the area of the
+rectangles.</figcaption>
+</figure>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>In a random binary search tree of
+size <code>n</code>, the following statements hold:</em></p>
+<ol>
+<li><p><em>For any <span
+class="math inline">\(<code>x</code>\in\{0,\ldots,<code>n</code>-1\}\)</span>,
+the expected length of the search path for <code>x</code> is <span
+class="math inline">\(H_{<code>x</code>+1} + H_{<code>n</code>-<code>x</code>} -
+O(1)\)</span>.<a href="#fn1" class="footnote-ref" id="fnref1"
+role="doc-noteref"><sup>1</sup></a></em></p></li>
+<li><p><em>For any <span
+class="math inline">\(<code>x</code>\in(-1,n)\setminus\{0,\ldots,<code>n</code>-1\}\)</span>,
+the expected length of the search path for <code>x</code> is <span
+class="math inline">\(H_{\lceil<code>x</code>\rceil}
+    + H_{<code>n</code>-\lceil<code>x</code>\rceil}\)</span>.</em></p></li>
+</ol>
+</div>
+<p>We will prove in the next section. For now, consider what the two
+parts of tell us. The first part tells us that if we search for an
+element in a tree of size <code>n</code>, then the expected length of the
+search path is at most <span class="math inline">\(2\ln n +
+O(1)\)</span>. The second part tells us the same thing about searching
+for a value not stored in the tree. When we compare the two parts of the
+lemma, we see that it is only slightly faster to search for something
+that is in the tree compared to something that is not.</p>
+<h3 id="proof-of">Proof of </h3>
+<p>The key observation needed to prove is the following: The search path
+for a value <code>x</code> in the open interval <span
+class="math inline">\((-1,<code>n</code>)\)</span> in a random binary search
+tree, <span class="math inline">\(T\)</span>, contains the node with key
+<span class="math inline">\(i &lt; <code>x</code>\)</span> if, and only if,
+in the random permutation used to create <span
+class="math inline">\(T\)</span>, <span class="math inline">\(i\)</span>
+appears before any of <span
+class="math inline">\(\{i+1,i+2,\ldots,\lfloor<code>x</code>\rfloor\}\)</span>.</p>
+<p>To see this, refer to and notice that until some value in <span
+class="math inline">\(\{i,i+1,\ldots,\lfloor<code>x</code>\rfloor\}\)</span>
+is added, the search paths for each value in the open interval <span
+class="math inline">\((i-1,\lfloor<code>x</code>\rfloor+1)\)</span> are
+identical. (Remember that for two values to have different search paths,
+there must be some element in the tree that compares differently with
+them.) Let <span class="math inline">\(j\)</span> be the first element
+in <span
+class="math inline">\(\{i,i+1,\ldots,\lfloor<code>x</code>\rfloor\}\)</span>
+to appear in the random permutation. Notice that <span
+class="math inline">\(j\)</span> is now and will always be on the search
+path for <code>x</code>. If <span class="math inline">\(j\neq i\)</span>
+then the node <span class="math inline">\(<code>u</code>_j\)</span>
+containing <span class="math inline">\(j\)</span> is created before the
+node <span class="math inline">\(<code>u</code>_i\)</span> that contains
+<span class="math inline">\(i\)</span>. Later, when <span
+class="math inline">\(i\)</span> is added, it will be added to the
+subtree rooted at <span
+class="math inline">\(<code>u</code>_j<code>.left</code>\)</span>, since <span
+class="math inline">\(i&lt;j\)</span>. On the other hand, the search
+path for <code>x</code> will never visit this subtree because it will
+proceed to <span class="math inline">\(<code>u</code>_j<code>.right</code>\)</span>
+after visiting <span class="math inline">\(<code>u</code>_j\)</span>.</p>
+<figure>
+<div class="center">
+<img src="figs/rbst-records" />
+</div>
+<figcaption>The value <span
+class="math inline">\(i&lt;<code>x</code>\)</span> is on the search path for
+<code>x</code> if and only if <span class="math inline">\(i\)</span> is the
+first element among <span
+class="math inline">\(\{i,i+1,\ldots,\lfloor<code>x</code>\rfloor\}\)</span>
+added to the tree.</figcaption>
+</figure>
+<p>Similarly, for <span class="math inline">\(i&gt;<code>x</code>\)</span>,
+<span class="math inline">\(i\)</span> appears in the search path for
+<code>x</code> if and only if <span class="math inline">\(i\)</span> appears
+before any of <span class="math inline">\(\{\lceil<code>x</code>\rceil,
+\lceil<code>x</code>\rceil+1,\ldots,i-1\}\)</span> in the random permutation
+used to create <span class="math inline">\(T\)</span>.</p>
+<p>Notice that, if we start with a random permutation of <span
+class="math inline">\(\{0,\ldots,<code>n</code>\}\)</span>, then the
+subsequences containing only <span
+class="math inline">\(\{i,i+1,\ldots,\lfloor<code>x</code>\rfloor\}\)</span>
+and <span class="math inline">\(\{\lceil<code>x</code>\rceil,
+\lceil<code>x</code>\rceil+1,\ldots,i-1\}\)</span> are also random
+permutations of their respective elements. Each element, then, in the
+subsets <span
+class="math inline">\(\{i,i+1,\ldots,\lfloor<code>x</code>\rfloor\}\)</span>
+and <span class="math inline">\(\{\lceil<code>x</code>\rceil,
+\lceil<code>x</code>\rceil+1,\ldots,i-1\}\)</span> is equally likely to
+appear before any other in its subset in the random permutation used to
+create <span class="math inline">\(T\)</span>. So we have <span
+class="math display">\[\Pr\{\mbox{$i$ is on the search path for
+<code>x</code>}\}
+  = \left\{ \begin{array}{ll}
+     1/(\lfloor<code>x</code>\rfloor-i+1) &amp; \mbox{if $i &lt;
+<code>x</code>$} \\
+     1/(i-\lceil<code>x</code>\rceil+1) &amp; \mbox{if $i &gt; <code>x</code>$}
+     \end{array}\right . \enspace .\]</span></p>
+<p>With this observation, the proof of involves some simple calculations
+with harmonic numbers:</p>
+<div class="proof">
+<p><em>Proof of .</em> Let <span class="math inline">\(I_i\)</span> be
+the indicator random variable that is equal to one when <span
+class="math inline">\(i\)</span> appears on the search path for
+<code>x</code> and zero otherwise. Then the length of the search path is
+given by <span
+class="math display">\[\sum_{i\in\{0,\ldots,<code>n</code>-1\}\setminus\{<code>x</code>\}}
+I_i\]</span> so, if <span
+class="math inline">\(<code>x</code>\in\{0,\ldots,<code>n</code>-1\}\)</span>,
+the expected length of the search path is given by (see .a) <span
+class="math display">\[\begin{align*}
+  \E\left[\sum_{i=0}^{<code>x</code>-1} I_i +
+\sum_{i=<code>x</code>+1}^{<code>n</code>-1} I_i\right]
+   &amp; =  \sum_{i=0}^{<code>x</code>-1} \E\left[I_i\right]
+         + \sum_{i=<code>x</code>+1}^{<code>n</code>-1} \E\left[I_i\right] \\
+   &amp; = \sum_{i=0}^{<code>x</code>-1} 1/(\lfloor<code>x</code>\rfloor-i+1)
+         + \sum_{i=<code>x</code>+1}^{<code>n</code>-1}
+1/(i-\lceil<code>x</code>\rceil+1) \\
+   &amp; = \sum_{i=0}^{<code>x</code>-1} 1/(<code>x</code>-i+1)
+         + \sum_{i=<code>x</code>+1}^{<code>n</code>-1} 1/(i-<code>x</code>+1) \\
+   &amp; = \frac{1}{2}+\frac{1}{3}+\cdots+\frac{1}{<code>x</code>+1} \\
+   &amp; \quad {} +
+\frac{1}{2}+\frac{1}{3}+\cdots+\frac{1}{<code>n</code>-<code>x</code>} \\
+   &amp; = H_{<code>x</code>+1} + H_{<code>n</code>-<code>x</code>} - 2  \enspace .
+\end{align*}\]</span> The corresponding calculations for a search value
+<span
+class="math inline">\(<code>x</code>\in(-1,n)\setminus\{0,\ldots,<code>n</code>-1\}\)</span>
+are almost identical (see .b). ◻</p>
+</div>
+<figure>
+<div class="center">
+<table>
+<tbody>
+<tr>
+<td style="text-align: center;"><img src="figs/rbst-probs-a"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;">(a)</td>
+</tr>
+<tr>
+<td style="text-align: center;"><img src="figs/rbst-probs-b"
+alt="image" /></td>
+</tr>
+<tr>
+<td style="text-align: center;">(b)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<figcaption>The probabilities of an element being on the search path for
+<code>x</code> when (a) <code>x</code> is an integer and (b) when <code>x</code>
+is not an integer.</figcaption>
+</figure>
+<h3 id="summary">Summary</h3>
+<p>The following theorem summarizes the performance of a random binary
+search tree:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>A random binary search tree can be
+constructed in <span class="math inline">\(O(<code>n</code>\log
+<code>n</code>)\)</span> time. In a random binary search tree, the
+<code>find(x)</code> operation takes <span class="math inline">\(O(\log
+<code>n</code>)\)</span> expected time.</em></p>
+</div>
+<p>We should emphasize again that the expectation in is with respect to
+the random permutation used to create the random binary search tree. In
+particular, it does not depend on a random choice of <code>x</code>; it is
+true for every value of <code>x</code>.</p>
+<h2 id="code112-a-randomized-binary-search-tree"><code>Treap</code>: A
+Randomized Binary Search Tree</h2>
+<p>The problem with random binary search trees is, of course, that they
+are not dynamic. They don’t support the <code>add(x)</code> or <code>remove(x)</code>
+operations needed to implement the <code>SSet</code> interface. In this
+section we describe a data structure called a <code>Treap</code> that uses to
+implement the <code>SSet</code> interface.<a href="#fn2" class="footnote-ref"
+id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>A node in a <code>Treap</code> is like a node in a <code>BinarySearchTree</code> in that it
+has a data value, <code>x</code>, but it also contains a unique numerical
+<em>priority</em>, <code>p</code>, that is assigned at random:</p>
+<p>In addition to being a binary search tree, the nodes in a <code>Treap</code>
+also obey the <em>heap property</em>:</p>
+<ul>
+<li><p>(Heap Property) At every node <code>u</code>, except the root, <span
+class="math inline">\(<code>u.parent.p</code> &lt; <code>u.p</code>\)</span>.</p></li>
+</ul>
+<p>In other words, each node has a priority smaller than that of its two
+children. An example is shown in .</p>
+<figure>
+<div class="center">
+<img src="figs/treap" />
+</div>
+<figcaption>An example of a <code>Treap</code> containing the integers <span
+class="math inline">\(0,\ldots,9\)</span>. Each node, <code>u</code>, is
+illustrated as a box containing <span
+class="math inline">\(<code>u.x</code>,<code>u.p</code>\)</span>.</figcaption>
+</figure>
+<p>The heap and binary search tree conditions together ensure that, once
+the key (<code>x</code>) and priority (<code>p</code>) for each node are
+defined, the shape of the <code>Treap</code> is completely determined. The heap
+property tells us that the node with minimum priority has to be the
+root, <code>r</code>, of the <code>Treap</code>. The binary search tree property
+tells us that all nodes with keys smaller than <code>r.x</code> are stored in
+the subtree rooted at <code>r.left</code> and all nodes with keys larger than
+<code>r.x</code> are stored in the subtree rooted at <code>r.right</code>.</p>
+<p>The important point about the priority values in a <code>Treap</code> is
+that they are unique and assigned at random. Because of this, there are
+two equivalent ways we can think about a <code>Treap</code>. As defined above,
+a <code>Treap</code> obeys the heap and binary search tree properties.
+Alternatively, we can think of a <code>Treap</code> as a <code>BinarySearchTree</code> whose
+nodes were added in increasing order of priority. For example, the
+<code>Treap</code> in can be obtained by adding the sequence of <span
+class="math inline">\((<code>x</code>,<code>p</code>)\)</span> values <span
+class="math display">\[\langle
+   (3,1), (1,6), (0,9), (5,11), (4,14), (9,17), (7,22), (6,42), (8,49),
+(2,99)
+  \rangle\]</span> into a <code>BinarySearchTree</code>.</p>
+<p>Since the priorities are chosen randomly, this is equivalent to
+taking a random permutation of the keys—in this case the permutation is
+<span class="math display">\[\langle 3, 1, 0, 5, 9, 4, 7, 6, 8, 2
+\rangle\]</span> —and adding these to a <code>BinarySearchTree</code>. But this means that
+the shape of a treap is identical to that of a random binary search
+tree. In particular, if we replace each key <code>x</code> by its rank,<a
+href="#fn3" class="footnote-ref" id="fnref3"
+role="doc-noteref"><sup>3</sup></a> then applies. Restating in terms of
+<code>Treap</code>s, we have:</p>
+<div class="lem">
+<p><strong>Lemma 1.2</strong>. <em>In a <code>Treap</code> that stores a set
+<span class="math inline">\(S\)</span> of <code>n</code> keys, the
+following statements hold:</em></p>
+<ol>
+<li><p><em>For any <span class="math inline">\(<code>x</code>\in
+S\)</span>, the expected length of the search path for <code>x</code> is
+<span class="math inline">\(H_{r(<code>x</code>)+1} +
+H_{<code>n</code>-r(<code>x</code>)} - O(1)\)</span>.</em></p></li>
+<li><p><em>For any <span class="math inline">\(<code>x</code>\not\in
+S\)</span>, the expected length of the search path for <code>x</code> is
+<span class="math inline">\(H_{r(<code>x</code>)} +
+H_{<code>n</code>-r(<code>x</code>)}\)</span>.</em></p></li>
+</ol>
+<p><em>Here, <span class="math inline">\(r(<code>x</code>)\)</span> denotes
+the rank of <code>x</code> in the set <span
+class="math inline">\(S\cup\{<code>x</code>\}\)</span>.</em></p>
+</div>
+<p>Again, we emphasize that the expectation in is taken over the random
+choices of the priorities for each node. It does not require any
+assumptions about the randomness in the keys.</p>
+<p>tells us that <code>Treap</code>s can implement the <code>find(x)</code> operation
+efficiently. However, the real benefit of a <code>Treap</code> is that it can
+support the <code>add(x)</code> and <code>delete(x)</code> operations. To do this, it needs
+to perform rotations in order to maintain the heap property. Refer to .
+A <em>rotation</em> in a binary search tree is a local modification that
+takes a parent <code>u</code> of a node <code>w</code> and makes <code>w</code>
+the parent of <code>u</code>, while preserving the binary search tree
+property. Rotations come in two flavours: <em>left</em> or
+<em>right</em> depending on whether <code>w</code> is a right or left child
+of <code>u</code>, respectively.</p>
+<figure>
+<div class="center">
+<img src="figs/rotation" />
+</div>
+<figcaption>Left and right rotations in a binary search
+tree.</figcaption>
+</figure>
+<p>The code that implements this has to handle these two possibilities
+and be careful of a boundary case (when <code>u</code> is the root), so the
+actual code is a little longer than would lead a reader to believe:
+<code>[listing: ods/BinarySearchTree.rotateLeft(u).rotateRight(u)]</code>
+<span id="page:rotations" data-label="page:rotations"></span> In terms
+of the <code>Treap</code> data structure, the most important property of a
+rotation is that the depth of <code>w</code> decreases by one while the
+depth of <code>u</code> increases by one.</p>
+<p>Using rotations, we can implement the <code>add(x)</code> operation as
+follows: We create a new node, <code>u</code>, assign <code>u.x=x</code>, and pick
+a random value for <code>u.p</code>. Next we add <code>u</code> using the usual
+<code>add(x)</code> algorithm for a <code>BinarySearchTree</code>, so that <code>u</code> is now a
+leaf of the <code>Treap</code>. At this point, our <code>Treap</code> satisfies the
+binary search tree property, but not necessarily the heap property. In
+particular, it may be the case that <code>u.parent.p &gt; u.p</code>. If this is the case,
+then we perform a rotation at node <code>w</code>=<code>u.parent</code> so that
+<code>u</code> becomes the parent of <code>w</code>. If <code>u</code> continues
+to violate the heap property, we will have to repeat this, decreasing
+<code>u</code>’s depth by one every time, until <code>u</code> either becomes
+the root or <span class="math inline">\(<code>u.parent.p</code> &lt;
+<code>u.p</code>\)</span>.
+<code>[listing: ods/Treap.add(x).bubbleUp(u)]</code> An example of an
+<code>add(x)</code> operation is shown in .</p>
+<figure>
+<div class="center">
+<p><img src="figs/treap-insert-a" alt="image" /><br />
+<img src="figs/treap-insert-b" alt="image" /><br />
+<img src="figs/treap-insert-c" alt="image" /><br />
+</p>
+</div>
+<figcaption>Adding the value 1.5 into the <code>Treap</code> from
+.</figcaption>
+</figure>
+<p>The running time of the <code>add(x)</code> operation is given by the time it
+takes to follow the search path for <code>x</code> plus the number of
+rotations performed to move the newly-added node, <code>u</code>, up to its
+correct location in the <code>Treap</code>. By , the expected length of the
+search path is at most <span class="math inline">\(2\ln
+<code>n</code>+O(1)\)</span>. Furthermore, each rotation decreases the
+depth of <code>u</code>. This stops if <code>u</code> becomes the root, so the
+expected number of rotations cannot exceed the expected length of the
+search path. Therefore, the expected running time of the <code>add(x)</code>
+operation in a <code>Treap</code> is <span class="math inline">\(O(\log
+<code>n</code>)\)</span>. ( asks you to show that the expected number of
+rotations performed during an addition is actually only <span
+class="math inline">\(O(1)\)</span>.)</p>
+<p>The <code>remove(x)</code> operation in a <code>Treap</code> is the opposite of the
+<code>add(x)</code> operation. We search for the node, <code>u</code>, containing
+<code>x</code>, then perform rotations to move <code>u</code> downwards until
+it becomes a leaf, and then we splice <code>u</code> from the <code>Treap</code>.
+Notice that, to move <code>u</code> downwards, we can perform either a left
+or right rotation at <code>u</code>, which will replace <code>u</code> with
+<code>u.right</code> or <code>u.left</code>, respectively. The choice is made by the
+first of the following that apply:</p>
+<ol>
+<li><p>If <code>u.left</code> and <code>u.right</code> are both <code>null</code>, then
+<code>u</code> is a leaf and no rotation is performed.</p></li>
+<li><p>If <code>u.left</code> (or <code>u.right</code>) is <code>null</code>, then perform a
+right (or left, respectively) rotation at <code>u</code>.</p></li>
+<li><p>If <span class="math inline">\(<code>u.left.p</code> &lt;
+<code>u.right.p</code>\)</span> (or <span class="math inline">\(<code>u.left.p</code> &gt;
+<code>u.right.p</code>)\)</span>, then perform a right rotation (or left rotation,
+respectively) at <code>u</code>.</p></li>
+</ol>
+<p>These three rules ensure that the <code>Treap</code> doesn’t become
+disconnected and that the heap property is restored once <code>u</code> is
+removed. <code>[listing: ods/Treap.remove(x).trickleDown(u)]</code> An
+example of the <code>remove(x)</code> operation is shown in .</p>
+<figure>
+<div class="center">
+<p><img src="figs/treap-delete-a" alt="image" /><br />
+<img src="figs/treap-delete-b" alt="image" /><br />
+<img src="figs/treap-delete-c" alt="image" /><br />
+<img src="figs/treap-delete-d" alt="image" /></p>
+</div>
+<figcaption>Removing the value 9 from the <code>Treap</code> in .</figcaption>
+</figure>
+<p>The trick to analyze the running time of the <code>remove(x)</code> operation is
+to notice that this operation reverses the <code>add(x)</code> operation. In
+particular, if we were to reinsert <code>x</code>, using the same priority
+<code>u.p</code>, then the <code>add(x)</code> operation would do exactly the same
+number of rotations and would restore the <code>Treap</code> to exactly the
+same state it was in before the <code>remove(x)</code> operation took place.
+(Reading from bottom-to-top, illustrates the addition of the value 9
+into a <code>Treap</code>.) This means that the expected running time of the
+<code>remove(x)</code> on a <code>Treap</code> of size <code>n</code> is proportional to the
+expected running time of the <code>add(x)</code> operation on a <code>Treap</code> of
+size <span class="math inline">\(<code>n</code>-1\)</span>. We conclude
+that the expected running time of <code>remove(x)</code> is <span
+class="math inline">\(O(\log <code>n</code>)\)</span>.</p>
+<h3 id="summary-1">Summary</h3>
+<p>The following theorem summarizes the performance of the <code>Treap</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>A <code>Treap</code> implements the
+<code>SSet</code> interface. A <code>Treap</code> supports the operations
+<code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time per
+operation.</em></p>
+</div>
+<p>It is worth comparing the <code>Treap</code> data structure to the
+<code>SkiplistSSet</code> data structure. Both implement the <code>SSet</code> operations in
+<span class="math inline">\(O(\log <code>n</code>)\)</span> expected time
+per operation. In both data structures, <code>add(x)</code> and <code>remove(x)</code>
+involve a search and then a constant number of pointer changes (see
+below). Thus, for both these structures, the expected length of the
+search path is the critical value in assessing their performance. In a
+<code>SkiplistSSet</code>, the expected length of a search path is <span
+class="math display">\[2\log <code>n</code> + O(1) \enspace ,\]</span> In a
+<code>Treap</code>, the expected length of a search path is <span
+class="math display">\[2\ln <code>n</code> +O(1) \approx 1.386\log
+<code>n</code>  + O(1) \enspace .\]</span> Thus, the search paths in a
+<code>Treap</code> are considerably shorter and this translates into noticeably
+faster operations on <code>Treap</code>s than <code>Skiplist</code>s. in shows how the
+expected length of the search path in a <code>Skiplist</code> can be reduced to
+<span class="math display">\[e\ln <code>n</code> + O(1) \approx 1.884\log
+<code>n</code> + O(1)\]</span> by using biased coin tosses. Even with this
+optimization, the expected length of search paths in a <code>SkiplistSSet</code> is
+noticeably longer than in a <code>Treap</code>.</p>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>Random binary search trees have been studied extensively. Devroye
+<span class="citation" data-cites="d88"></span> gives a proof of and
+related results. There are much stronger results in the literature as
+well, the most impressive of which is due to Reed <span class="citation"
+data-cites="r03"></span>, who shows that the expected height of a random
+binary search tree is <span class="math display">\[\alpha\ln n -
+\beta\ln\ln n + O(1)\]</span> where <span
+class="math inline">\(\alpha\approx4.31107\)</span> is the unique
+solution on the interval <span class="math inline">\([2,\infty)\)</span>
+of the equation <span
+class="math inline">\(\alpha\ln((2e/\alpha))=1\)</span> and <span
+class="math inline">\(\beta=\frac{3}{2\ln(\alpha/2)}\)</span> .
+Furthermore, the variance of the height is constant.</p>
+<p>The name <code>Treap</code> was coined by Seidel and Aragon <span
+class="citation" data-cites="as96"></span> who discussed <code>Treap</code>s
+and some of their variants. However, their basic structure was studied
+much earlier by Vuillemin <span class="citation"
+data-cites="v80"></span> who called them Cartesian trees.</p>
+<p>One possible space-optimization of the <code>Treap</code> data structure is
+the elimination of the explicit storage of the priority <code>p</code> in
+each node. Instead, the priority of a node, <code>u</code>, is computed by
+hashing <code>u</code>’s address in memory. Although a number of hash
+functions will probably work well for this in practice, for the
+important parts of the proof of to remain valid, the hash function
+should be randomized and have the <em>min-wise independent
+property</em>: For any distinct values <span
+class="math inline">\(x_1,\ldots,x_k\)</span>, each of the hash values
+<span class="math inline">\(h(x_1),\ldots,h(x_k)\)</span> should be
+distinct with high probability and, for each <span
+class="math inline">\(i\in\{1,\ldots,k\}\)</span>, <span
+class="math display">\[\Pr\{h(x_i) = \min\{h(x_1),\ldots,h(x_k)\}\} \le
+c/k\]</span> for some constant <span class="math inline">\(c\)</span>.
+One such class of hash functions that is easy to implement and fairly
+fast is <em>tabulation hashing</em> ().</p>
+<p>Another <code>Treap</code> variant that doesn’t store priorities at each
+node is the randomized binary search tree of Martı́nez and Roura <span
+class="citation" data-cites="mr98"></span>. In this variant, every node,
+<code>u</code>, stores the size, <code>u.size</code>, of the subtree rooted at
+<code>u</code>. Both the <code>add(x)</code> and <code>remove(x)</code> algorithms are
+randomized. The algorithm for adding <code>x</code> to the subtree rooted
+at <code>u</code> does the following:</p>
+<ol>
+<li><p>With probability <span
+class="math inline">\(1/(<code>size(u)</code>+1)\)</span>, the value <code>x</code>
+is added the usual way, as a leaf, and rotations are then done to bring
+<code>x</code> up to the root of this subtree.</p></li>
+<li><p>Otherwise (with probability <span
+class="math inline">\(1-1/(<code>size(u)</code>+1)\)</span>), the value
+<code>x</code> is recursively added into one of the two subtrees rooted at
+<code>u.left</code> or <code>u.right</code>, as appropriate.</p></li>
+</ol>
+<p>The first case corresponds to an <code>add(x)</code> operation in a
+<code>Treap</code> where <code>x</code>’s node receives a random priority that is
+smaller than any of the <code>size(u)</code> priorities in <code>u</code>’s subtree,
+and this case occurs with exactly the same probability.</p>
+<p>Removing a value <code>x</code> from a randomized binary search tree is
+similar to the process of removing from a <code>Treap</code>. We find the node,
+<code>u</code>, that contains <code>x</code> and then perform rotations that
+repeatedly increase the depth of <code>u</code> until it becomes a leaf, at
+which point we can splice it from the tree. The choice of whether to
+perform a left or right rotation at each step is randomized.</p>
+<ol>
+<li><p>With probability <code>u.left.size/(u.size-1)</code>, we perform a right rotation at
+<code>u</code>, making <code>u.left</code> the root of the subtree that was
+formerly rooted at <code>u</code>.</p></li>
+<li><p>With probability <code>u.right.size/(u.size-1)</code>, we perform a left rotation at
+<code>u</code>, making <code>u.right</code> the root of the subtree that was
+formerly rooted at <code>u</code>.</p></li>
+</ol>
+<p>Again, we can easily verify that these are exactly the same
+probabilities that the removal algorithm in a <code>Treap</code> will perform a
+left or right rotation of <code>u</code>.</p>
+<p>Randomized binary search trees have the disadvantage, compared to
+treaps, that when adding and removing elements they make many random
+choices, and they must maintain the sizes of subtrees. One advantage of
+randomized binary search trees over treaps is that subtree sizes can
+serve another useful purpose, namely to provide access by rank in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time (see ).
+In comparison, the random priorities stored in treap nodes have no use
+other than keeping the treap balanced.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Illustrate the addition of 4.5
+(with priority 7) and then 7.5 (with priority 20) on the <code>Treap</code> in
+.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Illustrate the removal of 5 and
+then 7 on the <code>Treap</code> in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Prove the assertion that there are
+<span class="math inline">\(21,964,800\)</span> sequences that generate
+the tree on the right hand side of . (Hint: Give a recursive formula for
+the number of sequences that generate a complete binary tree of height
+<span class="math inline">\(h\)</span> and evaluate this formula for
+<span class="math inline">\(h=3\)</span>.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>Design and implement the
+<code>permute(a)</code> method that takes as input an array, <code>a</code>, that
+contains <code>n</code> distinct values and randomly permutes <code>a</code>.
+The method should run in <span
+class="math inline">\(O(<code>n</code>)\)</span> time and you should prove
+that each of the <span class="math inline">\(<code>n</code>!\)</span>
+possible permutations of <code>a</code> is equally probable.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Use both parts of to prove that
+the expected number of rotations performed by an <code>add(x)</code> operation
+(and hence also a <code>remove(x)</code> operation) is <span
+class="math inline">\(O(1)\)</span>.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Modify the <code>Treap</code>
+implementation given here so that it does not explicitly store
+priorities. Instead, it should simulate them by hashing the <code>hashCode()</code>
+of each node.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Suppose that a binary search tree
+stores, at each node, <code>u</code>, the height, <code>u.height</code>, of the
+subtree rooted at <code>u</code>, and the size, <code>u.size</code> of the subtree
+rooted at <code>u</code>.</em></p>
+<ol>
+<li><p><em>Show how, if we perform a left or right rotation at
+<code>u</code>, then these two quantities can be updated, in constant time,
+for all nodes affected by the rotation.</em></p></li>
+<li><p><em>Explain why the same result is not possible if we try to also
+store the depth, <code>u.depth</code>, of each node <code>u</code>.</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Design and implement an algorithm
+that constructs a <code>Treap</code> from a sorted array, <code>a</code>, of
+<code>n</code> elements. This method should run in <span
+class="math inline">\(O(<code>n</code>)\)</span> worst-case time and should
+construct a <code>Treap</code> that is indistinguishable from one in which the
+elements of <code>a</code> were added one at a time using the <code>add(x)</code>
+method.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>This exercise works out the
+details of how one can efficiently search a <code>Treap</code> given a pointer
+that is close to the node we are searching for.</em></p>
+<ol>
+<li><p><em>Design and implement a <code>Treap</code> implementation in which
+each node keeps track of the minimum and maximum values in its
+subtree.</em></p></li>
+<li><p><em>Using this extra information, add a <code>fingerFind(x,u)</code> method that
+executes the <code>find(x)</code> operation with the help of a pointer to the
+node <code>u</code> (which is hopefully not far from the node that contains
+<code>x</code>). This operation should start at <code>u</code> and walk
+upwards until it reaches a node <code>w</code> such that <span
+class="math inline">\(<code>w.min</code>\le <code>x</code>\le
+<code>w.max</code>\)</span>. From that point onwards, it should perform a
+standard search for <code>x</code> starting from <code>w</code>. (One can show
+that <code>fingerFind(x,u)</code> takes <span class="math inline">\(O(1+\log r)\)</span>
+time, where <span class="math inline">\(r\)</span> is the number of
+elements in the treap whose value is between <code>x</code> and
+<code>u.x</code>.)</em></p></li>
+<li><p><em>Extend your implementation into a version of a treap that
+starts all its <code>find(x)</code> operations from the node most recently found
+by <code>find(x)</code>.</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>Design and implement a version of
+a <code>Treap</code> that includes a <code>get(i)</code> operation that returns the key
+with rank <code>i</code> in the <code>Treap</code>. (Hint: Have each node,
+<code>u</code>, keep track of the size of the subtree rooted at
+<code>u</code>.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Implement a <code>TreapList</code>, an
+implementation of the <code>List</code> interface as a treap. Each node in the
+treap should store a list item, and an in-order traversal of the treap
+finds the items in the same order that they occur in the list. All the
+<code>List</code> operations <code>get(i)</code>, <code>set(i,x)</code>, <code>add(i,x)</code> and
+<code>remove(i)</code> should run in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> expected time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.12</strong>. <em>Design and implement a version of
+a <code>Treap</code> that supports the <code>split(x)</code> operation. This operation
+removes all values from the <code>Treap</code> that are greater than
+<code>x</code> and returns a second <code>Treap</code> that contains all the
+removed values.</em></p>
+<p><em>Example: the code <code>t2 = t.split(x)</code> removes from <code>t</code> all values
+greater than <code>x</code> and returns a new <code>Treap</code> <code>t2</code>
+containing all these values. The <code>split(x)</code> operation should run in
+<span class="math inline">\(O(\log <code>n</code>)\)</span> expected
+time.</em></p>
+<p><em>Warning: For this modification to work properly and still allow
+the <code>size()</code> method to run in constant time, it is necessary to
+implement the modifications in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.13</strong>. <em>Design and implement a version of
+a <code>Treap</code> that supports the <code>absorb(t2)</code> operation, which can be
+thought of as the inverse of the <code>split(x)</code> operation. This operation
+removes all values from the <code>Treap</code> <code>t2</code> and adds them to the
+receiver. This operation presupposes that the smallest value in
+<code>t2</code> is greater than the largest value in the receiver. The
+<code>absorb(t2)</code> operation should run in <span class="math inline">\(O(\log
+<code>n</code>)\)</span> expected time.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.14</strong>. <em>Implement Martinez’s randomized
+binary search trees, as discussed in this section. Compare the
+performance of your implementation with that of the <code>Treap</code>
+implementation.</em></p>
+</div>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p><em>The expressions <span
+class="math inline">\(<code>x</code>+1\)</span> and <span
+class="math inline">\(<code>n</code>-<code>x</code>\)</span> can be interpreted
+respectively as the number of elements in the tree less than or equal to
+<code>x</code> and the number of elements in the tree greater than or equal
+to <code>x</code>.</em><a href="#fnref1" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>The name <code>Treap</code> comes from the fact that this data
+structure is simultaneously a binary search <strong>tr</strong>ee () and
+a h<strong>eap</strong> ().<a href="#fnref2" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The rank of an element <code>x</code> in a set <span
+class="math inline">\(S\)</span> of elements is the number of elements
+in <span class="math inline">\(S\)</span> that are less than
+<code>x</code>.<a href="#fnref3" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>

@@ -1,0 +1,822 @@
+<h1 id="external-memory-searching">External Memory Searching</h1>
+<p>Throughout this book, we have been using the <code>w</code>-bit word-RAM
+model of computation defined in . An implicit assumption of this model
+is that our computer has a large enough random access memory to store
+all of the data in the data structure. In some situations, this
+assumption is not valid. There exist collections of data so large that
+no computer has enough memory to store them. In such cases, the
+application must resort to storing the data on some external storage
+medium such as a hard disk, a solid state disk, or even a network file
+server (which has its own external storage).</p>
+<p>Accessing an item from external storage is extremely slow. The hard
+disk attached to the computer on which this book was written has an
+average access time of 19ms and the solid state drive attached to the
+computer has an average access time of 0.3ms. In contrast, the random
+access memory in the computer has an average access time of less than
+0.000113ms. Accessing RAM is more than 2 500 times faster than accessing
+the solid state drive and more than 160 000 times faster than accessing
+the hard drive.</p>
+<p>These speeds are fairly typical; accessing a random byte from RAM is
+thousands of times faster than accessing a random byte from a hard disk
+or solid-state drive. Access time, however, does not tell the whole
+story. When we access a byte from a hard disk or solid state disk, an
+entire <em>block</em> of the disk is read. Each of the drives attached
+to the computer has a block size of 4 096; each time we read one byte,
+the drive gives us a block containing 4 096 bytes. If we organize our
+data structure carefully, this means that each disk access could yield
+4 096 bytes that are helpful in completing whatever operation we are
+doing.</p>
+<p>This is the idea behind the <em>external memory model</em> of
+computation, illustrated schematically in . In this model, the computer
+has access to a large external memory in which all of the data resides.
+This memory is divided into memory <em>blocks</em> each containing <span
+class="math inline">\(B\)</span> words. The computer also has limited
+internal memory on which it can perform computations. Transferring a
+block between internal memory and external memory takes constant time.
+Computations performed within the internal memory are <em>free</em>;
+they take no time at all. The fact that internal memory computations are
+free may seem a bit strange, but it simply emphasizes the fact that
+external memory is so much slower than RAM.</p>
+<figure>
+
+<figcaption>In the external memory model, accessing an individual item,
+<code>x</code>, in the external memory requires reading the entire block
+containing <code>x</code> into RAM.</figcaption>
+</figure>
+<p>In the full-blown external memory model, the size of the internal
+memory is also a parameter. However, for the data structures described
+in this chapter, it is sufficient to have an internal memory of size
+<span class="math inline">\(O(B+\log_B <code>n</code>)\)</span>. That is, the
+memory needs to be capable of storing a constant number of blocks and a
+recursion stack of height <span class="math inline">\(O(\log_B
+<code>n</code>)\)</span>. In most cases, the <span
+class="math inline">\(O(B)\)</span> term dominates the memory
+requirement. For example, even with the relatively small value <span
+class="math inline">\(B=32\)</span>, <span class="math inline">\(B\ge
+\log_B
+<code>n</code>\)</span> for all <span class="math inline">\(<code>n</code>\le
+2^{160}\)</span>. In decimal, <span class="math inline">\(B\ge \log_B
+<code>n</code>\)</span> for any <span class="math display">\[<code>n</code> \le
+1\,461\,501\,637\,330\,902\,918\,203\,684\,832\,716\,283\,019\,655\,932\,542\,976
+\enspace
+.\]</span></p>
+<h2 id="the-block-store">The Block Store</h2>
+<p>The notion of external memory includes a large number of possible
+different devices, each of which has its own block size and is accessed
+with its own collection of system calls. To simplify the exposition of
+this chapter so that we can focus on the common ideas, we encapsulate
+external memory devices with an object called a <code>BlockStore</code>. A <code>BlockStore</code>
+stores a collection of memory blocks, each of size <span
+class="math inline">\(B\)</span>. Each block is uniquely identified by
+its integer index. A <code>BlockStore</code> supports these operations:</p>
+<ol>
+<li><p><code>readBlock(i)</code>: Return the contents of the block whose index is
+<code>i</code>.</p></li>
+<li><p><code>writeBlock(i,b)</code>: Write contents of <code>b</code> to the block whose index
+is <code>i</code>.</p></li>
+<li><p><code>placeBlock(b)</code>: Return a new index and store the contents of
+<code>b</code> at this index.</p></li>
+<li><p><code>freeBlock(i)</code>: Free the block whose index is <code>i</code>. This
+indicates that the contents of this block are no longer used so the
+external memory allocated by this block may be reused.</p></li>
+</ol>
+<p>The easiest way to imagine a <code>BlockStore</code> is to imagine it as storing a
+file on disk that is partitioned into blocks, each containing <span
+class="math inline">\(B\)</span> bytes. In this way, <code>readBlock(i)</code> and
+<code>writeBlock(i,b)</code> simply read and write bytes <span
+class="math inline">\(<code>i</code>B,\ldots,(<code>i</code>+1)B-1\)</span> of
+this file. In addition, a simple <code>BlockStore</code> could keep a <em>free
+list</em> of blocks that are available for use. Blocks freed with
+<code>freeBlock(i)</code> are added to the free list. In this way, <code>placeBlock(b)</code> can use a
+block from the free list or, if none is available, append a new block to
+the end of the file.</p>
+<h2 id="b-trees">B-Trees</h2>
+<p>In this section, we discuss a generalization of binary trees, called
+<span class="math inline">\(B\)</span>-trees, which is efficient in the
+external memory model. Alternatively, <span
+class="math inline">\(B\)</span>-trees can be viewed as the natural
+generalization of 2-4 trees described in . (A 2-4 tree is a special case
+of a <span class="math inline">\(B\)</span>-tree that we get by setting
+<span class="math inline">\(B=2\)</span>.)</p>
+<p>For any integer <span class="math inline">\(B\ge 2\)</span>, a
+<em><span class="math inline">\(B\)</span>-tree</em> is a tree in which
+all of the leaves have the same depth and every non-root internal node,
+<code>u</code>, has at least <span class="math inline">\(B\)</span> children
+and at most <span class="math inline">\(2B\)</span> children. The
+children of <code>u</code> are stored in an array, <code>u.children</code>. The required
+number of children is relaxed at the root, which can have anywhere
+between 2 and <span class="math inline">\(2B\)</span> children.</p>
+<p>If the height of a <span class="math inline">\(B\)</span>-tree is
+<span class="math inline">\(h\)</span>, then it follows that the number,
+<span class="math inline">\(\ell\)</span>, of leaves in the <span
+class="math inline">\(B\)</span>-tree satisfies <span
+class="math display">\[2B^{h-1} \le \ell \le (2B)^{h} \enspace
+.\]</span> Taking the logarithm of the first inequality and rearranging
+terms yields: <span class="math display">\[\begin{align*}
+    h &amp; \le \frac{\log \ell-1}{\log B} + 1  \\
+      &amp; \le \frac{\log \ell}{\log B} + 1 \\
+      &amp; = \log_B \ell + 1 \enspace .
+\end{align*}\]</span> That is, the height of a <span
+class="math inline">\(B\)</span>-tree is proportional to the base-<span
+class="math inline">\(B\)</span> logarithm of the number of leaves.</p>
+<p>Each node, <code>u</code>, in <span class="math inline">\(B\)</span>-tree
+stores an array of keys <span
+class="math inline">\(<code>u.keys</code>[0],\ldots,<code>u.keys</code>[2B-1]\)</span>. If
+<code>u</code> is an internal node with <span
+class="math inline">\(k\)</span> children, then the number of keys
+stored at <code>u</code> is exactly <span class="math inline">\(k-1\)</span>
+and these are stored in <span
+class="math inline">\(<code>u.keys</code>[0],\ldots,<code>u.keys</code>[k-2]\)</span>. The
+remaining <span class="math inline">\(2B-k+1\)</span> array entries in
+<code>u.keys</code> are set to <code>null</code>. If <code>u</code> is a non-root leaf node,
+then <code>u</code> contains between <span
+class="math inline">\(B-1\)</span> and <span
+class="math inline">\(2B-1\)</span> keys. The keys in a <span
+class="math inline">\(B\)</span>-tree respect an order similar to the
+keys in a binary search tree. For any node, <code>u</code>, that stores
+<span class="math inline">\(k-1\)</span> keys, <span
+class="math display">\[<code>u.keys[0]</code> &lt; <code>u.keys[1]</code> &lt; \cdots &lt;
+<code>u.keys</code>[k-2] \enspace .\]</span> If <code>u</code> is an internal node,
+then for every <span
+class="math inline">\(<code>i</code>\in\{0,\ldots,k-2\}\)</span>, <span
+class="math inline">\(<code>u.keys[i]</code>\)</span> is larger than every key
+stored in the subtree rooted at <code>u.children[i]</code> but smaller than every key
+stored in the subtree rooted at <span
+class="math inline">\(<code>u.children[i+1]</code>\)</span>. Informally, <span
+class="math display">\[<code>u.children[i]</code> \prec <code>u.keys[i]</code> \prec <code>u.children[i+1]</code>
+\enspace .\]</span> An example of a <span
+class="math inline">\(B\)</span>-tree with <span
+class="math inline">\(B=2\)</span> is shown in .</p>
+<figure>
+
+<figcaption>A <span class="math inline">\(B\)</span>-tree with <span
+class="math inline">\(B=2\)</span>.</figcaption>
+</figure>
+<p>Note that the data stored in a <span
+class="math inline">\(B\)</span>-tree node has size <span
+class="math inline">\(O(B)\)</span>. Therefore, in an external memory
+setting, the value of <span class="math inline">\(B\)</span> in a <span
+class="math inline">\(B\)</span>-tree is chosen so that a node fits into
+a single external memory block. In this way, the time it takes to
+perform a <span class="math inline">\(B\)</span>-tree operation in the
+external memory model is proportional to the number of nodes that are
+accessed (read or written) by the operation.</p>
+<p>For example, if the keys are 4 byte integers and the node indices are
+also 4 bytes, then setting <span class="math inline">\(B=256\)</span>
+means that each node stores <span class="math display">\[(4+4)\times 2B
+= 8\times512=4096\]</span> bytes of data. This would be a perfect value
+of <span class="math inline">\(B\)</span> for the hard disk or solid
+state drive discussed in the introduction to this chaper, which have a
+block size of <span class="math inline">\(4096\)</span> bytes.</p>
+<p>The <code>BTree</code> class, which implements a <span
+class="math inline">\(B\)</span>-tree, stores a <code>BlockStore</code>, <code>bs</code>,
+that stores <code>BTree</code> nodes as well as the index, <code>ri</code>, of the
+root node. As usual, an integer, <code>n</code>, is used to keep track of
+the number of items in the data structure:</p>
+<p><code>[listing: ods/BTree.initialize(b)]</code></p>
+<h3 id="searching">Searching</h3>
+<p>The implementation of the <code>find(x)</code> operation, which is illustrated
+in , generalizes the <code>find(x)</code> operation in a binary search tree. The
+search for <code>x</code> starts at the root and uses the keys stored at a
+node, <code>u</code>, to determine in which of <code>u</code>’s children the
+search should continue.</p>
+<figure>
+
+<figcaption>A successful search (for the value 4) and an unsuccessful
+search (for the value 16.5) in a <span
+class="math inline">\(B\)</span>-tree. Shaded nodes show where the value
+of <code>z</code> is updated during the searches.</figcaption>
+</figure>
+<p>More specifically, at a node <code>u</code>, the search checks if
+<code>x</code> is stored in <code>u.keys</code>. If so, <code>x</code> has been found and
+the search is complete. Otherwise, the search finds the smallest
+integer, <code>i</code>, such that <span class="math inline">\(<code>u.keys[i]</code>
+&gt; <code>x</code>\)</span> and continues the search in the subtree rooted
+at <code>u.children[i]</code>. If no key in <code>u.keys</code> is greater than <code>x</code>, then
+the search continues in <code>u</code>’s rightmost child. Just like binary
+search trees, the algorithm keeps track of the most recently seen key,
+<code>z</code>, that is larger than <code>x</code>. In case <code>x</code> is not
+found, <code>z</code> is returned as the smallest value that is greater or
+equal to <code>x</code>. <code>[listing: ods/BTree.find(x)]</code> Central
+to the <code>find(x)</code> method is the <code>findIt(a,x)</code> method that searches in a
+<code>null</code>-padded sorted array, <code>a</code>, for the value <code>x</code>.
+This method, illustrated in , works for any array, <code>a</code>, where
+<span
+class="math inline">\(<code>a</code>[0],\ldots,<code>a</code>[k-1]\)</span> is a
+sequence of keys in sorted order and <span
+class="math inline">\(<code>a</code>[k],\ldots,<code>a</code>[<code>a.length</code>-1]\)</span>
+are all set to <code>null</code>. If <code>x</code> is in the array at position
+<code>i</code>, then <code>findIt(a,x)</code> returns <span
+class="math inline">\(-<code>i</code>-1\)</span>. Otherwise, it returns the
+smallest index, <code>i</code>, such that <span
+class="math inline">\(<code>a[i]</code>&gt;<code>x</code>\)</span> or <span
+class="math inline">\(<code>a[i]</code>=<code>null</code>\)</span>.</p>
+<figure>
+
+<figcaption>The execution of <code>findIt(a,27)</code>.</figcaption>
+</figure>
+<p><code>[listing: ods/BTree.findIt(a,x)]</code> The <code>findIt(a,x)</code> method
+uses a binary search that halves the search space at each step, so it
+runs in <span class="math inline">\(O(\log(<code>a.length</code>))\)</span> time.
+In our setting, <span class="math inline">\(<code>a.length</code>=2B\)</span>, so
+<code>findIt(a,x)</code> runs in <span class="math inline">\(O(\log B)\)</span>
+time.</p>
+<p>We can analyze the running time of a <span
+class="math inline">\(B\)</span>-tree <code>find(x)</code> operation both in the
+usual word-RAM model (where every instruction counts) and in the
+external memory model (where we only count the number of nodes
+accessed). Since each leaf in a <span
+class="math inline">\(B\)</span>-tree stores at least one key and the
+height of a <span class="math inline">\(B\)</span>-Tree with <span
+class="math inline">\(\ell\)</span> leaves is <span
+class="math inline">\(O(\log_B\ell)\)</span>, the height of a <span
+class="math inline">\(B\)</span>-tree that stores <code>n</code> keys is
+<span class="math inline">\(O(\log_B <code>n</code>)\)</span>. Therefore,
+in the external memory model, the time taken by the <code>find(x)</code>
+operation is <span class="math inline">\(O(\log_B <code>n</code>)\)</span>.
+To determine the running time in the word-RAM model, we have to account
+for the cost of calling <code>findIt(a,x)</code> for each node we access, so the
+running time of <code>find(x)</code> in the word-RAM model is <span
+class="math display">\[O(\log_B <code>n</code>)\times O(\log B) = O(\log
+<code>n</code>) \enspace .\]</span></p>
+<h3 id="addition">Addition</h3>
+<p>One important difference between <span
+class="math inline">\(B\)</span>-trees and the <code>BinarySearchTree</code> data
+structure from is that the nodes of a <span
+class="math inline">\(B\)</span>-tree do not store pointers to their
+parents. The reason for this will be explained shortly. The lack of
+parent pointers means that the <code>add(x)</code> and <code>remove(x)</code> operations on
+<span class="math inline">\(B\)</span>-trees are most easily implemented
+using recursion.</p>
+<p>Like all balanced search trees, some form of rebalancing is required
+during an <code>add(x)</code> operation. In a <span
+class="math inline">\(B\)</span>-tree, this is done by
+<em>splitting</em> nodes. Refer to for what follows. Although splitting
+takes place across two levels of recursion, it is best understood as an
+operation that takes a node <code>u</code> containing <span
+class="math inline">\(2B\)</span> keys and having <span
+class="math inline">\(2B+1\)</span> children. It creates a new node,
+<code>w</code>, that adopts <span
+class="math inline">\(<code>u.children</code>[B],\ldots,<code>u.children</code>[2B]\)</span>.
+The new node <code>w</code> also takes <code>u</code>’s <span
+class="math inline">\(B\)</span> largest keys, <span
+class="math inline">\(<code>u.keys</code>[B],\ldots,<code>u.keys</code>[2B-1]\)</span>.
+At this point, <code>u</code> has <span class="math inline">\(B\)</span>
+children and <span class="math inline">\(B\)</span> keys. The extra key,
+<span class="math inline">\(<code>u.keys</code>[B-1]\)</span>, is passed up to
+the parent of <code>u</code>, which also adopts <code>w</code>.</p>
+<p>Notice that the splitting operation modifies three nodes:
+<code>u</code>, <code>u</code>’s parent, and the new node, <code>w</code>. This
+is why it is important that the nodes of a <span
+class="math inline">\(B\)</span>-tree do not maintain parent pointers.
+If they did, then the <span class="math inline">\(B+1\)</span> children
+adopted by <code>w</code> would all need to have their parent pointers
+modified. This would increase the number of external memory accesses
+from 3 to <span class="math inline">\(B+4\)</span> and would make <span
+class="math inline">\(B\)</span>-trees much less efficient for large
+values of <span class="math inline">\(B\)</span>.</p>
+<figure>
+
+<figcaption>Splitting the node <code>u</code> in a <span
+class="math inline">\(B\)</span>-tree (<span
+class="math inline">\(B=3\)</span>). Notice that the key <span
+class="math inline">\(<code>u.keys</code>[2]=\mathrm{m}\)</span> passes from
+<code>u</code> to its parent.</figcaption>
+</figure>
+<p>The <code>add(x)</code> method in a <span
+class="math inline">\(B\)</span>-tree is illustrated in . At a high
+level, this method finds a leaf, <code>u</code>, at which to add the value
+<code>x</code>. If this causes <code>u</code> to become overfull (because it
+already contained <span class="math inline">\(B-1\)</span> keys), then
+<code>u</code> is split. If this causes <code>u</code>’s parent to become
+overfull, then <code>u</code>’s parent is also split, which may cause
+<code>u</code>’s grandparent to become overfull, and so on. This process
+continues, moving up the tree one level at a time until reaching a node
+that is not overfull or until the root is split. In the former case, the
+process stops. In the latter case, a new root is created whose two
+children become the nodes obtained when the original root was split.</p>
+<figure>
+
+<figcaption>The <code>add(x)</code> operation in a <code>BTree</code>. Adding the value
+21 results in two nodes being split.</figcaption>
+</figure>
+<p>The executive summary of the <code>add(x)</code> method is that it walks from
+the root to a leaf searching for <code>x</code>, adds <code>x</code> to this
+leaf, and then walks back up to the root, splitting any overfull nodes
+it encounters along the way. With this high level view in mind, we can
+now delve into the details of how this method can be implemented
+recursively.</p>
+<p>The real work of <code>add(x)</code> is done by the <code>addRecursive(x,ui)</code> method, which
+adds the value <code>x</code> to the subtree whose root, <code>u</code>, has
+the identifier <code>ui</code>. If <code>u</code> is a leaf, then <code>x</code>
+is simply inserted into <code>u.keys</code>. Otherwise, <code>x</code> is added
+recursively into the appropriate child, <span
+class="math inline">\(<code>u</code>&#39;\)</span>, of <code>u</code>. The
+result of this recursive call is normally <code>null</code> but may also be a
+reference to a newly-created node, <code>w</code>, that was created because
+<span class="math inline">\(<code>u</code>&#39;\)</span> was split. In this
+case, <code>u</code> adopts <code>w</code> and takes its first key, completing
+the splitting operation on <span
+class="math inline">\(<code>u</code>&#39;\)</span>.</p>
+<p>After the value <code>x</code> has been added (either to <code>u</code> or
+to a descendant of <code>u</code>), the <code>addRecursive(x,ui)</code> method checks to see if
+<code>u</code> is storing too many (more than <span
+class="math inline">\(2B-1\)</span>) keys. If so, then <code>u</code> needs
+to be <em>split</em> with a call to the <code>u.split()</code> method. The result
+of calling <code>u.split()</code> is a new node that is used as the return value
+for <code>addRecursive(x,ui)</code>.
+<code>[listing: ods/BTree.addRecursive(x,ui)]</code></p>
+<p>The <code>addRecursive(x,ui)</code> method is a helper for the <code>add(x)</code> method, which
+calls <code>addRecursive(x,ri)</code> to insert <code>x</code> into the root of the <span
+class="math inline">\(B\)</span>-tree. If <code>addRecursive(x,ri)</code> causes the root to
+split, then a new root is created that takes as its children both the
+old root and the new node created by the splitting of the old root.
+<code>[listing: ods/BTree.add(x)]</code></p>
+<p>The <code>add(x)</code> method and its helper, <code>addRecursive(x,ui)</code>, can be analyzed
+in two phases:</p>
+<dl>
+<dt>Downward phase:</dt>
+<dd>
+<p>During the downward phase of the recursion, before <code>x</code> has
+been added, they access a sequence of <code>BTree</code> nodes and call
+<code>findIt(a,x)</code> on each node. As with the <code>find(x)</code> method, this takes
+<span class="math inline">\(O(\log_B <code>n</code>)\)</span> time in the
+external memory model and <span class="math inline">\(O(\log
+<code>n</code>)\)</span> time in the word-RAM model.</p>
+</dd>
+<dt>Upward phase:</dt>
+<dd>
+<p>During the upward phase of the recursion, after <code>x</code> has been
+added, these methods perform a sequence of at most <span
+class="math inline">\(O(\log_B <code>n</code>)\)</span> splits. Each split
+involves only three nodes, so this phase takes <span
+class="math inline">\(O(\log_B
+    <code>n</code>)\)</span> time in the external memory model. However,
+each split involves moving <span class="math inline">\(B\)</span> keys
+and children from one node to another, so in the word-RAM model, this
+takes <span class="math inline">\(O(B\log <code>n</code>)\)</span>
+time.</p>
+</dd>
+</dl>
+<p>Recall that the value of <span class="math inline">\(B\)</span> can
+be quite large, much larger than even <span class="math inline">\(\log
+<code>n</code>\)</span>. Therefore, in the word-RAM model, adding a value
+to a <span class="math inline">\(B\)</span>-tree can be much slower than
+adding into a balanced binary search tree. Later, in , we will show that
+the situation is not quite so bad; the amortized number of split
+operations done during an <code>add(x)</code> operation is constant. This shows
+that the (amortized) running time of the <code>add(x)</code> operation in the
+word-RAM model is <span class="math inline">\(O(B+\log
+<code>n</code>)\)</span>.</p>
+<h3 id="removal">Removal</h3>
+<p>The <code>remove(x)</code> operation in a <code>BTree</code> is, again, most easily
+implemented as a recursive method. Although the recursive implementation
+of <code>remove(x)</code> spreads the complexity across several methods, the
+overall process, which is illustrated in , is fairly straightforward. By
+shuffling keys around, removal is reduced to the problem of removing a
+value, <span class="math inline">\(<code>x</code>&#39;\)</span>, from some
+leaf, <code>u</code>. Removing <span
+class="math inline">\(<code>x</code>&#39;\)</span> may leave <code>u</code>
+with less than <span class="math inline">\(B-1\)</span> keys; this
+situation is called an <em>underflow</em>.</p>
+<figure>
+
+<figcaption>Removing the value 4 from a <span
+class="math inline">\(B\)</span>-tree results in one merge and one
+borrowing operation.</figcaption>
+</figure>
+<p>When an underflow occurs, <code>u</code> either borrows keys from, or is
+merged with, one of its siblings. If <code>u</code> is merged with a
+sibling, then <code>u</code>’s parent will now have one less child and one
+less key, which can cause <code>u</code>’s parent to underflow; this is
+again corrected by borrowing or merging, but merging may cause
+<code>u</code>’s grandparent to underflow. This process works its way back
+up to the root until there is no more underflow or until the root has
+its last two children merged into a single child. When the latter case
+occurs, the root is removed and its lone child becomes the new root.</p>
+<p>Next we delve into the details of how each of these steps is
+implemented. The first job of the <code>remove(x)</code> method is to find the
+element <code>x</code> that should be removed. If <code>x</code> is found in a
+leaf, then <code>x</code> is removed from this leaf. Otherwise, if
+<code>x</code> is found at <code>u.keys[i]</code> for some internal node, <code>u</code>,
+then the algorithm removes the smallest value, <code>x'</code>, in the
+subtree rooted at <code>u.children[i+1]</code>. The value <code>x'</code> is the smallest
+value stored in the <code>BTree</code> that is greater than <code>x</code>. The
+value of <code>x'</code> is then used to replace <code>x</code> in <code>u.keys[i]</code>.
+This process is illustrated in .</p>
+<figure>
+
+<figcaption>The <code>remove(x)</code> operation in a <code>BTree</code>. To remove the
+value <span class="math inline">\(<code>x</code>=10\)</span> we replace it
+with the the value <span class="math inline">\(<code>x'</code>=11\)</span>
+and remove 11 from the leaf that contains it.</figcaption>
+</figure>
+<p>The <code>removeRecursive(x,ui)</code> method is a recursive implementation of the preceding
+algorithm:
+<code>[listing: ods/BTree.removeRecursive(x,ui).removeSmallest(ui)]</code></p>
+<p>Note that, after recursively removing the value <code>x</code> from the
+<code>i</code>th child of <code>u</code>, <code>removeRecursive(x,ui)</code> needs to ensure that
+this child still has at least <span class="math inline">\(B-1\)</span>
+keys. In the preceding code, this is done using a method called
+<code>checkUnderflow(x,i)</code>, which checks for and corrects an underflow in the
+<code>i</code>th child of <code>u</code>. Let <code>w</code> be the <code>i</code>th
+child of <code>u</code>. If <code>w</code> has only <span
+class="math inline">\(B-2\)</span> keys, then this needs to be fixed.
+The fix requires using a sibling of <code>w</code>. This can be either
+child <span class="math inline">\(<code>i</code>+1\)</span> of <code>u</code>
+or child <span class="math inline">\(<code>i</code>-1\)</span> of
+<code>u</code>. We will usually use child <span
+class="math inline">\(<code>i</code>-1\)</span> of <code>u</code>, which is
+the sibling, <code>v</code>, of <code>w</code> directly to its left. The only
+time this doesn’t work is when <span
+class="math inline">\(<code>i</code>=0\)</span>, in which case we use the
+sibling directly to <code>w</code>’s right.
+<code>[listing: ods/BTree.checkUnderflow(u,i)]</code> In the following,
+we focus on the case when <span class="math inline">\(<code>i</code>\neq
+0\)</span> so that any underflow at the <code>i</code>th child of
+<code>u</code> will be corrected with the help of the <span
+class="math inline">\((<code>i</code>-1)\)</span>st child of <code>u</code>.
+The case <span class="math inline">\(<code>i</code>=0\)</span> is similar
+and the details can be found in the accompanying source code.</p>
+<p>To fix an underflow at node <code>w</code>, we need to find more keys
+(and possibly also children), for <code>w</code>. There are two ways to do
+this:</p>
+<dl>
+<dt>Borrowing:</dt>
+<dd>
+<p>If <code>w</code> has a sibling, <code>v</code>, with more than <span
+class="math inline">\(B-1\)</span> keys, then <code>w</code> can borrow
+some keys (and possibly also children) from <code>v</code>. More
+specifically, if <code>v</code> stores <code>size(v)</code> keys, then between them,
+<code>v</code> and <code>w</code> have a total of <span
+class="math display">\[B-2 + <code>size(w)</code> \ge 2B-2\]</span> keys. We can
+therefore shift keys from <code>v</code> to <code>w</code> so that each of
+<code>v</code> and <code>w</code> has at least <span
+class="math inline">\(B-1\)</span> keys. This process is illustrated in
+.</p>
+<figure>
+
+<figcaption>If <code>v</code> has more than <span
+class="math inline">\(B-1\)</span> keys, then <code>w</code> can borrow
+keys from <code>v</code>.</figcaption>
+</figure>
+</dd>
+<dt>Merging:</dt>
+<dd>
+<p>If <code>v</code> has only <span class="math inline">\(B-1\)</span>
+keys, we must do something more drastic, since <code>v</code> cannot afford
+to give any keys to <code>w</code>. Therefore, we <em>merge</em>
+<code>v</code> and <code>w</code> as shown in . The merge operation is the
+opposite of the split operation. It takes two nodes that contain a total
+of <span class="math inline">\(2B-3\)</span> keys and merges them into a
+single node that contains <span class="math inline">\(2B-2\)</span>
+keys. (The additional key comes from the fact that, when we merge
+<code>v</code> and <code>w</code>, their common parent, <code>u</code>, now has
+one less child and therefore needs to give up one of its keys.)</p>
+<figure>
+
+<figcaption>Merging two siblings <code>v</code> and <code>w</code> in a <span
+class="math inline">\(B\)</span>-tree (<span
+class="math inline">\(B=3\)</span>).</figcaption>
+</figure>
+</dd>
+</dl>
+<p><code>[listing: ods/BTree.checkUnderflowNonZero(u,i).checkUnderflowZero(u,i)]</code></p>
+<p>To summarize, the <code>remove(x)</code> method in a <span
+class="math inline">\(B\)</span>-tree follows a root to leaf path,
+removes a key <code>x'</code> from a leaf, <code>u</code>, and then performs
+zero or more merge operations involving <code>u</code> and its ancestors,
+and performs at most one borrowing operation. Since each merge and
+borrow operation involves modifying only three nodes, and only <span
+class="math inline">\(O(\log_B <code>n</code>)\)</span> of these operations
+occur, the entire process takes <span class="math inline">\(O(\log_B
+<code>n</code>)\)</span> time in the external memory model. Again, however,
+each merge and borrow operation takes <span
+class="math inline">\(O(B)\)</span> time in the word-RAM model, so (for
+now) the most we can say about the running time required by <code>remove(x)</code>
+in the word-RAM model is that it is <span
+class="math inline">\(O(B\log_B <code>n</code>)\)</span>.</p>
+<h3 id="amortized-analysis-of-b-trees">Amortized Analysis of <span
+class="math inline">\(B\)</span>-Trees</h3>
+<p>Thus far, we have shown that</p>
+<ol>
+<li><p>In the external memory model, the running time of <code>find(x)</code>,
+<code>add(x)</code>, and <code>remove(x)</code> in a <span
+class="math inline">\(B\)</span>-tree is <span
+class="math inline">\(O(\log_B <code>n</code>)\)</span>.</p></li>
+<li><p>In the word-RAM model, the running time of <code>find(x)</code> is <span
+class="math inline">\(O(\log <code>n</code>)\)</span> and the running time
+of <code>add(x)</code> and <code>remove(x)</code> is <span class="math inline">\(O(B\log
+<code>n</code>)\)</span>.</p></li>
+</ol>
+<p>The following lemma shows that, so far, we have overestimated the
+number of merge and split operations performed by <span
+class="math inline">\(B\)</span>-trees.</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>Starting with an empty <span
+class="math inline">\(B\)</span>-tree and performing any sequence of
+<span class="math inline">\(m\)</span> <code>add(x)</code> and <code>remove(x)</code>
+operations results in at most <span class="math inline">\(3m/2\)</span>
+splits, merges, and borrows being performed.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> The proof of this has already been sketched in for
+the special case in which <span class="math inline">\(B=2\)</span>. The
+lemma can be proven using a credit scheme, in which</p>
+<ol>
+<li><p>each split, merge, or borrow operation is paid for with two
+credits, i.e., a credit is removed each time one of these operations
+occurs; and</p></li>
+<li><p>at most three credits are created during any <code>add(x)</code> or
+<code>remove(x)</code> operation.</p></li>
+</ol>
+<p>Since at most <span class="math inline">\(3m\)</span> credits are
+ever created and each split, merge, and borrow is paid for with with two
+credits, it follows that at most <span
+class="math inline">\(3m/2\)</span> splits, merges, and borrows are
+performed. These credits are illustrated using the  symbol in Figures <a
+href="#fig:btree-split" data-reference-type="ref"
+data-reference="fig:btree-split">[fig:btree-split]</a>, <a
+href="#fig:btree-borrow" data-reference-type="ref"
+data-reference="fig:btree-borrow">[fig:btree-borrow]</a>, and <a
+href="#fig:btree-merge" data-reference-type="ref"
+data-reference="fig:btree-merge">[fig:btree-merge]</a>.</p>
+<p>To keep track of these credits the proof maintains the following
+<em>credit invariant</em>: Any non-root node with <span
+class="math inline">\(B-1\)</span> keys stores one credit and any node
+with <span class="math inline">\(2B-1\)</span> keys stores three
+credits. A node that stores at least <span
+class="math inline">\(B\)</span> keys and most <span
+class="math inline">\(2B-2\)</span> keys need not store any credits.
+What remains is to show that we can maintain the credit invariant and
+satisfy properties 1 and 2, above, during each <code>add(x)</code> and
+<code>remove(x)</code> operation.</p>
+<h5 id="adding">Adding:</h5>
+<p>The <code>add(x)</code> method does not perform any merges or borrows, so we
+need only consider split operations that occur as a result of calls to
+<code>add(x)</code>.</p>
+<p>Each split operation occurs because a key is added to a node,
+<code>u</code>, that already contains <span
+class="math inline">\(2B-1\)</span> keys. When this happens, <code>u</code>
+is split into two nodes, <code>u'</code> and <code>u''</code> having <span
+class="math inline">\(B-1\)</span> and <span
+class="math inline">\(B\)</span> keys, respectively. Prior to this
+operation, <code>u</code> was storing <span
+class="math inline">\(2B-1\)</span> keys, and hence three credits. Two
+of these credits can be used to pay for the split and the other credit
+can be given to <code>u'</code> (which has <span
+class="math inline">\(B-1\)</span> keys) to maintain the credit
+invariant. Therefore, we can pay for the split and maintain the credit
+invariant during any split.</p>
+<p>The only other modification to nodes that occur during an <code>add(x)</code>
+operation happens after all splits, if any, are complete. This
+modification involves adding a new key to some node <code>u'</code>. If,
+prior to this, <code>u'</code> had <span class="math inline">\(2B-2\)</span>
+children, then it now has <span class="math inline">\(2B-1\)</span>
+children and must therefore receive three credits. These are the only
+credits given out by the <code>add(x)</code> method.</p>
+<h5 id="removing">Removing:</h5>
+<p>During a call to <code>remove(x)</code>, zero or more merges occur and are
+possibly followed by a single borrow. Each merge occurs because two
+nodes, <code>v</code> and <code>w</code>, each of which had exactly <span
+class="math inline">\(B-1\)</span> keys prior to calling <code>remove(x)</code>
+were merged into a single node with exactly <span
+class="math inline">\(2B-2\)</span> keys. Each such merge therefore
+frees up two credits that can be used to pay for the merge.</p>
+<p>After any merges are performed, at most one borrow operation occurs,
+after which no further merges or borrows occur. This borrow operation
+only occurs if we remove a key from a leaf, <code>v</code>, that has <span
+class="math inline">\(B-1\)</span> keys. The node <code>v</code> therefore
+has one credit, and this credit goes towards the cost of the borrow.
+This single credit is not enough to pay for the borrow, so we create one
+credit to complete the payment.</p>
+<p>At this point, we have created one credit and we still need to show
+that the credit invariant can be maintained. In the worst case,
+<code>v</code>’s sibling, <code>w</code>, has exactly <span
+class="math inline">\(B\)</span> keys before the borrow so that,
+afterwards, both <code>v</code> and <code>w</code> have <span
+class="math inline">\(B-1\)</span> keys. This means that <code>v</code> and
+<code>w</code> each should be storing a credit when the operation is
+complete. Therefore, in this case, we create an additional two credits
+to give to <code>v</code> and <code>w</code>. Since a borrow happens at most
+once during a <code>remove(x)</code> operation, this means that we create at most
+three credits, as required.</p>
+<p>If the <code>remove(x)</code> operation does not include a borrow operation,
+this is because it finishes by removing a key from some node that, prior
+to the operation, had <span class="math inline">\(B\)</span> or more
+keys. In the worst case, this node had exactly <span
+class="math inline">\(B\)</span> keys, so that it now has <span
+class="math inline">\(B-1\)</span> keys and must be given one credit,
+which we create.</p>
+<p>In either case—whether the removal finishes with a borrow operation
+or not—at most three credits need to be created during a call to
+<code>remove(x)</code> to maintain the credit invariant and pay for all borrows and
+merges that occur. This completes the proof of the lemma. ◻</p>
+</div>
+<p>The purpose of is to show that, in the word-RAM model the cost of
+splits, merges and joins during a sequence of <span
+class="math inline">\(m\)</span> <code>add(x)</code> and <code>remove(x)</code> operations
+is only <span class="math inline">\(O(Bm)\)</span>. That is, the
+amortized cost per operation is only <span
+class="math inline">\(O(B)\)</span>, so the amortized cost of
+<code>add(x)</code> and <code>remove(x)</code> in the word-RAM model is <span
+class="math inline">\(O(B+\log <code>n</code>)\)</span>. This is summarized
+by the following pair of theorems:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong> (External Memory <span
+class="math inline">\(B\)</span>-Trees). <em>A <code>BTree</code> implements
+the <code>SSet</code> interface. In the external memory model, a <code>BTree</code>
+supports the operations <code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> in
+<span class="math inline">\(O(\log_B <code>n</code>)\)</span> time per
+operation.</em></p>
+</div>
+<div class="thm">
+<p><strong>Theorem 1.2</strong> (Word-RAM <span
+class="math inline">\(B\)</span>-Trees). <em>A <code>BTree</code> implements
+the <code>SSet</code> interface. In the word-RAM model, and ignoring the cost
+of splits, merges, and borrows, a <code>BTree</code> supports the operations
+<code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> in <span
+class="math inline">\(O(\log <code>n</code>)\)</span> time per operation.
+Furthermore, beginning with an empty <code>BTree</code>, any sequence of <span
+class="math inline">\(m\)</span> <code>add(x)</code> and <code>remove(x)</code> operations
+results in a total of <span class="math inline">\(O(Bm)\)</span> time
+spent performing splits, merges, and borrows.</em></p>
+</div>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>The external memory model of computation was introduced by Aggarwal
+and Vitter <span class="citation" data-cites="av88"></span>. It is
+sometimes also called the <em>I/O model</em> or the <em>disk access
+model</em>.</p>
+<p><span class="math inline">\(B\)</span>-Trees are to external memory
+searching what binary search trees are to internal memory searching.
+<span class="math inline">\(B\)</span>-trees were introduced by Bayer
+and McCreight <span class="citation" data-cites="bm70"></span> in 1970
+and, less than ten years later, the title of Comer’s ACM Computing
+Surveys article referred to them as ubiquitous <span class="citation"
+data-cites="c79"></span>.</p>
+<p>Like binary search trees, there are many variants of <span
+class="math inline">\(B\)</span>-Trees, including <span
+class="math inline">\(B^+\)</span>-trees, <span
+class="math inline">\(B^*\)</span>-trees, and counted <span
+class="math inline">\(B\)</span>-trees. <span
+class="math inline">\(B\)</span>-trees are indeed ubiquitous and are the
+primary data structure in many file systems, including Apple’s HFS+,
+Microsoft’s NTFS, and Linux’s Ext4; every major database system; and
+key-value stores used in cloud computing. Graefe’s recent survey <span
+class="citation" data-cites="g10"></span> provides a 200+ page overview
+of the many modern applications, variants, and optimizations of <span
+class="math inline">\(B\)</span>-trees.</p>
+<p><span class="math inline">\(B\)</span>-trees implement the
+<code>SSet</code> interface. If only the <code>USet</code> interface is needed, then
+external memory hashing could be used as an alternative to <span
+class="math inline">\(B\)</span>-trees. External memory hashing schemes
+do exist; see, for example, Jensen and Pagh <span class="citation"
+data-cites="jp08"></span>. These schemes implement the <code>USet</code>
+operations in <span class="math inline">\(O(1)\)</span> expected time in
+the external memory model. However, for a variety of reasons, many
+applications still use <span class="math inline">\(B\)</span>-trees even
+though they only require <code>USet</code> operations.</p>
+<p>One reason <span class="math inline">\(B\)</span>-trees are such a
+popular choice is that they often perform better than their <span
+class="math inline">\(O(\log_B <code>n</code>)\)</span> running time bounds
+suggest. The reason for this is that, in external memory settings, the
+value of <span class="math inline">\(B\)</span> is typically quite
+large—in the hundreds or even thousands. This means that 99% or even
+99.9% of the data in a <span class="math inline">\(B\)</span>-tree is
+stored in the leaves. In a database system with a large memory, it may
+be possible to cache all the internal nodes of a <span
+class="math inline">\(B\)</span>-tree in RAM, since they only represent
+1% or 0.1% of the total data set. When this happens, this means that a
+search in a <span class="math inline">\(B\)</span>-tree involves a very
+fast search in RAM, through the internal nodes, followed by a single
+external memory access to retrieve a leaf.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>Show what happens when the keys
+1.5 and then 7.5 are added to the <span
+class="math inline">\(B\)</span>-tree in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Show what happens when the keys 3
+and then 4 are removed from the <span
+class="math inline">\(B\)</span>-tree in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>What is the maximum number of
+internal nodes in a <span class="math inline">\(B\)</span>-tree that
+stores <code>n</code> keys (as a function of <code>n</code> and <span
+class="math inline">\(B\)</span>)?</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>The introduction to this chapter
+claims that <span class="math inline">\(B\)</span>-trees only need an
+internal memory of size <span
+class="math inline">\(O(B+\log_B<code>n</code>)\)</span>. However, the
+implementation given here actually requires more memory.</em></p>
+<ol>
+<li><p><em>Show that the implementation of the <code>add(x)</code> and
+<code>remove(x)</code> methods given in this chapter use an internal memory
+proportional to <span class="math inline">\(B\log_B
+<code>n</code>\)</span>.</em></p></li>
+<li><p><em>Describe how these methods could be modified in order to
+reduce their memory consumption to <span class="math inline">\(O(B +
+\log_B <code>n</code>)\)</span>.</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Draw the credits used in the proof
+of on the trees in Figures <a href="#fig:btree-add"
+data-reference-type="ref"
+data-reference="fig:btree-add">[fig:btree-add]</a> and <a
+href="#fig:btree-remove-full" data-reference-type="ref"
+data-reference="fig:btree-remove-full">[fig:btree-remove-full]</a>.
+Verify that (with three additional credits) it is possible to pay for
+the splits, merges, and borrows and maintain the credit
+invariant.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Design a modified version of a
+<span class="math inline">\(B\)</span>-tree in which nodes can have
+anywhere from <span class="math inline">\(B\)</span> up to <span
+class="math inline">\(3B\)</span> children (and hence <span
+class="math inline">\(B-1\)</span> up to <span
+class="math inline">\(3B-1\)</span> keys). Show that this new version of
+<span class="math inline">\(B\)</span>-trees performs only <span
+class="math inline">\(O(m/B)\)</span> splits, merges, and borrows during
+a sequence of <span class="math inline">\(m\)</span> operations. (Hint:
+For this to work, you will have to be more agressive with merging,
+sometimes merging two nodes before it is strictly necessary.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>In this exercise, you will design
+a modified method of splitting and merging in <span
+class="math inline">\(B\)</span>-trees that asymptotically reduces the
+number of splits, borrows and merges by considering up to three nodes at
+a time.</em></p>
+<ol>
+<li><p><em>Let <code>u</code> be an overfull node and let <code>v</code> be a
+sibling immediately to the right of <code>u</code>. There are two ways to
+fix the overflow at <code>u</code>:</em></p>
+<ol>
+<li><p><em><code>u</code> can give some of its keys to <code>v</code>;
+or</em></p></li>
+<li><p><em><code>u</code> can be split and the keys of <code>u</code> and
+<code>v</code> can be evenly distributed among <code>u</code>, <code>v</code>,
+and the newly created node, <code>w</code>.</em></p></li>
+</ol>
+<p><em>Show that this can always be done in such a way that, after the
+operation, each of the (at most 3) affected nodes has at least <span
+class="math inline">\(B+\alpha B\)</span> keys and at most <span
+class="math inline">\(2B-\alpha B\)</span> keys, for some constant <span
+class="math inline">\(\alpha &gt; 0\)</span>.</em></p></li>
+<li><p><em>Let <code>u</code> be an underfull node and let <code>v</code> and
+<code>w</code> be siblings of <code>u</code> There are two ways to fix the
+underflow at <code>u</code>:</em></p>
+<ol>
+<li><p><em>keys can be redistributed among <code>u</code>, <code>v</code>, and
+<code>w</code>; or</em></p></li>
+<li><p><em><code>u</code>, <code>v</code>, and <code>w</code> can be merged into
+two nodes and the keys of <code>u</code>, <code>v</code>, and <code>w</code> can
+be redistributed amongst these nodes.</em></p></li>
+</ol>
+<p><em>Show that this can always be done in such a way that, after the
+operation, each of the (at most 3) affected nodes has at least <span
+class="math inline">\(B+\alpha B\)</span> keys and at most <span
+class="math inline">\(2B-\alpha B\)</span> keys, for some constant <span
+class="math inline">\(\alpha &gt; 0\)</span>.</em></p></li>
+<li><p><em>Show that, with these modifications, the number of merges,
+borrows, and splits that occur during <span
+class="math inline">\(m\)</span> operations is <span
+class="math inline">\(O(m/B)\)</span>.</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>A <span
+class="math inline">\(B^+\)</span>-tree, illustrated in stores every key
+in a leaf and keeps its leaves stored as a doubly-linked list. As usual,
+each leaf stores between <span class="math inline">\(B-1\)</span> and
+<span class="math inline">\(2B-1\)</span> keys. Above this list is a
+standard <span class="math inline">\(B\)</span>-tree that stores the
+largest value from each leaf but the last.</em></p>
+<ol>
+<li><p><em>Describe fast implementations of <code>add(x)</code>, <code>remove(x)</code>,
+and <code>find(x)</code> in a <span
+class="math inline">\(B^+\)</span>-tree.</em></p></li>
+<li><p><em>Explain how to efficiently implement the <code>findRange(x,y)</code> method,
+that reports all values greater than <code>x</code> and less than or equal
+to <code>y</code>, in a <span
+class="math inline">\(B^+\)</span>-tree.</em></p></li>
+<li><p><em>Implement a class, <code>BPlusTree</code>, that implements <code>find(x)</code>,
+<code>add(x)</code>, <code>remove(x)</code>, and <code>findRange(x,y)</code>.</em></p></li>
+<li><p><em><span class="math inline">\(B^+\)</span>-trees duplicate some
+of the keys because they are stored both in the <span
+class="math inline">\(B\)</span>-tree and in the list. Explain why this
+duplication does not add up to much for large values of <span
+class="math inline">\(B\)</span>.</em></p></li>
+</ol>
+</div>
+<figure>
+
+<figcaption>A <span class="math inline">\(B^+\)</span>-tree is a <span
+class="math inline">\(B\)</span>-tree on top of a doubly-linked list of
+blocks.</figcaption>
+</figure>

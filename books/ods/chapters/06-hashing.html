@@ -1,0 +1,1176 @@
+<h1 id="hash-tables">Hash Tables</h1>
+<p>Hash tables are an efficient method of storing a small number,
+<code>n</code>, of integers from a large range <span
+class="math inline">\(U=\{0,\ldots,2^{<code>w</code>}-1\}\)</span>. The term
+<em>hash table</em> includes a broad range of data structures. The first
+part of this chapter focuses on two of the most common implementations
+of hash tables: hashing with chaining and linear probing.</p>
+<p>Very often hash tables store types of data that are not integers. In
+this case, an integer <em>hash code</em> is associated with each data
+item and is used in the hash table. The second part of this chapter
+discusses how such hash codes are generated.</p>
+<p>Some of the methods used in this chapter require random choices of
+integers in some specific range. In the code samples, some of these
+“random” integers are hard-coded constants. These constants were
+obtained using random bits generated from atmospheric noise.</p>
+<h2 id="code2-hashing-with-chaining"><code>ChainedHashTable</code>: Hashing with
+Chaining</h2>
+<p>A <code>ChainedHashTable</code> data structure uses <em>hashing with chaining</em> to
+store data as an array, <code>t</code>, of lists. An integer, <code>n</code>,
+keeps track of the total number of items in all lists (see ):
+<code>[listing: ods/ChainedHashTable.t.n]</code></p>
+<figure>
+<div class="center">
+<img src="figs/chainedhashtable" />
+</div>
+<figcaption>An example of a <code>ChainedHashTable</code> with <span
+class="math inline">\(<code>n</code>=14\)</span> and <span
+class="math inline">\(<code>t.length</code>=16\)</span>. In this example <span
+class="math inline">\(<code>hash(x)</code>=6\)</span></figcaption>
+</figure>
+<p>The <em>hash value</em> of a data item <code>x</code>, denoted <code>hash(x)</code>
+is a value in the range <span
+class="math inline">\(\{0,\ldots,<code>t.length</code>-1\}\)</span>. All items with
+hash value <code>i</code> are stored in the list at <code>t[i]</code>. To ensure
+that lists don’t get too long, we maintain the invariant <span
+class="math display">\[<code>n</code> \le <code>t.length</code>\]</span> so that the
+average number of elements stored in one of these lists is <span
+class="math inline">\(<code>n</code>/<code>t.length</code> \le 1\)</span>.</p>
+<p>To add an element, <code>x</code>, to the hash table, we first check if
+the length of <code>t</code> needs to be increased and, if so, we grow
+<code>t</code>. With this out of the way we hash <code>x</code> to get an
+integer, <code>i</code>, in the range <span
+class="math inline">\(\{0,\ldots,<code>t.length</code>-1\}\)</span>, and we append
+<code>x</code> to the list <code>t[i]</code>:
+<code>[listing: ods/ChainedHashTable.add(x)]</code> Growing the table,
+if necessary, involves doubling the length of <code>t</code> and reinserting
+all elements into the new table. This strategy is exactly the same as
+the one used in the implementation of <code>ArrayStack</code> and the same result
+applies: The cost of growing is only constant when amortized over a
+sequence of insertions (see  on page ).</p>
+<p>Besides growing, the only other work done when adding a new value
+<code>x</code> to a <code>ChainedHashTable</code> involves appending <code>x</code> to the list
+<code>t[hash(x)]</code>. For any of the list implementations described in Chapters <a
+href="#chap:arrays" data-reference-type="ref"
+data-reference="chap:arrays">[chap:arrays]</a> or <a
+href="#chap:linkedlists" data-reference-type="ref"
+data-reference="chap:linkedlists">[chap:linkedlists]</a>, this takes
+only constant time.</p>
+<p>To remove an element, <code>x</code>, from the hash table, we iterate
+over the list <code>t[hash(x)]</code> until we find <code>x</code> so that we can remove
+it: <code>[listing: ods/ChainedHashTable.remove(x)]</code> This takes
+<span class="math inline">\(O(<code>n</code>_{<code>hash(x)</code>})\)</span> time,
+where <span class="math inline">\(<code>n</code>_{<code>i</code>}\)</span>
+denotes the length of the list stored at <code>t[i]</code>.</p>
+<p>Searching for the element <code>x</code> in a hash table is similar. We
+perform a linear search on the list <code>t[hash(x)]</code>:
+<code>[listing: ods/ChainedHashTable.find(x)]</code> Again, this takes
+time proportional to the length of the list <code>t[hash(x)]</code>.</p>
+<p>The performance of a hash table depends critically on the choice of
+the hash function. A good hash function will spread the elements evenly
+among the <code>t.length</code> lists, so that the expected size of the list
+<code>t[hash(x)]</code> is <span class="math inline">\(O(<code>n</code>/<code>t.length)</code> =
+O(1)\)</span>. On the other hand, a bad hash function will hash all
+values (including <code>x</code>) to the same table location, in which case
+the size of the list <code>t[hash(x)]</code> will be <code>n</code>. In the next section
+we describe a good hash function.</p>
+<h3 id="multiplicative-hashing">Multiplicative Hashing</h3>
+<p>Multiplicative hashing is an efficient method of generating hash
+values based on modular arithmetic (discussed in ) and integer division.
+It uses the <span class="math inline">\(\ddiv\)</span> operator, which
+calculates the integral part of a quotient, while discarding the
+remainder. Formally, for any integers <span class="math inline">\(a\ge
+0\)</span> and <span class="math inline">\(b\ge 1\)</span>, <span
+class="math inline">\(a\ddiv b = \lfloor
+a/b\rfloor\)</span>.</p>
+<p>In multiplicative hashing, we use a hash table of size <span
+class="math inline">\(2^{<code>d</code>}\)</span> for some integer
+<code>d</code> (called the <em>dimension</em>). The formula for hashing an
+integer <span
+class="math inline">\(<code>x</code>\in\{0,\ldots,2^{<code>w</code>}-1\}\)</span>
+is <span class="math display">\[<code>hash(x)</code> =
+((<code>z</code>\cdot<code>x</code>) \bmod 2^{<code>w</code>}) \ddiv
+2^{<code>w</code>-<code>d</code>} \enspace .\]</span> Here, <code>z</code> is a
+randomly chosen <em>odd</em> integer in <span
+class="math inline">\(\{1,\ldots,2^{<code>w</code>}-1\}\)</span>. This hash
+function can be realized very efficiently by observing that, by default,
+operations on integers are already done modulo <span
+class="math inline">\(2^{<code>w</code>}\)</span> where <span
+class="math inline">\(<code>w</code>\)</span> is the number of bits in an
+integer.<a href="#fn1" class="footnote-ref" id="fnref1"
+role="doc-noteref"><sup>1</sup></a> (See .) Furthermore, integer
+division by <span
+class="math inline">\(2^{<code>w</code>-<code>d</code>}\)</span> is equivalent
+to dropping the rightmost <span
+class="math inline">\(<code>w</code>-<code>d</code>\)</span> bits in a binary
+representation (which is implemented by shifting the bits right by <span
+class="math inline">\(<code>w</code>-<code>d</code>\)</span> using the
+<code>&gt;&gt;</code> operator).
+<code>[listing: ods/ChainedHashTable.hash(x)]</code></p>
+<figure>
+<div class="center">
+
+</div>
+<figcaption>The operation of the multiplicative hash function with <span
+class="math inline">\(<code>w</code>=32\)</span> and <span
+class="math inline">\(<code>d</code>=8\)</span>.</figcaption>
+</figure>
+<p>The following lemma, whose proof is deferred until later in this
+section, shows that multiplicative hashing does a good job of avoiding
+collisions:</p>
+<div class="lem">
+<p><strong>Lemma 1.1</strong>. <em>Let <code>x</code> and <code>y</code> be
+any two values in <span
+class="math inline">\(\{0,\ldots,2^{<code>w</code>}-1\}\)</span> with <span
+class="math inline">\(<code>x</code>\neq <code>y</code>\)</span>. Then <span
+class="math inline">\(\Pr\{<code>hash(x)</code>=<code>hash(y)</code>\} \le
+2/2^{<code>d</code>}\)</span>.</em></p>
+</div>
+<p>With , the performance of <code>remove(x)</code>, and <code>find(x)</code> are easy to
+analyze:</p>
+<div class="lem">
+<p><strong>Lemma 1.2</strong>. <em>For any data value <code>x</code>, the
+expected length of the list <code>t[hash(x)]</code> is at most <span
+class="math inline">\(<code>n</code>_{<code>x</code>} + 2\)</span>, where
+<span class="math inline">\(<code>n</code>_{<code>x</code>}\)</span> is the
+number of occurrences of <code>x</code> in the hash table.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> Let <span class="math inline">\(S\)</span> be the
+(multi-)set of elements stored in the hash table that are not equal to
+<code>x</code>. For an element <span class="math inline">\(<code>y</code>\in
+S\)</span>, define the indicator variable <span
+class="math display">\[I_{<code>y</code>} = \left\{\begin{array}{ll}
+       1 &amp; \mbox{if $<code>hash(x)</code>=<code>hash(y)</code>$} \\
+       0 &amp; \mbox{otherwise}
+       \end{array}\right.\]</span> and notice that, by , <span
+class="math inline">\(\E[I_{<code>y</code>}] \le
+  2/2^{<code>d</code>}=2/<code>t.length</code>\)</span>. The expected length of the
+list <code>t[hash(x)]</code> is given by <span
+class="math display">\[\begin{eqnarray*}
+   \E\left[<code>t[hash(x)].size()</code>\right] &amp;=&amp;
+\E\left[<code>n</code>_{<code>x</code>} + \sum_{<code>y</code>\in S}
+I_{<code>y</code>}\right] \\
+    &amp;=&amp; <code>n</code>_{<code>x</code>} + \sum_{<code>y</code>\in S} \E
+[I_{<code>y</code>} ] \\
+    &amp;\le&amp; <code>n</code>_{<code>x</code>} + \sum_{<code>y</code>\in S}
+2/<code>t.length</code> \\
+    &amp;\le&amp; <code>n</code>_{<code>x</code>} + \sum_{<code>y</code>\in S}
+2/<code>n</code> \\
+    &amp;\le&amp; <code>n</code>_{<code>x</code>} +
+(<code>n</code>-<code>n</code>_{<code>x</code>})2/<code>n</code> \\
+    &amp;\le&amp; <code>n</code>_{<code>x</code>} + 2 \enspace ,
+\end{eqnarray*}\]</span> as required. ◻</p>
+</div>
+<p>Now, we want to prove , but first we need a result from number
+theory. In the following proof, we use the notation <span
+class="math inline">\((b_r,\ldots,b_0)_2\)</span> to denote <span
+class="math inline">\(\sum_{i=0}^r b_i2^i\)</span>, where each <span
+class="math inline">\(b_i\)</span> is a bit, either 0 or 1. In other
+words, <span class="math inline">\((b_r,\ldots,b_0)_2\)</span> is the
+integer whose binary representation is given by <span
+class="math inline">\(b_r,\ldots,b_0\)</span>. We use <span
+class="math inline">\(\star\)</span> to denote a bit of unknown
+value.</p>
+<div class="lem">
+<p><strong>Lemma 1.3</strong>. <em>Let <span
+class="math inline">\(S\)</span> be the set of odd integers in <span
+class="math inline">\(\{1,\ldots,2^{<code>w</code>}-1\}\)</span>; let <span
+class="math inline">\(q\)</span> and <span
+class="math inline">\(i\)</span> be any two elements in <span
+class="math inline">\(S\)</span>. Then there is exactly one value <span
+class="math inline">\(<code>z</code>\in S\)</span> such that <span
+class="math inline">\(<code>z</code>q\bmod 2^{<code>w</code>} =
+i\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> Since the number of choices for <span
+class="math inline">\(<code>z</code>\)</span> and <span
+class="math inline">\(i\)</span> is the same, it is sufficient to prove
+that there is <em>at most</em> one value <span
+class="math inline">\(<code>z</code>\in S\)</span> that satisfies <span
+class="math inline">\(<code>z</code>q\bmod 2^{<code>w</code>} =
+i\)</span>.</p>
+<p>Suppose, for the sake of contradiction, that there are two such
+values <code>z</code> and <code>z'</code>, with <span
+class="math inline">\(<code>z</code>&gt;<code>z</code>&#39;\)</span>. Then
+<span class="math display">\[<code>z</code>q\bmod 2^{<code>w</code>} =
+<code>z</code>&#39;q \bmod 2^{<code>w</code>} = i\]</span> So <span
+class="math display">\[(<code>z</code>-<code>z</code>&#39;)q\bmod
+2^{<code>w</code>} = 0\]</span> But this means that <span
+class="math display">\[\begin{equation}
+    (<code>z</code>-<code>z</code>&#39;)q = k 2^{<code>w</code>}
+\eqlabel{factors}
+\end{equation}\]</span> for some integer <span
+class="math inline">\(k\)</span>. Thinking in terms of binary numbers,
+we have <span class="math display">\[(<code>z</code>-<code>z</code>&#39;)q =
+k\cdot(1,\underbrace{0,\ldots,0}_{<code>w</code>})_2 \enspace ,\]</span> so
+that the <code>w</code> trailing bits in the binary representation of <span
+class="math inline">\((<code>z</code>-<code>z</code>&#39;)q\)</span> are all
+0’s.</p>
+<p>Furthermore <span class="math inline">\(k\neq 0\)</span>, since <span
+class="math inline">\(q\neq 0\)</span> and <span
+class="math inline">\(<code>z</code>-<code>z</code>&#39;\neq 0\)</span>. Since
+<span class="math inline">\(q\)</span> is odd, it has no trailing 0’s in
+its binary representation: <span class="math display">\[q =
+(\star,\ldots,\star,1)_2 \enspace .\]</span> Since <span
+class="math inline">\(|<code>z</code>-<code>z</code>&#39;| &lt;
+2^{<code>w</code>}\)</span>, <span
+class="math inline">\(<code>z</code>-<code>z</code>&#39;\)</span> has fewer
+than <code>w</code> trailing 0’s in its binary representation: <span
+class="math display">\[<code>z</code>-<code>z</code>&#39; =
+(\star,\ldots,\star,1,\underbrace{0,\ldots,0}_{&lt;<code>w</code>})_2
+      \enspace .\]</span> Therefore, the product <span
+class="math inline">\((<code>z</code>-<code>z</code>&#39;)q\)</span> has fewer
+than <code>w</code> trailing 0’s in its binary representation: <span
+class="math display">\[(<code>z</code>-<code>z</code>&#39;)q =
+(\star,\cdots,\star,1,\underbrace{0,\ldots,0}_{&lt;<code>w</code>})_2
+    \enspace .\]</span> Therefore <span
+class="math inline">\((<code>z</code>-<code>z</code>&#39;)q\)</span> cannot
+satisfy , yielding a contradiction and completing the proof. ◻</p>
+</div>
+<p>The utility of comes from the following observation: If <code>z</code>
+is chosen uniformly at random from <span
+class="math inline">\(S\)</span>, then <code>zt</code> is uniformly
+distributed over <span class="math inline">\(S\)</span>. In the
+following proof, it helps to think of the binary representation of
+<code>z</code>, which consists of <span
+class="math inline">\(<code>w</code>-1\)</span> random bits followed by a
+1.</p>
+<div class="proof">
+<p><em>Proof of .</em> First we note that the condition <span
+class="math inline">\(<code>hash(x)</code>=<code>hash(y)</code>\)</span> is equivalent to
+the statement “the highest-order <code>d</code> bits of <span
+class="math inline">\(<code>z</code>
+<code>x</code>\bmod2^{<code>w</code>}\)</span> and the highest-order
+<code>d</code> bits of <span class="math inline">\(<code>z</code>
+<code>y</code>\bmod 2^{<code>w</code>}\)</span> are the same.” A necessary
+condition of that statement is that the highest-order <code>d</code> bits
+in the binary representation of <span
+class="math inline">\(<code>z</code>(<code>x</code>-<code>y</code>)\bmod
+2^{<code>w</code>}\)</span> are either all 0’s or all 1’s. That is, <span
+class="math display">\[\begin{equation}
+      <code>z</code>(<code>x</code>-<code>y</code>)\bmod 2^{<code>w</code>} =
+      (\underbrace{0,\ldots,0}_{<code>d</code>},\underbrace{\star,\ldots,\star}_{<code>w</code>-<code>d</code>})_2
+      \eqlabel{all-zeros}
+\end{equation}\]</span> when <span
+class="math inline">\(<code>zx</code>\bmod 2^{<code>w</code>} &gt;
+<code>zy</code>\bmod 2^{<code>w</code>}\)</span> or <span
+class="math display">\[\begin{equation}
+      <code>z</code>(<code>x</code>-<code>y</code>)\bmod 2^{<code>w</code>} =
+      (\underbrace{1,\ldots,1}_{<code>d</code>},\underbrace{\star,\ldots,\star}_{<code>w</code>-<code>d</code>})_2
+       \enspace .
+      \eqlabel{all-ones}
+\end{equation}\]</span> when <span
+class="math inline">\(<code>zx</code>\bmod 2^{<code>w</code>} &lt;
+<code>zy</code>\bmod 2^{<code>w</code>}\)</span>. Therefore, we only have to
+bound the probability that <span
+class="math inline">\(<code>z</code>(<code>x</code>-<code>y</code>)\bmod
+2^{<code>w</code>}\)</span> looks like or .</p>
+<p>Let <span class="math inline">\(q\)</span> be the unique odd integer
+such that <span class="math inline">\((<code>x</code>-<code>y</code>)\bmod
+  2^{<code>w</code>}=q2^r\)</span> for some integer <span
+class="math inline">\(r\ge 0\)</span>. By , the binary representation of
+<span class="math inline">\(<code>z</code>q\bmod
+  2^{<code>w</code>}\)</span> has <span
+class="math inline">\(<code>w</code>-1\)</span> random bits, followed by a
+1: <span class="math display">\[<code>z</code>q\bmod 2^{<code>w</code>}  =
+(\underbrace{b_{<code>w</code>-1},\ldots,b_{1}}_{<code>w</code>-1},1)_2\]</span>
+Therefore, the binary representation of <span
+class="math inline">\(<code>z</code>(<code>x</code>-<code>y</code>)\bmod
+2^{<code>w</code>}=<code>z</code>q2^r\bmod 2^{<code>w</code>}\)</span> has <span
+class="math inline">\(<code>w</code>-r-1\)</span> random bits, followed by
+a 1, followed by <span class="math inline">\(r\)</span> 0’s: <span
+class="math display">\[<code>z</code>(<code>x</code>-<code>y</code>)\bmod
+2^{<code>w</code>}  =
+  <code>z</code>q2^{r}\bmod 2^{<code>w</code>} =
+      (\underbrace{b_{<code>w</code>-r-1},\ldots,b_{1}}_{<code>w</code>-r-1},1,\underbrace{0,0,\ldots,0}_{r})_2\]</span>
+We can now finish the proof: If <span class="math inline">\(r &gt;
+<code>w</code>-<code>d</code>\)</span>, then the <code>d</code> higher order bits
+of <span class="math inline">\(<code>z</code>(<code>x</code>-<code>y</code>)\bmod
+2^{<code>w</code>}\)</span> contain both 0’s and 1’s, so the probability
+that <span
+class="math inline">\(<code>z</code>(<code>x</code>-<code>y</code>)\bmod
+2^{<code>w</code>}\)</span> looks like or is 0. If <span
+class="math inline">\(<code>r</code>=<code>w</code>-<code>d</code>\)</span>, then
+the probability of looking like is 0, but the probability of looking
+like is <span
+class="math inline">\(1/2^{<code>d</code>-1}=2/2^{<code>d</code>}\)</span>
+(since we must have <span
+class="math inline">\(b_1,\ldots,b_{d-1}=1,\ldots,1\)</span>). If <span
+class="math inline">\(r &lt; <code>w</code>-<code>d</code>\)</span>, then we
+must have <span
+class="math inline">\(b_{<code>w</code>-r-1},\ldots,b_{<code>w</code>-r-<code>d</code>}=0,\ldots,0\)</span>
+or <span
+class="math inline">\(b_{<code>w</code>-r-1},\ldots,b_{<code>w</code>-r-<code>d</code>}=1,\ldots,1\)</span>.
+The probability of each of these cases is <span
+class="math inline">\(1/2^{<code>d</code>}\)</span> and they are mutually
+exclusive, so the probability of either of these cases is <span
+class="math inline">\(2/2^{<code>d</code>}\)</span>. This completes the
+proof. ◻</p>
+</div>
+<h3 id="summary">Summary</h3>
+<p>The following theorem summarizes the performance of a <code>ChainedHashTable</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.1</strong>. <em>A <code>ChainedHashTable</code> implements the
+<code>USet</code> interface. Ignoring the cost of calls to <code>grow()</code>, a
+<code>ChainedHashTable</code> supports the operations <code>add(x)</code>, <code>remove(x)</code>, and
+<code>find(x)</code> in <span class="math inline">\(O(1)\)</span> expected time
+per operation.</em></p>
+<p><em>Furthermore, beginning with an empty <code>ChainedHashTable</code>, any sequence of
+<span class="math inline">\(m\)</span> <code>add(x)</code> and <code>remove(x)</code>
+operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls to
+<code>grow()</code>.</em></p>
+</div>
+<h2 id="code306-linear-probing"><code>LinearHashTable</code>: Linear Probing</h2>
+<p>The <code>ChainedHashTable</code> data structure uses an array of lists, where the
+<code>i</code>th list stores all elements <code>x</code> such that <span
+class="math inline">\(<code>hash(x)</code>=<code>i</code>\)</span>. An alternative,
+called <em>open addressing</em> is to store the elements directly in an
+array, <code>t</code>, with each array location in <code>t</code> storing at
+most one value. This approach is taken by the <code>LinearHashTable</code> described in
+this section. In some places, this data structure is described as
+<em>open addressing with linear probing</em>.</p>
+<p>The main idea behind a <code>LinearHashTable</code> is that we would, ideally, like to
+store the element <code>x</code> with hash value <code>i=hash(x)</code> in the table
+location <code>t[i]</code>. If we cannot do this (because some element is
+already stored there) then we try to store it at location <span
+class="math inline">\(<code>t</code>[(<code>i</code>+1)\bmod<code>t.length</code>]\)</span>;
+if that’s not possible, then we try <span
+class="math inline">\(<code>t</code>[(<code>i</code>+2)\bmod<code>t.length</code>]\)</span>,
+and so on, until we find a place for <code>x</code>.</p>
+<p>There are three types of entries stored in <code>t</code>:</p>
+<ol>
+<li><p>data values: actual values in the <code>USet</code> that we are
+representing;</p></li>
+<li><p><code>null</code> values: at array locations where no data has ever
+been stored; and</p></li>
+<li><p><code>del</code> values: at array locations where data was once stored
+but that has since been deleted.</p></li>
+</ol>
+<p>In addition to the counter, <code>n</code>, that keeps track of the
+number of elements in the <code>LinearHashTable</code>, a counter, <code>q</code>, keeps
+track of the number of elements of Types 1 and 3. That is, <code>q</code>
+is equal to <code>n</code> plus the number of <code>del</code> values in
+<code>t</code>. To make this work efficiently, we need <code>t</code> to be
+considerably larger than <code>q</code>, so that there are lots of
+<code>null</code> values in <code>t</code>. The operations on a <code>LinearHashTable</code>
+therefore maintain the invariant that <span
+class="math inline">\(<code>t.length</code>\ge 2<code>q</code>\)</span>.</p>
+<p>To summarize, a <code>LinearHashTable</code> contains an array, <code>t</code>, that
+stores data elements, and integers <code>n</code> and <code>q</code> that keep
+track of the number of data elements and non-<code>null</code> values of
+<code>t</code>, respectively. Because many hash functions only work for
+table sizes that are a power of 2, we also keep an integer <code>d</code>
+and maintain the invariant that <span
+class="math inline">\(<code>t.length</code>=2^<code>d</code>\)</span>.
+<code>[listing: ods/LinearHashTable.t.n.q.d]</code></p>
+<p>The <code>find(x)</code> operation in a <code>LinearHashTable</code> is simple. We start at
+array entry <code>t[i]</code> where <span
+class="math inline">\(<code>i</code>=<code>hash(x)</code>\)</span> and search
+entries <code>t[i]</code>, <span
+class="math inline">\(<code>t</code>[(<code>i</code>+1)\bmod
+<code>t.length</code>]\)</span>, <span
+class="math inline">\(<code>t</code>[(<code>i</code>+2)\bmod
+<code>t.length</code>]\)</span>, and so on, until we find an index <code>i'</code>
+such that, either, <code>t[i']=x</code>, or <code>t[i']=null</code>. In the former case we
+return <code>t[i']</code>. In the latter case, we conclude that <code>x</code> is
+not contained in the hash table and return <code>null</code>.
+<code>[listing: ods/LinearHashTable.find(x)]</code></p>
+<p>The <code>add(x)</code> operation is also fairly easy to implement. After
+checking that <code>x</code> is not already stored in the table (using
+<code>find(x)</code>), we search <code>t[i]</code>, <span
+class="math inline">\(<code>t</code>[(<code>i</code>+1)\bmod
+<code>t.length</code>]\)</span>, <span
+class="math inline">\(<code>t</code>[(<code>i</code>+2)\bmod
+<code>t.length</code>]\)</span>, and so on, until we find a <code>null</code> or
+<code>del</code> and store <code>x</code> at that location, increment
+<code>n</code>, and <code>q</code>, if appropriate.
+<code>[listing: ods/LinearHashTable.add(x)]</code></p>
+<p>By now, the implementation of the <code>remove(x)</code> operation should be
+obvious. We search <code>t[i]</code>, <span
+class="math inline">\(<code>t</code>[(<code>i</code>+1)\bmod
+<code>t.length</code>]\)</span>, <span
+class="math inline">\(<code>t</code>[(<code>i</code>+2)\bmod
+<code>t.length</code>]\)</span>, and so on until we find an index <code>i'</code> such
+that <code>t[i']=x</code> or <code>t[i']=null</code>. In the former case, we set <code>t[i']=del</code>
+and return <code>true</code>. In the latter case we conclude that <code>x</code>
+was not stored in the table (and therefore cannot be deleted) and return
+<code>false</code>. <code>[listing: ods/LinearHashTable.remove(x)]</code></p>
+<p>The correctness of the <code>find(x)</code>, <code>add(x)</code>, and <code>remove(x)</code>
+methods is easy to verify, though it relies on the use of <code>del</code>
+values. Notice that none of these operations ever sets a non-<code>null</code>
+entry to <code>null</code>. Therefore, when we reach an index <code>i'</code> such
+that <code>t[i']=null</code>, this is a proof that the element, <code>x</code>, that we
+are searching for is not stored in the table; <code>t[i']</code> has always
+been <code>null</code>, so there is no reason that a previous <code>add(x)</code>
+operation would have proceeded beyond index <code>i'</code>.</p>
+<p>The <code>resize()</code> method is called by <code>add(x)</code> when the number of
+non-<code>null</code> entries exceeds <span
+class="math inline">\(<code>t.length</code>/2\)</span> or by <code>remove(x)</code> when the
+number of data entries is less than <code>t.length/8</code>. The <code>resize()</code> method
+works like the <code>resize()</code> methods in other array-based data structures.
+We find the smallest non-negative integer <code>d</code> such that <span
+class="math inline">\(2^{<code>d</code>}
+\ge 3<code>n</code>\)</span>. We reallocate the array <code>t</code> so that
+it has size <span class="math inline">\(2^{<code>d</code>}\)</span>, and
+then we insert all the elements in the old version of <code>t</code> into
+the newly-resized copy of <code>t</code>. While doing this, we reset
+<code>q</code> equal to <code>n</code> since the newly-allocated <code>t</code>
+contains no <code>del</code> values.
+<code>[listing: ods/LinearHashTable.resize()]</code></p>
+<h3 id="analysis-of-linear-probing">Analysis of Linear Probing</h3>
+<p>Notice that each operation, <code>add(x)</code>, <code>remove(x)</code>, or <code>find(x)</code>,
+finishes as soon as (or before) it discovers the first <code>null</code> entry
+in <code>t</code>. The intuition behind the analysis of linear probing is
+that, since at least half the elements in <code>t</code> are equal to
+<code>null</code>, an operation should not take long to complete because it
+will very quickly come across a <code>null</code> entry. We shouldn’t rely too
+heavily on this intuition, though, because it would lead us to (the
+incorrect) conclusion that the expected number of locations in
+<code>t</code> examined by an operation is at most 2.</p>
+<p>For the rest of this section, we will assume that all hash values are
+independently and uniformly distributed in <span
+class="math inline">\(\{0,\ldots,<code>t.length</code>-1\}\)</span>. This is not a
+realistic assumption, but it will make it possible for us to analyze
+linear probing. Later in this section we will describe a method, called
+tabulation hashing, that produces a hash function that is “good enough”
+for linear probing. We will also assume that all indices into the
+positions of <code>t</code> are taken modulo <code>t.length</code>, so that
+<code>t[i]</code> is really a shorthand for <span
+class="math inline">\(<code>t</code>[<code>i</code>\bmod<code>t.length</code>]\)</span>.</p>
+<p>We say that a <em>run of length <span
+class="math inline">\(k\)</span> that starts at <code>i</code></em> occurs
+when all the table entries <span class="math inline">\(<code>t[i]</code>,
+<code>t[i+1]</code>,\ldots,<code>t</code>[<code>i</code>+k-1]\)</span> are
+non-<code>null</code> and <span
+class="math inline">\(<code>t</code>[<code>i</code>-1]=<code>t</code>[<code>i</code>+k]=<code>null</code>\)</span>.
+The number of non-<code>null</code> elements of <code>t</code> is exactly
+<code>q</code> and the <code>add(x)</code> method ensures that, at all times, <span
+class="math inline">\(<code>q</code>\le<code>t.length</code>/2\)</span>. There are
+<code>q</code> elements <span
+class="math inline">\(<code>x</code>_1,\ldots,<code>x</code>_{<code>q</code>}\)</span>
+that have been inserted into <code>t</code> since the last <code>resize()</code>
+operation. By our assumption, each of these has a hash value, <span
+class="math inline">\(<code>hash</code>(<code>x</code>_j)\)</span>, that is
+uniform and independent of the rest. With this setup, we can prove the
+main lemma required to analyze linear probing.</p>
+<div class="lem">
+<p><strong>Lemma 1.4</strong>. <em>Fix a value <span
+class="math inline">\(<code>i</code>\in\{0,\ldots,<code>t.length</code>-1\}\)</span>.
+Then the probability that a run of length <span
+class="math inline">\(k\)</span> starts at <code>i</code> is <span
+class="math inline">\(O(c^k)\)</span> for some constant <span
+class="math inline">\(0&lt;c&lt;1\)</span>.</em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> If a run of length <span
+class="math inline">\(k\)</span> starts at <code>i</code>, then there are
+exactly <span class="math inline">\(k\)</span> elements <span
+class="math inline">\(<code>x</code>_j\)</span> such that <span
+class="math inline">\(<code>hash</code>(<code>x</code>_j)\in\{<code>i</code>,\ldots,<code>i</code>+k-1\}\)</span>.
+The probability that this occurs is exactly <span
+class="math display">\[p_k  =
+\binom{<code>q</code>}{k}\left(\frac{k}{<code>t.length</code>}\right)^k\left(\frac{<code>t.length</code>-k}{<code>t.length</code>}\right)^{<code>q</code>-k}
+\enspace ,\]</span> since, for each choice of <span
+class="math inline">\(k\)</span> elements, these <span
+class="math inline">\(k\)</span> elements must hash to one of the <span
+class="math inline">\(k\)</span> locations and the remaining <span
+class="math inline">\(<code>q</code>-k\)</span> elements must hash to the
+other <span class="math inline">\(<code>t.length</code>-k\)</span> table
+locations.<a href="#fn2" class="footnote-ref" id="fnref2"
+role="doc-noteref"><sup>2</sup></a></p>
+<p>In the following derivation we will cheat a little and replace <span
+class="math inline">\(r!\)</span> with <span
+class="math inline">\((r/e)^r\)</span>. Stirling’s Approximation ()
+shows that this is only a factor of <span
+class="math inline">\(O(\sqrt{r})\)</span> from the truth. This is just
+done to make the derivation simpler; asks the reader to redo the
+calculation more rigorously using Stirling’s Approximation in its
+entirety.</p>
+<p>The value of <span class="math inline">\(p_k\)</span> is maximized
+when <code>t.length</code> is minimum, and the data structure maintains the
+invariant that <span class="math inline">\(<code>t.length</code> \ge
+2<code>q</code>\)</span>, so <span class="math display">\[\begin{align*}
+   p_k &amp; \le
+\binom{<code>q</code>}{k}\left(\frac{k}{2<code>q</code>}\right)^k\left(\frac{2<code>q</code>-k}{2<code>q</code>}\right)^{<code>q</code>-k}
+\\
+  &amp; =
+\left(\frac{<code>q</code>!}{(<code>q</code>-k)!k!}\right)\left(\frac{k}{2<code>q</code>}\right)^k\left(\frac{2<code>q</code>-k}{2<code>q</code>}\right)^{<code>q</code>-k}
+\\
+  &amp; \approx
+\left(\frac{<code>q</code>^{<code>q</code>}}{(<code>q</code>-k)^{<code>q</code>-k}k^k}\right)\left(\frac{k}{2<code>q</code>}\right)^k\left(\frac{2<code>q</code>-k}{2<code>q</code>}\right)^{<code>q</code>-k}
+&amp;&amp; \text{[Stirling&#39;s approximation]} \\
+  &amp; =
+\left(\frac{<code>q</code>^{k}<code>q</code>^{<code>q</code>-k}}{(<code>q</code>-k)^{<code>q</code>-k}k^k}\right)\left(\frac{k}{2<code>q</code>}\right)^k\left(\frac{2<code>q</code>-k}{2<code>q</code>}\right)^{<code>q</code>-k}
+\\
+&amp; = \left(\frac{<code>q</code>k}{2<code>q</code>k}\right)^k
+     \left(\frac{<code>q</code>(2<code>q</code>-k)}{2<code>q</code>(<code>q</code>-k)}\right)^{<code>q</code>-k}
+\\
+&amp; = \left(\frac{1}{2}\right)^k
+     \left(\frac{(2<code>q</code>-k)}{2(<code>q</code>-k)}\right)^{<code>q</code>-k}
+\\
+&amp; = \left(\frac{1}{2}\right)^k
+     \left(1+\frac{k}{2(<code>q</code>-k)}\right)^{<code>q</code>-k} \\
+&amp; \le \left(\frac{\sqrt{e}}{2}\right)^k \enspace .
+\end{align*}\]</span> (In the last step, we use the inequality <span
+class="math inline">\((1+1/x)^x \le e\)</span>, which holds for all
+<span class="math inline">\(x&gt;0\)</span>.) Since <span
+class="math inline">\(\sqrt{e}/{2}&lt; 0.824360636 &lt; 1\)</span>, this
+completes the proof. ◻</p>
+</div>
+<p>Using to prove upper-bounds on the expected running time of
+<code>find(x)</code>, <code>add(x)</code>, and <code>remove(x)</code> is now fairly straightforward.
+Consider the simplest case, where we execute <code>find(x)</code> for some value
+<code>x</code> that has never been stored in the <code>LinearHashTable</code>. In this case,
+<span class="math inline">\(<code>i</code>=<code>hash(x)</code>\)</span> is a random
+value in <span class="math inline">\(\{0,\ldots,<code>t.length</code>-1\}\)</span>
+independent of the contents of <code>t</code>. If <code>i</code> is part of a
+run of length <span class="math inline">\(k\)</span>, then the time it
+takes to execute the <code>find(x)</code> operation is at most <span
+class="math inline">\(O(1+k)\)</span>. Thus, the expected running time
+can be upper-bounded by <span class="math display">\[O\left(1 +
+\left(\frac{1}{<code>t.length</code>}\right)\sum_{i=1}^{<code>t.length</code>}\sum_{k=0}^{\infty}
+k\Pr\{\text{<code>i</code> is part of a run of length $k$}\}\right)
+\enspace .\]</span> Note that each run of length <span
+class="math inline">\(k\)</span> contributes to the inner sum <span
+class="math inline">\(k\)</span> times for a total contribution of <span
+class="math inline">\(k^2\)</span>, so the above sum can be rewritten as
+<span class="math display">\[\begin{align*}
+  &amp; { } O\left(1 +
+\left(\frac{1}{<code>t.length</code>}\right)\sum_{i=1}^{<code>t.length</code>}\sum_{k=0}^{\infty}
+k^2\Pr\{\mbox{<code>i</code> starts a run of length $k$}\}\right) \\
+  &amp; \le O\left(1 +
+\left(\frac{1}{<code>t.length</code>}\right)\sum_{i=1}^{<code>t.length</code>}\sum_{k=0}^{\infty}
+k^2p_k\right) \\
+  &amp; = O\left(1 + \sum_{k=0}^{\infty} k^2p_k\right) \\
+  &amp; = O\left(1 + \sum_{k=0}^{\infty} k^2\cdot O(c^k)\right) \\
+  &amp; = O(1) \enspace .
+\end{align*}\]</span> The last step in this derivation comes from the
+fact that <span class="math inline">\(\sum_{k=0}^{\infty} k^2\cdot
+O(c^k)\)</span> is an exponentially decreasing series.<a href="#fn3"
+class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>
+Therefore, we conclude that the expected running time of the <code>find(x)</code>
+operation for a value <code>x</code> that is not contained in a <code>LinearHashTable</code>
+is <span class="math inline">\(O(1)\)</span>.</p>
+<p>If we ignore the cost of the <code>resize()</code> operation, then the above
+analysis gives us all we need to analyze the cost of operations on a
+<code>LinearHashTable</code>.</p>
+<p>First of all, the analysis of <code>find(x)</code> given above applies to the
+<code>add(x)</code> operation when <code>x</code> is not contained in the table. To
+analyze the <code>find(x)</code> operation when <code>x</code> is contained in the
+table, we need only note that this is the same as the cost of the
+<code>add(x)</code> operation that previously added <code>x</code> to the table.
+Finally, the cost of a <code>remove(x)</code> operation is the same as the cost of
+a <code>find(x)</code> operation.</p>
+<p>In summary, if we ignore the cost of calls to <code>resize()</code>, all
+operations on a <code>LinearHashTable</code> run in <span
+class="math inline">\(O(1)\)</span> expected time. Accounting for the
+cost of resize can be done using the same type of amortized analysis
+performed for the <code>ArrayStack</code> data structure in .</p>
+<h3 id="summary-1">Summary</h3>
+<p>The following theorem summarizes the performance of the <code>LinearHashTable</code>
+data structure:</p>
+<div class="thm">
+<p><strong>Theorem 1.2</strong>. <em>A <code>LinearHashTable</code> implements the
+<code>USet</code> interface. Ignoring the cost of calls to <code>resize()</code>, a
+<code>LinearHashTable</code> supports the operations <code>add(x)</code>, <code>remove(x)</code>, and
+<code>find(x)</code> in <span class="math inline">\(O(1)\)</span> expected time
+per operation.</em></p>
+<p><em>Furthermore, beginning with an empty <code>LinearHashTable</code>, any sequence of
+<span class="math inline">\(m\)</span> <code>add(x)</code> and <code>remove(x)</code>
+operations results in a total of <span
+class="math inline">\(O(m)\)</span> time spent during all calls to
+<code>resize()</code>.</em></p>
+</div>
+<h3 id="tabulation-hashing">Tabulation Hashing</h3>
+<p>While analyzing the <code>LinearHashTable</code> structure, we made a very strong
+assumption: That for any set of elements, <span
+class="math inline">\(\{<code>x</code>_1,\ldots,<code>x</code>_<code>n</code>\}\)</span>,
+the hash values <span class="math inline">\(<code>hash</code>(\)</span>x<span
+class="math inline">\(_1),\ldots,<code>hash</code>(<code>x</code>_<code>n</code>)\)</span>
+are independently and uniformly distributed over the set <span
+class="math inline">\(\{0,\ldots,<code>t.length</code>-1\}\)</span>. One way to
+achieve this is to store a giant array, <code>tab</code>, of length <span
+class="math inline">\(2^{<code>w</code>}\)</span>, where each entry is a
+random <code>w</code>-bit integer, independent of all the other entries. In
+this way, we could implement <code>hash(x)</code> by extracting a <code>d</code>-bit
+integer from <code>tab[x.hashCode()]</code>:
+<code>[listing: ods/LinearHashTable.idealHash(x)]</code> Here,
+<code>&gt;&gt;</code>, is the <em>bitwise right shift</em> operator, so
+<code>x.hashCode() &gt;&gt; w-d</code> extracts the <code>d</code> most significant bits of
+<code>x</code>’s <code>w</code>-bit hash code.</p>
+<p>Unfortunately, storing an array of size <span
+class="math inline">\(2^{<code>w</code>}\)</span> is prohibitive in terms
+of memory usage. The approach used by <em>tabulation hashing</em> is to,
+instead, treat <code>w</code>-bit integers as being comprised of <span
+class="math inline">\(<code>w</code>/<code>r</code>\)</span> integers, each
+having only <span class="math inline">\(<code>r</code>\)</span> bits. In
+this way, tabulation hashing only needs <span
+class="math inline">\(<code>w</code>/<code>r</code>\)</span> arrays each of
+length <span class="math inline">\(2^{<code>r</code>}\)</span>. All the
+entries in these arrays are independent random <code>w</code>-bit integers.
+To obtain the value of <code>hash(x)</code> we split <code>x.hashCode()</code> up into <span
+class="math inline">\(<code>w</code>/<code>r</code>\)</span> <code>r</code>-bit
+integers and use these as indices into these arrays. We then combine all
+these values with the bitwise exclusive-or operator to obtain
+<code>hash(x)</code>. The following code shows how this works when <span
+class="math inline">\(<code>w</code>=32\)</span> and <span
+class="math inline">\(<code>r</code>=4\)</span>:
+<code>[listing: ods/LinearHashTable.hash(x)]</code> In this case,
+<code>tab</code> is a two-dimensional array with four columns and <span
+class="math inline">\(2^{32/4}=256\)</span> rows.</p>
+<p>Quantities like <code>0xff</code>, used above, are <em>hexadecimal
+numbers</em> whose digits have 16 possible values 0–9, which have their
+usual meaning and a–f, which denote 10–15. The number <span
+class="math inline">\(<code>0xff</code>=15\cdot 16 + 15 = 255\)</span>. The
+<code>&amp;</code> symbol is the <em>bitwise and</em> operator, so code like
+<code>h &gt;&gt; 8 &amp; 0xff</code> extracts bits with index 8 through 15 of <code>h</code>.</p>
+<p>One can easily verify that, for any <code>x</code>, <code>hash(x)</code> is
+uniformly distributed over <span
+class="math inline">\(\{0,\ldots,2^{<code>d</code>}-1\}\)</span>. With a
+little work, one can even verify that any pair of values have
+independent hash values. This implies tabulation hashing could be used
+in place of multiplicative hashing for the <code>ChainedHashTable</code>
+implementation.</p>
+<p>However, it is not true that any set of <code>n</code> distinct values
+gives a set of <code>n</code> independent hash values. Nevertheless, when
+tabulation hashing is used, the bound of still holds. References for
+this are provided at the end of this chapter.</p>
+<h2 id="hash-codes">Hash Codes</h2>
+<p>The hash tables discussed in the previous section are used to
+associate data with integer keys consisting of <code>w</code> bits. In many
+cases, we have keys that are not integers. They may be strings, objects,
+arrays, or other compound structures. To use hash tables for these types
+of data, we must map these data types to <code>w</code>-bit hash codes.
+Hash code mappings should have the following properties:</p>
+<ol>
+<li><p>If <code>x</code> and <code>y</code> are equal, then <code>x.hashCode()</code> and
+<code>y.hashCode()</code> are equal.</p></li>
+<li><p>If <code>x</code> and <code>y</code> are not equal, then the
+probability that <span
+class="math inline">\(<code>x.hashCode()</code>=<code>y.hashCode()</code>\)</span> should be small
+(close to <span
+class="math inline">\(1/2^{<code>w</code>}\)</span>).</p></li>
+</ol>
+<p>The first property ensures that if we store <code>x</code> in a hash
+table and later look up a value <code>y</code> equal to <code>x</code>, then
+we will find <code>x</code>—as we should. The second property minimizes the
+loss from converting our objects to integers. It ensures that unequal
+objects usually have different hash codes and so are likely to be stored
+at different locations in our hash table.</p>
+<h3 id="hash-codes-for-primitive-data-types">Hash Codes for Primitive
+Data Types</h3>
+<p>Small primitive data types like <code>char</code>, <code>byte</code>,
+<code>int</code>, and <code>float</code> are usually easy to find hash codes for.
+These data types always have a binary representation and this binary
+representation usually consists of <code>w</code> or fewer bits. In these
+cases, we just treat these bits as the representation of an integer in
+the range <span
+class="math inline">\(\{0,\ldots,2^<code>w</code>-1\}\)</span>. If two
+values are different, they get different hash codes. If they are the
+same, they get the same hash code.</p>
+<p>A few primitive data types are made up of more than <code>w</code> bits,
+usually <span class="math inline">\(c<code>w</code>\)</span> bits for some
+constant integer <span class="math inline">\(c\)</span>. (Java’s
+<code>long</code> and <code>double</code> types are examples of this with <span
+class="math inline">\(c=2\)</span>.) These data types can be treated as
+compound objects made of <span class="math inline">\(c\)</span> parts,
+as described in the next section.</p>
+<h3 id="hash-codes-for-compound-objects">Hash Codes for Compound
+Objects</h3>
+<p>For a compound object, we want to create a hash code by combining the
+individual hash codes of the object’s constituent parts. This is not as
+easy as it sounds. Although one can find many hacks for this (for
+example, combining the hash codes with bitwise exclusive-or operations),
+many of these hacks turn out to be easy to foil (see Exercises <a
+href="#exc:hash-hack-first" data-reference-type="ref"
+data-reference="exc:hash-hack-first">[exc:hash-hack-first]</a>–<a
+href="#exc:hash-hack-last" data-reference-type="ref"
+data-reference="exc:hash-hack-last">[exc:hash-hack-last]</a>). However,
+if one is willing to do arithmetic with <span
+class="math inline">\(2<code>w</code>\)</span> bits of precision, then
+there are simple and robust methods available. Suppose we have an object
+made up of several parts <span
+class="math inline">\(P_0,\ldots,P_{r-1}\)</span> whose hash codes are
+<span
+class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{r-1}\)</span>.
+Then we can choose mutually independent random <code>w</code>-bit integers
+<span
+class="math inline">\(<code>z</code>_0,\ldots,<code>z</code>_{r-1}\)</span>
+and a random <span class="math inline">\(2<code>w</code>\)</span>-bit odd
+integer <code>z</code> and compute a hash code for our object with <span
+class="math display">\[h(<code>x</code>_0,\ldots,<code>x</code>_{r-1}) =  
+   \left(\left(<code>z</code>\sum_{i=0}^{r-1} <code>z</code>_i
+<code>x</code>_i\right)\bmod 2^{2<code>w</code>}\right)
+   \ddiv 2^{<code>w</code>} \enspace .\]</span> Note that this hash code
+has a final step (multiplying by <code>z</code> and dividing by <span
+class="math inline">\(2^{<code>w</code>}\)</span>) that uses the
+multiplicative hash function from to take the <span
+class="math inline">\(2<code>w</code>\)</span>-bit intermediate result and
+reduce it to a <code>w</code>-bit final result. Here is an example of this
+method applied to a simple compound object with three parts <code>x0</code>,
+<code>x1</code>, and <code>x2</code>:</p>
+<p><code>[listing: ods/Point3d.hashCode()]</code> The following theorem
+shows that, in addition to being straightforward to implement, this
+method is provably good:</p>
+<div class="thm">
+<p><strong>Theorem 1.3</strong>. <em>Let <span
+class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{r-1}\)</span>
+and <span
+class="math inline">\(<code>y</code>_0,\ldots,<code>y</code>_{r-1}\)</span>
+each be sequences of <code>w</code> bit integers in <span
+class="math inline">\(\{0,\ldots,2^{<code>w</code>}-1\}\)</span> and assume
+<span class="math inline">\(<code>x</code>_i \neq <code>y</code>_i\)</span>
+for at least one index <span
+class="math inline">\(i\in\{0,\ldots,r-1\}\)</span>. Then <span
+class="math display">\[\Pr\{ h(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
+=  h(<code>y</code>_0,\ldots,<code>y</code>_{r-1}) \}
+        \le 3/2^{<code>w</code>} \enspace .\]</span></em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> We will first ignore the final multiplicative hashing
+step and see how that step contributes later. Define: <span
+class="math display">\[h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
+=  
+       \left(\sum_{j=0}^{r-1} <code>z</code>_j <code>x</code>_j\right)\bmod
+2^{2<code>w</code>} \enspace .\]</span> Suppose that <span
+class="math inline">\(h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
+=  h&#39;(<code>y</code>_0,\ldots,<code>y</code>_{r-1})\)</span>. We can
+rewrite this as: <span class="math display">\[\begin{equation}
+  \eqlabel{bighash-x}
+      <code>z</code>_i(<code>x</code>_i-<code>y</code>_i) \bmod 2^{2<code>w</code>}
+= t
+\end{equation}\]</span> where <span class="math display">\[t =
+\left(\sum_{j=0}^{i-1} <code>z</code>_j(<code>y</code>_j-<code>x</code>_j) +
+\sum_{j=i+1}^{r-1} <code>z</code>_j(<code>y</code>_j-<code>x</code>_j)\right)
+\bmod 2^{2<code>w</code>}\]</span> If we assume, without loss of generality
+that <span class="math inline">\(<code>x</code>_i&gt;
+<code>y</code>_i\)</span>, then becomes <span
+class="math display">\[\begin{equation}
+      <code>z</code>_i(<code>x</code>_i-<code>y</code>_i) = t
+\eqlabel{bighash-xx} \enspace ,
+\end{equation}\]</span> since each of <span
+class="math inline">\(<code>z</code>_i\)</span> and <span
+class="math inline">\((<code>x</code>_i-<code>y</code>_i)\)</span> is at most
+<span class="math inline">\(2^{<code>w</code>}-1\)</span>, so their product
+is at most <span
+class="math inline">\(2^{2<code>w</code>}-2^{<code>w</code>+1}+1 &lt;
+2^{2<code>w</code>}-1\)</span>. By assumption, <span
+class="math inline">\(<code>x</code>_i-<code>y</code>_i\neq 0\)</span>, so has
+at most one solution in <span
+class="math inline">\(<code>z</code>_i\)</span>. Therefore, since <span
+class="math inline">\(<code>z</code>_i\)</span> and <span
+class="math inline">\(t\)</span> are independent (<span
+class="math inline">\(<code>z</code>_0,\ldots,<code>z</code>_{r-1}\)</span>
+are mutually independent), the probability that we select <span
+class="math inline">\(<code>z</code>_i\)</span> so that <span
+class="math inline">\(h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1})=h&#39;(<code>y</code>_0,\ldots,<code>y</code>_{r-1})\)</span>
+is at most <span class="math inline">\(1/2^{<code>w</code>}\)</span>.</p>
+<p>The final step of the hash function is to apply multiplicative
+hashing to reduce our <span
+class="math inline">\(2<code>w</code>\)</span>-bit intermediate result
+<span
+class="math inline">\(h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1})\)</span>
+to a <code>w</code>-bit final result <span
+class="math inline">\(h(<code>x</code>_0,\ldots,<code>x</code>_{r-1})\)</span>.
+By , if <span
+class="math inline">\(h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1})\neq
+h&#39;(<code>y</code>_0,\ldots,<code>y</code>_{r-1})\)</span>, then <span
+class="math inline">\(\Pr\{h(<code>x</code>_0,\ldots,<code>x</code>_{r-1}) =
+h(<code>y</code>_0,\ldots,<code>y</code>_{r-1})\} \le
+2/2^{<code>w</code>}\)</span>.</p>
+<p>To summarize, <span class="math display">\[\begin{align*}
+    &amp; \Pr\left\{\begin{array}{l}
+          h(<code>x</code>_0,\ldots,<code>x</code>_{r-1}) \\
+          \quad =
+h(<code>y</code>_0,\ldots,<code>y</code>_{r-1})\end{array}\right\} \\
+      &amp;= \Pr\left\{\begin{array}{ll}
+            \mbox{$h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1}) =
+h&#39;(<code>y</code>_0,\ldots,<code>y</code>_{r-1})$ or} \\
+            \mbox{$h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1}) \neq
+h&#39;(<code>y</code>_0,\ldots,<code>y</code>_{r-1})$} \\
+                 \quad  \mbox{and
+$<code>z</code>h&#39;(<code>x</code>_0,\ldots,<code>x</code>_{r-1})\ddiv2^{<code>w</code>}
+= <code>z</code> h&#39;(<code>y</code>_0,\ldots,<code>y</code>_{r-1})\ddiv
+2^{<code>w</code>}$}
+          \end{array}\right\} \\
+      &amp;\le 1/2^{<code>w</code>} + 2/2^{<code>w</code>} = 3/2^{<code>w</code>}
+\enspace . \qedhere
+\end{align*}\]</span> ◻</p>
+</div>
+<h3 id="hash-codes-for-arrays-and-strings">Hash Codes for Arrays and
+Strings</h3>
+<p>The method from the previous section works well for objects that have
+a fixed, constant, number of components. However, it breaks down when we
+want to use it with objects that have a variable number of components,
+since it requires a random <code>w</code>-bit integer <span
+class="math inline">\(<code>z</code>_i\)</span> for each component. We
+could use a pseudorandom sequence to generate as many <span
+class="math inline">\(<code>z</code>_i\)</span>’s as we need, but then the
+<span class="math inline">\(<code>z</code>_i\)</span>’s are not mutually
+independent, and it becomes difficult to prove that the pseudorandom
+numbers don’t interact badly with the hash function we are using. In
+particular, the values of <span class="math inline">\(t\)</span> and
+<span class="math inline">\(<code>z</code>_i\)</span> in the proof of are
+no longer independent.</p>
+<p>A more rigorous approach is to base our hash codes on polynomials
+over prime fields; these are just regular polynomials that are evaluated
+modulo some prime number, <code>p</code>. This method is based on the
+following theorem, which says that polynomials over prime fields behave
+pretty-much like usual polynomials:</p>
+<div class="thm">
+<p><strong>Theorem 1.4</strong>. <em>Let <span
+class="math inline">\(<code>p</code>\)</span> be a prime number, and let
+<span class="math inline">\(f(<code>z</code>) = <code>x</code>_0<code>z</code>^0
++ <code>x</code>_1<code>z</code>^1 +
+\cdots + <code>x</code>_{r-1}<code>z</code>^{r-1}\)</span> be a non-trivial
+polynomial with coefficients <span
+class="math inline">\(<code>x</code>_i\in\{0,\ldots,<code>p</code>-1\}\)</span>.
+Then the equation <span class="math inline">\(f(<code>z</code>)\bmod
+<code>p</code> = 0\)</span> has at most <span
+class="math inline">\(r-1\)</span> solutions for <span
+class="math inline">\(<code>z</code>\in\{0,\ldots,p-1\}\)</span>.</em></p>
+</div>
+<p>To use , we hash a sequence of integers <span
+class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{r-1}\)</span>
+with each <span class="math inline">\(<code>x</code>_i\in
+\{0,\ldots,<code>p</code>-2\}\)</span> using a random integer <span
+class="math inline">\(<code>z</code>\in\{0,\ldots,<code>p</code>-1\}\)</span>
+via the formula <span
+class="math display">\[h(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
+    =
+\left(<code>x</code>_0<code>z</code>^0+\cdots+<code>x</code>_{r-1}<code>z</code>^{r-1}+(<code>p</code>-1)<code>z</code>^r
+\right)\bmod <code>p</code> \enspace .\]</span></p>
+<p>Note the extra <span
+class="math inline">\((<code>p</code>-1)<code>z</code>^r\)</span> term at the
+end of the formula. It helps to think of <span
+class="math inline">\((<code>p</code>-1)\)</span> as the last element,
+<span class="math inline">\(<code>x</code>_r\)</span>, in the sequence
+<span
+class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{r}\)</span>.
+Note that this element differs from every other element in the sequence
+(each of which is in the set <span
+class="math inline">\(\{0,\ldots,<code>p</code>-2\}\)</span>). We can think
+of <span class="math inline">\(<code>p</code>-1\)</span> as an
+end-of-sequence marker.</p>
+<p>The following theorem, which considers the case of two sequences of
+the same length, shows that this hash function gives a good return for
+the small amount of randomization needed to choose <code>z</code>:</p>
+<div class="thm">
+<p><strong>Theorem 1.5</strong>. <em>Let <span
+class="math inline">\(<code>p</code>&gt;2^{<code>w</code>}+1\)</span> be a
+prime, let <span
+class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{r-1}\)</span>
+and <span
+class="math inline">\(<code>y</code>_0,\ldots,<code>y</code>_{r-1}\)</span>
+each be sequences of <code>w</code>-bit integers in <span
+class="math inline">\(\{0,\ldots,2^{<code>w</code>}-1\}\)</span>, and
+assume <span class="math inline">\(<code>x</code>_i \neq
+<code>y</code>_i\)</span> for at least one index <span
+class="math inline">\(i\in\{0,\ldots,r-1\}\)</span>. Then <span
+class="math display">\[\Pr\{ h(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
+=  h(<code>y</code>_0,\ldots,<code>y</code>_{r-1}) \}
+          \le (r-1)/<code>p</code> \enspace .\]</span></em></p>
+</div>
+<div class="proof">
+<p><em>Proof.</em> The equation <span
+class="math inline">\(h(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
+=  h(<code>y</code>_0,\ldots,<code>y</code>_{r-1})\)</span> can be rewritten
+as <span class="math display">\[\begin{equation}
+  \eqlabel{strhash-eqlen}
+    \left(
+       (<code>x</code>_0-<code>y</code>_0)<code>z</code>^0+\cdots+(<code>x</code>_{r-1}-<code>y</code>_{r-1})<code>z</code>^{r-1}
+    \right)\bmod <code>p</code> = 0.
+\end{equation}\]</span> Since <span
+class="math inline">\(<code>x</code>_<code>i</code>\neq
+<code>y</code>_<code>i</code>\)</span>, this polynomial is non-trivial.
+Therefore, by , it has at most <span class="math inline">\(r-1\)</span>
+solutions in <code>z</code>. The probability that we pick <code>z</code> to be
+one of these solutions is therefore at most <span
+class="math inline">\((r-1)/<code>p</code>\)</span>. ◻</p>
+</div>
+<p>Note that this hash function also deals with the case in which two
+sequences have different lengths, even when one of the sequences is a
+prefix of the other. This is because this function effectively hashes
+the infinite sequence <span
+class="math display">\[<code>x</code>_0,\ldots,<code>x</code>_{r-1},
+<code>p</code>-1,0,0,\ldots \enspace .\]</span> This guarantees that if we
+have two sequences of length <span class="math inline">\(r\)</span> and
+<span class="math inline">\(r&#39;\)</span> with <span
+class="math inline">\(r &gt; r&#39;\)</span>, then these two sequences
+differ at index <span class="math inline">\(i=r\)</span>. In this case,
+becomes <span class="math display">\[\left(
+     \sum_{i=0}^{i=r&#39;-1}(<code>x</code>_i-<code>y</code>_i)<code>z</code>^i +
+(<code>x</code>_{r&#39;} - <code>p</code> + 1)<code>z</code>^{r&#39;}
+     +\sum_{i=r&#39;+1}^{i=r-1}<code>x</code>_i<code>z</code>^i +
+(<code>p</code>-1)<code>z</code>^{r}
+  \right)\bmod <code>p</code> = 0 \enspace ,\]</span> which, by , has at
+most <span class="math inline">\(r\)</span> solutions in <span
+class="math inline">\(<code>z</code>\)</span>. This combined with suffice
+to prove the following more general theorem:</p>
+<div class="thm">
+<p><strong>Theorem 1.6</strong>. <em>Let <span
+class="math inline">\(<code>p</code>&gt;2^{<code>w</code>}+1\)</span> be a
+prime, let <span
+class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{r-1}\)</span>
+and <span
+class="math inline">\(<code>y</code>_0,\ldots,<code>y</code>_{r&#39;-1}\)</span>
+be distinct sequences of <code>w</code>-bit integers in <span
+class="math inline">\(\{0,\ldots,2^{<code>w</code>}-1\}\)</span>. Then
+<span class="math display">\[\Pr\{
+h(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
+=  h(<code>y</code>_0,\ldots,<code>y</code>_{r-1}) \}
+          \le \max\{r,r&#39;\}/<code>p</code>  \enspace .\]</span></em></p>
+</div>
+<p>The following example code shows how this hash function is applied to
+an object that contains an array, <code>x</code>, of values:</p>
+<p><code>[listing: ods/GeomVector.hashCode()]</code></p>
+<p>The preceding code sacrifices some collision probability for
+implementation convenience. In particular, it applies the multiplicative
+hash function from , with <span
+class="math inline">\(<code>d</code>=31\)</span> to reduce <code>x[i].hashCode()</code> to a
+31-bit value. This is so that the additions and multiplications that are
+done modulo the prime <span
+class="math inline">\(<code>p</code>=2^{32}-5\)</span> can be carried out
+using unsigned 63-bit arithmetic. Thus the probability of two different
+sequences, the longer of which has length <span
+class="math inline">\(r\)</span>, having the same hash code is at most
+<span class="math display">\[2/2^{31} + r/(2^{32}-5)\]</span> rather
+than the <span class="math inline">\(r/(2^{32}-5)\)</span> specified in
+.</p>
+<h2 id="discussion-and-exercises">Discussion and Exercises</h2>
+<p>Hash tables and hash codes represent an enormous and active field of
+research that is just touched upon in this chapter. The online
+Bibliography on Hashing <span class="citation"
+data-cites="hashing"></span> contains nearly 2000 entries.</p>
+<p>A variety of different hash table implementations exist. The one
+described in is known as <em>hashing with chaining</em> (each array
+entry contains a chain (<code>List</code>) of elements). Hashing with chaining
+dates back to an internal IBM memorandum authored by H. P. Luhn and
+dated January 1953. This memorandum also seems to be one of the earliest
+references to linked lists.</p>
+<p>An alternative to hashing with chaining is that used by <em>open
+addressing</em> schemes, where all data is stored directly in an array.
+These schemes include the <code>LinearHashTable</code> structure of . This idea was also
+proposed, independently, by a group at IBM in the 1950s. Open addressing
+schemes must deal with the problem of <em>collision resolution</em>: the
+case where two values hash to the same array location. Different
+strategies exist for collision resolution; these provide different
+performance guarantees and often require more sophisticated hash
+functions than the ones described here.</p>
+<p>Yet another category of hash table implementations are the so-called
+<em>perfect hashing</em> methods. These are methods in which <code>find(x)</code>
+operations take <span class="math inline">\(O(1)\)</span> time in the
+worst-case. For static data sets, this can be accomplished by finding
+<em>perfect hash functions</em> for the data; these are functions that
+map each piece of data to a unique array location. For data that changes
+over time, perfect hashing methods include <em>FKS two-level hash
+tables</em> <span class="citation" data-cites="fks84 dkkmrt94"></span>
+and <em>cuckoo hashing</em> <span class="citation"
+data-cites="pr04"></span>.</p>
+<p>The hash functions presented in this chapter are probably among the
+most practical methods currently known that can be proven to work well
+for any set of data. Other provably good methods date back to the
+pioneering work of Carter and Wegman who introduced the notion of
+<em>universal hashing</em> and described several hash functions for
+different scenarios <span class="citation" data-cites="cw79"></span>.
+Tabulation hashing, described in , is due to Carter and Wegman <span
+class="citation" data-cites="cw79"></span>, but its analysis, when
+applied to linear probing (and several other hash table schemes) is due
+to Pǎtraşcu and Thorup <span class="citation"
+data-cites="pt12"></span>.</p>
+<p>The idea of <em>multiplicative hashing</em> is very old and seems to
+be part of the hashing folklore <span class="citation"
+data-cites="k97v3"></span>. However, the idea of choosing the multiplier
+<code>z</code> to be a random <em>odd</em> number, and the analysis in is
+due to Dietzfelbinger  <span class="citation"
+data-cites="dhkp97"></span>. This version of multiplicative hashing is
+one of the simplest, but its collision probability of <span
+class="math inline">\(2/2^{<code>d</code>}\)</span> is a factor of two
+larger than what one could expect with a random function from <span
+class="math inline">\(2^{<code>w</code>}\to
+2^{<code>d</code>}\)</span>. The <em>multiply-add hashing</em> method uses
+the function <span class="math display">\[h(<code>x</code>) =
+((<code>z</code><code>x</code> + b) \bmod 2^{<code>2w</code>}) \ddiv
+2^{<code>2w</code>-<code>d</code>}\]</span> where <code>z</code> and <code>b</code>
+are each randomly chosen from <span
+class="math inline">\(\{0,\ldots,2^{<code>2w</code>}-1\}\)</span>.
+Multiply-add hashing has a collision probability of only <span
+class="math inline">\(1/2^{<code>d</code>}\)</span> <span class="citation"
+data-cites="d96"></span>, but requires <span
+class="math inline">\(2<code>w</code>\)</span>-bit precision
+arithmetic.</p>
+<p>There are a number of methods of obtaining hash codes from
+fixed-length sequences of <code>w</code>-bit integers. One particularly
+fast method <span class="citation" data-cites="bhkkr99"></span> is the
+function <span class="math display">\[\begin{array}{l}
+  h(<code>x</code>_0,\ldots,<code>x</code>_{r-1}) \\
+   \quad = \left(\sum_{i=0}^{r/2-1}
+((<code>x</code>_{2i}+<code>a</code>_{2i})\bmod
+2^{<code>w</code>})((<code>x</code>_{2i+1}+<code>a</code>_{2i+1})\bmod
+2^{<code>w</code>})\right) \bmod 2^{2<code>w</code>}
+\end{array}\]</span> where <span class="math inline">\(r\)</span> is
+even and <span
+class="math inline">\(<code>a</code>_0,\ldots,<code>a</code>_{r-1}\)</span>
+are randomly chosen from <span
+class="math inline">\(\{0,\ldots,2^{<code>w</code>}\}\)</span>. This yields
+a <span class="math inline">\(2<code>w</code>\)</span>-bit hash code that
+has collision probability <span
+class="math inline">\(1/2^{<code>w</code>}\)</span>. This can be reduced to
+a <code>w</code>-bit hash code using multiplicative (or multiply-add)
+hashing. This method is fast because it requires only <span
+class="math inline">\(r/2\)</span> <span
+class="math inline">\(2<code>w</code>\)</span>-bit multiplications whereas
+the method described in requires <span class="math inline">\(r\)</span>
+multiplications. (The <span class="math inline">\(\bmod\)</span>
+operations occur implicitly by using <code>w</code> and <span
+class="math inline">\(2<code>w</code>\)</span>-bit arithmetic for the
+additions and multiplications, respectively.)</p>
+<p>The method from of using polynomials over prime fields to hash
+variable-length arrays and strings is due to Dietzfelbinger  <span
+class="citation" data-cites="dgmp92"></span>. Due to its use of the
+<span class="math inline">\(\bmod\)</span> operator which relies on a
+costly machine instruction, it is, unfortunately, not very fast. Some
+variants of this method choose the prime <code>p</code> to be one of the
+form <span class="math inline">\(2^{<code>w</code>}-1\)</span>, in which
+case the <span class="math inline">\(\bmod\)</span> operator can be
+replaced with addition (<code>+</code>) and bitwise-and (<code>&amp;</code>)
+operations <span class="citation" data-cites="k97v2"></span>. Another
+option is to apply one of the fast methods for fixed-length strings to
+blocks of length <span class="math inline">\(c\)</span> for some
+constant <span class="math inline">\(c&gt;1\)</span> and then apply the
+prime field method to the resulting sequence of <span
+class="math inline">\(\lceil r/c\rceil\)</span> hash codes.</p>
+<div class="exc">
+<p><strong>Exercise 1.1</strong>. <em>A certain university assigns each
+of its students student numbers the first time they register for any
+course. These numbers are sequential integers that started at 0 many
+years ago and are now in the millions. Suppose we have a class of one
+hundred first year students and we want to assign them hash codes based
+on their student numbers. Does it make more sense to use the first two
+digits or the last two digits of their student number? Justify your
+answer.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.2</strong>. <em>Consider the hashing scheme in ,
+and suppose <span
+class="math inline">\(<code>n</code>=2^{<code>d</code>}\)</span> and <span
+class="math inline">\(<code>d</code>\le <code>w</code>/2\)</span>.</em></p>
+<ol>
+<li><p><em>Show that, for any choice of the muliplier, <code>z</code>,
+there exists <code>n</code> values that all have the same hash code. (Hint:
+This is easy, and doesn’t require any number theory.)</em></p></li>
+<li><p><em>Given the multiplier, <code>z</code>, describe <code>n</code>
+values that all have the same hash code. (Hint: This is harder, and
+requires some basic number theory.)</em></p></li>
+</ol>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.3</strong>. <em>Prove that the bound <span
+class="math inline">\(2/2^{<code>d</code>}\)</span> in is the best possible
+bound by showing that, if <span
+class="math inline">\(x=2^{<code>w</code>-<code>d</code>-2}\)</span> and <span
+class="math inline">\(<code>y</code>=3<code>x</code>\)</span>, then <span
+class="math inline">\(\Pr\{<code>hash(x)</code>=<code>hash(y)</code>\}=2/2^{<code>d</code>}\)</span>.
+(Hint look at the binary representations of <span
+class="math inline">\(<code>zx</code>\)</span> and <span
+class="math inline">\(<code>z</code>3<code>x</code>\)</span> and use the fact
+that <span class="math inline">\(<code>z</code>3<code>x</code> =
+<code>z</code>x<code>+2</code>z<code>x</code>\)</span>.)</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.4</strong>. <em>Reprove using the full version of
+Stirling’s Approximation given in .</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.5</strong>. <em>Consider the following simplified
+version of the code for adding an element <code>x</code> to a <code>LinearHashTable</code>,
+which simply stores <code>x</code> in the first <code>null</code> array entry it
+finds. Explain why this could be very slow by giving an example of a
+sequence of <span class="math inline">\(O(<code>n</code>)\)</span>
+<code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> operations that would take on
+the order of <span class="math inline">\(<code>n</code>^2\)</span> time to
+execute. <code>[listing: ods/LinearHashTable.addSlow(x)]</code></em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.6</strong>. <em>Early versions of the Java
+<code>hashCode()</code> method for the <code>String</code> class worked by not using all of
+the characters found in long strings. For example, for a sixteen
+character string, the hash code was computed using only the eight
+even-indexed characters. Explain why this was a very bad idea by giving
+an example of large set of strings that all have the same hash
+code.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.7</strong>. <em>Suppose you have an object made up
+of two <code>w</code>-bit integers, <code>x</code> and <code>y</code>. Show why
+<span class="math inline">\(<code>x</code>\oplus<code>y</code>\)</span> does
+not make a good hash code for your object. Give an example of a large
+set of objects that would all have hash code 0.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.8</strong>. <em>Suppose you have an object made up
+of two <code>w</code>-bit integers, <code>x</code> and <code>y</code>. Show why
+<span class="math inline">\(<code>x</code>+<code>y</code>\)</span> does not
+make a good hash code for your object. Give an example of a large set of
+objects that would all have the same hash code.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.9</strong>. <em>Suppose you have an object made up
+of two <code>w</code>-bit integers, <code>x</code> and <code>y</code>. Suppose
+that the hash code for your object is defined by some deterministic
+function <span class="math inline">\(h(<code>x</code>,<code>y</code>)\)</span>
+that produces a single <code>w</code>-bit integer. Prove that there exists
+a large set of objects that have the same hash code.</em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.10</strong>. <em>Let <span
+class="math inline">\(p=2^{<code>w</code>}-1\)</span> for some positive
+integer <code>w</code>. Explain why, for a positive integer <span
+class="math inline">\(x\)</span> <span class="math display">\[(x\bmod
+2^{<code>w</code>}) + (x\ddiv 2^{<code>w</code>}) \equiv x \bmod
+(2^{<code>w</code>}-1) \enspace .\]</span></em></p>
+</div>
+<div class="exc">
+<p><strong>Exercise 1.11</strong>. <em>Find some commonly used hash
+table implementation such as the the <code>HashTable</code> or <code>LinearHashTable</code>
+implementations in this book, and design a program that stores integers
+in this data structure so that there are integers, <code>x</code>, such
+that <code>find(x)</code> takes linear time. That is, find a set of <code>n</code>
+integers for which there are <span
+class="math inline">\(c<code>n</code>\)</span> elements that hash to the
+same table location.</em></p>
+<p><em>Depending on how good the implementation is, you may be able to
+do this just by inspecting the code for the implementation, or you may
+have to write some code that does trial insertions and searches, timing
+how long it takes to add and find particular values. (This can be, and
+has been, used to launch denial of service attacks on web servers <span
+class="citation" data-cites="cw03"></span>.)</em></p>
+</div>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p>This is true for most programming languages including C,
+C#, C++, and Java. Notable exceptions are Python and Ruby, in which the
+result of a fixed-length <code>w</code>-bit integer operation that overflows
+is upgraded to a variable-length representation.<a href="#fnref1"
+class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>Note that <span class="math inline">\(p_k\)</span> is
+greater than the probability that a run of length <span
+class="math inline">\(k\)</span> starts at <code>i</code>, since the
+definition of <span class="math inline">\(p_k\)</span> does not include
+the requirement <span
+class="math inline">\(<code>t</code>[<code>i</code>-1]=<code>t</code>[<code>i</code>+k]=<code>null</code>\)</span>.<a
+href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>In the terminology of many calculus texts, this sum
+passes the ratio test: There exists a positive integer <span
+class="math inline">\(k_0\)</span> such that, for all <span
+class="math inline">\(k\ge k_0\)</span>, <span
+class="math inline">\(\frac{(k+1)^2c^{k+1}}{k^2c^k} &lt; 1\)</span>.<a
+href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
