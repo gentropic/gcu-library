@@ -33,7 +33,14 @@ the right child of the node at index <code>i</code> is at index <span
 class="math inline">\(<code>right(i)</code>=2<code>i</code>+2\)</span>. The parent of
 the node at index <code>i</code> is at index <span
 class="math inline">\(<code>parent(i)</code>=(<code>i</code>-1)/2\)</span>.
-<code>[listing: ods/BinaryHeap.left(i).right(i).parent(i)]</code></p>
+<pre class="listing"><code class="language-python">def left(i):
+    return 2*i + 1
+
+def right(i):
+    return 2*(i+1)
+
+def parent(i):
+    return (i-1)//2</code></pre></p>
 <p>A <code>BinaryHeap</code> uses this technique to implicitly represent a complete
 binary tree in which the elements are <em>heap-ordered</em>: The value
 stored at any index <code>i</code> is not smaller than the value stored at
@@ -42,7 +49,9 @@ class="math inline">\(<code>i</code>=0\)</span>. It follows that the
 smallest value in the priority <code>Queue</code> is therefore stored at
 position 0 (the root).</p>
 <p>In a <code>BinaryHeap</code>, the <code>n</code> elements are stored in an array
-<code>a</code>: <code>[listing: ods/BinaryHeap.a.n]</code></p>
+<code>a</code>: <pre class="listing"><code class="language-python">    def _initialize(self):
+        self.a = new_array(1)
+        self.n = 0</code></pre></p>
 <p>Implementing the <code>add(x)</code> operation is fairly straightforward. As
 with all array-based structures, we first check to see if <code>a</code> is
 full (by checking if <span
@@ -51,8 +60,20 @@ grow <code>a</code>. Next, we place <code>x</code> at location <code>a[n]</code>
 increment <code>n</code>. At this point, all that remains is to ensure that
 we maintain the heap property. We do this by repeatedly swapping
 <code>x</code> with its parent until <code>x</code> is no longer smaller than
-its parent. See .
-<code>[listing: ods/BinaryHeap.add(x).bubbleUp(i)]</code></p>
+its parent. See . <pre class="listing"><code class="language-python">    def add(self, x):
+        if len(self.a) &lt; self.n+1:
+            self.resize()
+        self.a[self.n] = x
+        self.n += 1
+        self.bubble_up(self.n-1)
+        return True
+
+    def bubble_up(self, i):
+        p = parent(i)
+        while i &gt; 0 and self.a[i] &lt; self.a[p]:
+            self.a[i], self.a[p] = self.a[p], self.a[i]
+            i = p
+            p = parent(i)</code></pre></p>
 <figure>
 <div class="center">
 <p><img src="figs/heap-insert-1" alt="image" /><br />
@@ -73,8 +94,32 @@ the new root element is now probably not the smallest element, so it
 needs to be moved downwards. We do this by repeatedly comparing this
 element to its two children. If it is the smallest of the three then we
 are done. Otherwise, we swap this element with the smallest of its two
-children and continue.
-<code>[listing: ods/BinaryHeap.remove().trickleDown(i)]</code></p>
+children and continue. <pre class="listing"><code class="language-python">    def remove(self):
+        x = self.a[0]
+        self.a[0] = self.a[self.n-1]
+        self.n -= 1
+        self.trickle_down(0)
+        if 3*self.n &lt; len(self.a):
+            self.resize()
+        return x
+
+    def trickle_down(self, i):
+        while i &gt;= 0:
+            j = -1
+            r = right(i)
+            if r &lt; self.n and self.a[r] &lt; self.a[i]:
+                l = left(i)
+                if self.a[l] &lt; self.a[r]:
+                    j = l
+                else:
+                    j = r
+            else:
+                l = left(i)
+                if l &lt; self.n and self.a[l] &lt; self.a[i]:
+                    j = l
+            if j &gt;= 0:
+                self.a[j], self.a[i] =     self.a[i], self.a[j]
+            i = j</code></pre></p>
 <figure>
 <div class="center">
 <p><img src="figs/heap-remove-1" alt="image" /><br />
@@ -137,8 +182,17 @@ reverse the roles of <code>h1</code> and <code>h2</code>. Then we know that the
 root of the merged heap will contain <code>h1.x</code>, and we can recursively
 merge <code>h2</code> with <code>h1.left</code> or <code>h1.right</code>, as we wish. This is
 where randomization comes in, and we toss a coin to decide whether to
-merge <code>h2</code> with <code>h1.left</code> or <code>h1.right</code>:
-<code>[listing: ods/MeldableHeap.merge(h1,h2)]</code></p>
+merge <code>h2</code> with <code>h1.left</code> or <code>h1.right</code>: <pre class="listing"><code class="language-python">    def merge(self, h1, h2):
+        if h1 == self.nil: return h2
+        if h2 == self.nil: return h1
+        if h2.x &lt; h1.x: (h1, h2) = (h2, h1)
+        if random_bit():
+            h1.left = self.merge(h1.left, h2)
+            h1.left.parent = h1
+        else:
+            h1.right = self.merge(h1.right, h2)
+            h1.right.parent = h1
+        return h1</code></pre></p>
 <figure>
 
 <figcaption>Merging <code>h1</code> and <code>h2</code> is done by merging
@@ -150,15 +204,24 @@ class="math inline">\(O(\log <code>n</code>)\)</span> expected time, where
 <code>h2</code>.</p>
 <p>With access to a <code>merge(h1,h2)</code> operation, the <code>add(x)</code> operation is
 easy. We create a new node <code>u</code> containing <code>x</code> and then
-merge <code>u</code> with the root of our heap:
-<code>[listing: ods/MeldableHeap.add(x)]</code> This takes <span
-class="math inline">\(O(\log (<code>n</code>+1)) = O(\log
+merge <code>u</code> with the root of our heap: <pre class="listing"><code class="language-python">    def add(self, x):
+        u = self._new_node(x)
+        self.r = self.merge(u, self.r)
+        self.r.parent = self.nil
+        self.n += 1
+        return True</code></pre> This takes
+<span class="math inline">\(O(\log (<code>n</code>+1)) = O(\log
 <code>n</code>)\)</span> expected time.</p>
 <p>The <code>remove()</code> operation is similarly easy. The node we want to
 remove is the root, so we just merge its two children and make the
-result the root: <code>[listing: ods/MeldableHeap.remove()]</code>
-Again, this takes <span class="math inline">\(O(\log
-<code>n</code>)\)</span> expected time.</p>
+result the root: <pre class="listing"><code class="language-python">    def remove(self):
+        if self.n == 0: raise IndexError('remove from empty heap')
+        x = self.r.x
+        self.r = self.merge(self.r.left, self.r.right)
+        if self.r != self.nil: self.r.parent = self.nil
+        self.n -= 1
+        return x</code></pre> Again, this takes <span
+class="math inline">\(O(\log <code>n</code>)\)</span> expected time.</p>
 <p>Additionally, a <code>MeldableHeap</code> can implement many other operations in
 <span class="math inline">\(O(\log <code>n</code>)\)</span> expected time,
 including:</p>

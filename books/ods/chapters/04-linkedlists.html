@@ -26,9 +26,11 @@ node <code>u</code> stores a data value <code>u.x</code> and a reference
 <p>For efficiency, an <code>SLList</code> uses variables <code>head</code> and
 <code>tail</code> to keep track of the first and last node in the sequence, as
 well as an integer <code>n</code> to keep track of the length of the
-sequence: <code>[listing: ods/SLList.head.tail.n]</code> A sequence of
-<code>Stack</code> and <code>Queue</code> operations on an <code>SLList</code> is illustrated in
-.</p>
+sequence: <pre class="listing"><code class="language-python">    def _initialize(self):
+        self.n = 0
+        self.head = None
+        self.tail = None</code></pre> A sequence of <code>Stack</code> and <code>Queue</code>
+operations on an <code>SLList</code> is illustrated in .</p>
 <figure>
 <div class="center">
 <img src="figs/sllist" />
@@ -44,20 +46,35 @@ the sequence. The <code>push()</code> operation simply creates a new node
 of the list and makes <code>u</code> the new head of the list. Finally, it
 increments <code>n</code> since the size of the <code>SLList</code> has increased by
 one:</p>
-<p><code>[listing: ods/SLList.push(x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def push(self,x):
+        u = self.new_node(x)
+        u.next = self.head
+        self.head = u
+        if self.n == 0:
+            self.tail = u
+        self.n += 1
+        return x</code></pre></p>
 <p>The <code>pop()</code> operation, after checking that the <code>SLList</code> is not
 empty, removes the head by setting <span
 class="math inline">\(<code>head=head.next</code>\)</span> and decrementing <code>n</code>. A
 special case occurs when the last element is being removed, in which
 case <code>tail</code> is set to <code>null</code>:</p>
-<p><code>[listing: ods/SLList.pop()]</code></p>
+<p><pre class="listing"><code class="language-python">    def pop(self):
+        if self.n == 0: return None
+        x = self.head.x
+        self.head = self.head.next
+        self.n -= 1
+        if self.n == 0:
+            self.tail = None
+        return x</code></pre></p>
 <p>Clearly, both the <code>push(x)</code> and <code>pop()</code> operations run in <span
 class="math inline">\(O(1)\)</span> time.</p>
 <h3 id="queue-operations">Queue Operations</h3>
 <p>An <code>SLList</code> can also implement the FIFO queue operations <code>add(x)</code>
 and <code>remove()</code> in constant time. Removals are done from the head of the
 list, and are identical to the <code>pop()</code> operation:</p>
-<p><code>[listing: ods/SLList.remove()]</code></p>
+<p><pre class="listing"><code class="language-python">    def _remove(self):
+        return self.pop()</code></pre></p>
 <p>Additions, on the other hand, are done at the tail of the list. In
 most cases, this is done by setting <span
 class="math inline">\(<code>tail.next</code>=<code>u</code>\)</span>, where <code>u</code>
@@ -66,7 +83,15 @@ case occurs when <span class="math inline">\(<code>n</code>=0\)</span>, in
 which case <span
 class="math inline">\(<code>tail</code>=<code>head</code>=<code>null</code>\)</span>. In this
 case, both <code>tail</code> and <code>head</code> are set to <code>u</code>.</p>
-<p><code>[listing: ods/SLList.add(x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _add(self,x):
+        u = self.new_node(x)
+        if self.n == 0:
+            self.head = u
+        else:
+            self.tail.next = u
+        self.tail = u
+        self.n += 1
+        return True</code></pre></p>
 <p>Clearly, both <code>add(x)</code> and <code>remove()</code> take constant time.</p>
 <h3 id="summary">Summary</h3>
 <p>The following theorem summarizes the performance of an
@@ -112,18 +137,40 @@ illustrated in .</p>
 </div>
 <figcaption>A <code>DLList</code> containing a,b,c,d,e.</figcaption>
 </figure>
-<p><code>[listing: ods/DLList.n.dummy.DLList()]</code></p>
+<p><pre class="listing"><code class="language-python">    def _initialize(self):
+        self.n = 0
+        self.dummy = DLList.Node(None)
+        self.dummy.prev = self.dummy
+        self.dummy.next = self.dummy</code></pre></p>
 <p>Finding the node with a particular index in a <code>DLList</code> is easy; we
 can either start at the head of the list (<code>dummy.next</code>) and work forward,
 or start at the tail of the list (<code>dummy.prev</code>) and work backward. This
 allows us to reach the <code>i</code>th node in <span
 class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>
 time:</p>
-<p><code>[listing: ods/DLList.getNode(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def get_node(self, i):
+        if i &lt; self.n/2:
+            p = self.dummy.next    
+            for _ in range(i): 
+                p = p.next
+        else:
+            p = self.dummy
+            for _ in range(self.n, i, -1): 
+                p = p.prev
+        return p</code></pre></p>
 <p>The <code>get(i)</code> and <code>set(i,x)</code> operations are now also easy. We
 first find the <code>i</code>th node and then get or set its <code>x</code>
 value:</p>
-<p><code>[listing: ods/DLList.get(i).set(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def get(self, i):
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        return self.get_node(i).x
+
+    def set(self, i, x): #@ReservedAssignment
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        u = self.get_node(i)
+        y = u.x
+        u.x = x
+        return y</code></pre></p>
 <p>The running time of these operations is dominated by the time it
 takes to find the <code>i</code>th node, and is therefore <span
 class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>.</p>
@@ -136,7 +183,14 @@ class="math inline">\(<code>u.prev</code>=<code>w.prev</code>\)</span>, and then
 adjusting <code>u.prev.next</code> and <code>u.next.prev</code>. (See .) Thanks to the dummy node,
 there is no need to worry about <code>w.prev</code> or <code>w.next</code> not
 existing.</p>
-<p><code>[listing: ods/DLList.addBefore(w,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add_before(self, w, x):
+        u = DLList.Node(x)
+        u.prev = w.prev
+        u.next = w
+        u.next.prev = u
+        u.prev.next = u
+        self.n += 1
+        return u</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/dllist-addbefore" />
@@ -147,7 +201,9 @@ existing.</p>
 <p>Now, the list operation <code>add(i,x)</code> is trivial to implement. We find
 the <code>i</code>th node in the <code>DLList</code> and insert a new node
 <code>u</code> that contains <code>x</code> just before it.</p>
-<p><code>[listing: ods/DLList.add(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, i, x):
+        if i &lt; 0 or i &gt; self.n:    raise IndexError()
+        self.add_before(self.get_node(i), x)</code></pre></p>
 <p>The only non-constant part of the running time of <code>add(i,x)</code> is the
 time it takes to find the <code>i</code>th node (using <code>getNode(i)</code>). Thus,
 <code>add(i,x)</code> runs in <span class="math inline">\(O(1+\min\{<code>i</code>,
@@ -156,10 +212,15 @@ time it takes to find the <code>i</code>th node (using <code>getNode(i)</code>).
 to adjust pointers at <code>w.next</code> and <code>w.prev</code> so that they skip over
 <code>w</code>. Again, the use of the dummy node eliminates the need to
 consider any special cases:</p>
-<p><code>[listing: ods/DLList.remove(w)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _remove(self, w):
+        w.prev.next = w.next
+        w.next.prev = w.prev
+        self.n -= 1    </code></pre></p>
 <p>Now the <code>remove(i)</code> operation is trivial. We find the node with index
 <code>i</code> and remove it:</p>
-<p><code>[listing: ods/DLList.remove(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self, i):
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        self._remove(self.get_node(i))</code></pre></p>
 <p>Again, the only expensive part of this operation is finding the
 <code>i</code>th node using <code>getNode(i)</code>, so <code>remove(i)</code> runs in <span
 class="math inline">\(O(1+\min\{<code>i</code>,
@@ -248,7 +309,20 @@ list and traverse in the forward direction, or at the back of the list
 and traverse backwards until we reach the node we want. The only
 difference is that, each time we move from one node to the next, we skip
 over a whole block of elements.</p>
-<p><code>[listing: ods/SEList.get_location(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _get_location(self, i):
+        if i &lt; self.n//2:
+            u = self.dummy.next
+            while i &gt;= u.d.size():
+                i -= u.d.size()
+                u = u.next
+            return u,i
+        else:
+            u = self.dummy
+            idx = self.n
+            while i &lt; idx:
+                u = u.prev
+                idx -= u.d.size()
+        return u, i-idx</code></pre></p>
 <p>Remember that, with the exception of at most one block, each block
 contains at least <span class="math inline">\(<code>b</code>-1\)</span>
 elements, so each step in our search gets us <span
@@ -265,7 +339,13 @@ class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\}/<
 <p>Once we know how to locate the item with index <code>i</code>, the
 <code>get(i)</code> and <code>set(i,x)</code> operations translate into getting or setting
 a particular index in the correct block:</p>
-<p><code>[listing: ods/SEList.get(i).set(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def get(self, i):
+        u, j = self._get_location(i)
+        return u.d.get(j)
+
+    def set(self, i, x):
+        u, j = self._get_location(i)
+        return u.d.set(j, x)</code></pre></p>
 <p>The running times of these operations are dominated by the time it
 takes to locate the item, so they also run in <span
 class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\}/<code>b</code>)\)</span>
@@ -278,7 +358,12 @@ the last block is full (or does not exist because there are no blocks
 yet), then we first allocate a new block and append it to the list of
 blocks. Now that we are sure that the last block exists and is not full,
 we append <code>x</code> to the last block.</p>
-<p><code>[listing: ods/SEList.append(x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def append(self, x):
+        last = self.dummy.prev
+        if last is self.dummy or last.d.size() == self.b+1:
+            last = self._add_before(self.dummy)
+        last.d.append(x)
+        self.n += 1</code></pre></p>
 <p>Things get more complicated when we add to the interior of the list
 using <code>add(i,x)</code>. We first locate <code>i</code> to get the node
 <code>u</code> whose block contains the <code>i</code>th list item. The
@@ -346,7 +431,27 @@ class="math inline">\(<code>u</code>_0\)</span>’s block contains only
 <code>b</code> elements so it has room for us to insert
 <code>x</code>.</p></li>
 </ol>
-<p><code>[listing: ods/SEList.add(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, i, x):
+        if i &lt; 0 or i &gt; self.n: raise IndexError()
+        if i == self.n:
+            self.append(x)
+            return
+        u, j = self._get_location(i)
+        r = 0
+        w = u
+        while r &lt; self.b and w is not self.dummy and w.d.size() == self.b+1:
+            w = w.next
+            r += 1
+        if r == self.b:  # b blocks, each with b+1 elements
+            self._spread(u)
+            w = u
+        if w == self.dummy: # ran off the end - add new node
+            w = self._add_before(w)
+        while w is not u: # work backwards, shifting elements as we go
+             w.d.add_first(w.prev.d.remove_last())
+             w = w.prev
+        w.d.add(j, x)
+        self.n += 1</code></pre></p>
 <p>The running time of the <code>add(i,x)</code> operation depends on which of the
 three cases above occurs. Cases 1 and 2 involve examining and shifting
 elements through at most <code>b</code> blocks and take <span
@@ -436,7 +541,23 @@ empty. Now <span class="math inline">\(<code>u</code>_0\)</span>’s block
 contains <code>b</code> elements and we can then remove the appropriate
 element from it.</p></li>
 </ol>
-<p><code>[listing: ods/SEList.remove(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self, i):
+        if i &lt; 0 or i &gt; self.n-1: raise IndexError()
+        u, j = self._get_location(i)
+        y = u.d.get(j)
+        w = u
+        r = 0
+        while r &lt; self.b and w is not self.dummy and w.d.size() == self.b-1:
+            w = w.next
+            r += 1
+        if r == self.b: # b blocks, each with b-1 elements
+            self._gather(u)
+        u.d.remove(j)
+        while u.d.size() &lt; self.b-1 and u.next is not self.dummy:
+            u.d.add_last(u.next.d.remove_first())
+            u = u.next
+        if u.d.size() == 0: self._remove_node(u)
+        self.n -= 1</code></pre></p>
 <p>Like the <code>add(i,x)</code> operation, the running time of the <code>remove(i)</code>
 operation is <span
 class="math inline">\(O(<code>b</code>+\min\{<code>i</code>,<code>n</code>-<code>i</code>\}/<code>b</code>)\)</span>
@@ -447,8 +568,21 @@ Analysis of Spreading and Gathering</h3>
 <p>Next, we consider the cost of the <code>gather(u)</code> and <code>spread(u)</code> methods
 that may be executed by the <code>add(i,x)</code> and <code>remove(i)</code> methods. For the
 sake of completeness, here they are:</p>
-<p><code>[listing: ods/SEList.spread(u)]</code>
-<code>[listing: ods/SEList.gather(u)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _spread(self, u):
+        w = u
+        for j in range(self.b):
+            w = w.next
+        w = self._add_before(w)
+        while w is not u:
+            while w.d.size() &lt; self.b:
+                w.d.add_first(w.prev.d.remove_last())
+            w = w.prev</code></pre> <pre class="listing"><code class="language-python">    def _gather(self, u):
+        w = u
+        for j in range(self.b-1):
+            while w.d.size() &lt; self.b:
+                w.d.add_last(w.next.d.remove_first())
+            w = w.next
+        self._remove_node(w)</code></pre></p>
 <p>The running time of each of these methods is dominated by the two
 nested loops. Both the inner and outer loops execute at most <span
 class="math inline">\(<code>b</code>+1\)</span> times, so the total running

@@ -346,8 +346,15 @@ methods that are illustrated in . The first two subroutines are for
 manipulating colours while preserving the black-height property. The
 <code>pushBlack(u)</code> method takes as input a black node <code>u</code> that has two
 red children and colours <code>u</code> red and its two children black. The
-<code>pullBlack(u)</code> method reverses this operation:
-<code>[listing: ods/RedBlackTree.pushBlack(u).pullBlack(u)]</code></p>
+<code>pullBlack(u)</code> method reverses this operation: <pre class="listing"><code class="language-python">    def push_black(self, u):
+        u.colour -= 1
+        u.left.colour += 1
+        u.right.colour += 1
+
+    def pull_black(self, u):
+        u.colour += 1
+        u.left.colour -= 1
+        u.right.colour -= 1</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/flippullpush" />
@@ -357,15 +364,17 @@ red children and colours <code>u</code> red and its two children black. The
 <p>The <code>flipLeft(u)</code> method swaps the colours of <code>u</code> and
 <code>u.right</code> and then performs a left rotation at <code>u</code>. This
 method reverses the colours of these two nodes as well as their
-parent-child relationship:
-<code>[listing: ods/RedBlackTree.flipLeft(u)]</code> The <code>flipLeft(u)</code>
-operation is especially useful in restoring the left-leaning property at
-a node <code>u</code> that violates it (because <code>u.left</code> is black and
+parent-child relationship: <pre class="listing"><code class="language-python">    def flip_left(self, u):
+        self.swap_colours(u, u.right)
+        self.rotate_left(u)</code></pre> The <code>flipLeft(u)</code> operation is
+especially useful in restoring the left-leaning property at a node
+<code>u</code> that violates it (because <code>u.left</code> is black and
 <code>u.right</code> is red). In this special case, we can be assured that this
 operation preserves both the black-height and no-red-edge properties.
 The <code>flipRight(u)</code> operation is symmetric with <code>flipLeft(u)</code>, when the roles
-of left and right are reversed.
-<code>[listing: ods/RedBlackTree.flipRight(u)]</code></p>
+of left and right are reversed. <pre class="listing"><code class="language-python">    def flip_right(self, u):
+        self.swap_colours(u, u.left)
+        self.rotate_right(u)</code></pre></p>
 <h3 id="addition">Addition</h3>
 <p>To implement <code>add(x)</code> in a <code>RedBlackTree</code>, we perform a standard
 <code>BinarySearchTree</code> insertion to add a new leaf, <code>u</code>, with <span
@@ -376,7 +385,13 @@ black-height property. It may, however, violate the left-leaning
 property (if <code>u</code> is the right child of its parent), and it may
 violate the no-red-edge property (if <code>u</code>’s parent is
 <code>red</code>). To restore these properties, we call the method
-<code>addFixup(u)</code>. <code>[listing: ods/RedBlackTree.add(x)]</code></p>
+<code>addFixup(u)</code>. <pre class="listing"><code class="language-python">    def add(self, x):
+        u = self._new_node(x)
+        u.colour = red
+        if self.add_node(u):
+            self.add_fixup(u)
+            return True
+        return False</code></pre></p>
 <p>Illustrated in , the <code>addFixup(u)</code> method takes as input a node
 <code>u</code> whose colour is red and which may violate the no-red-edge
 property and/or the left-leaning property. The following discussion is
@@ -417,7 +432,23 @@ makes <code>w</code> the (black) parent of <code>g</code> and gives
 <code>w</code> two red children, <code>u</code> and <code>g</code>. This ensures
 that <code>u</code> satisfies the no-red-edge property and <code>g</code>
 satisfies the left-leaning property. In this case we can stop.
-<code>[listing: ods/RedBlackTree.addFixup(u)]</code></p>
+<pre class="listing"><code class="language-python">    def add_fixup(self, u):
+        while u.colour == red:
+            if u == self.r:
+                u.colour = black
+            w = u.parent
+            if w.left.colour == black:
+                self.flip_left(w)
+                u = w
+                w = u.parent
+            if w.colour == black:
+                return   # red-red edge is eliminated - done
+            g = w.parent
+            if g.right.colour == black:
+                self.flip_right(g)
+                return
+            self.push_black(g)
+            u = g</code></pre></p>
 <p>The <code>insertFixup(u)</code> method takes constant time per iteration and each
 iteration either finishes or moves <code>u</code> closer to the root.
 Therefore, the <code>insertFixup(u)</code> method finishes after <span
@@ -440,7 +471,24 @@ which is an invalid colour. If <code>w</code> was red, then it is replaced
 by a black node <code>u</code>, which may violate the left-leaning property
 at <span class="math inline">\(<code>u.parent</code>\)</span>. Both of these
 problems can be resolved with a call to the <code>removeFixup(u)</code> method.
-<code>[listing: ods/RedBlackTree.remove(x)]</code></p>
+<pre class="listing"><code class="language-python">    def remove(self, x):
+        u = self._find_last(x)
+        if u == self.nil or u.x != x:
+            return False
+        w = u.right
+        if w == self.nil:
+            w = u
+            u = w.left
+        else:
+            while w.left != self.nil:
+                w = w.left
+            u.x = w.x
+            u = w.right
+        self.splice(w)
+        u.colour += w.colour
+        u.parent = w.parent
+        self.remove_fixup(u)
+        return True</code></pre></p>
 <p>The <code>removeFixup(u)</code> method takes as its input a node <code>u</code> whose
 colour is black (1) or double-black (2). If <code>u</code> is double-black,
 then <code>removeFixup(u)</code> performs a series of rotations and recolouring
@@ -450,8 +498,20 @@ the end of this process, <code>u</code> refers to the root of the subtree
 that has been changed. The root of this subtree may have changed colour.
 In particular, it may have gone from red to black, so the <code>removeFixup(u)</code>
 method finishes by checking if <code>u</code>’s parent violates the
-left-leaning property and, if so, fixing it.
-<code>[listing: ods/RedBlackTree.removeFixup(u)]</code></p>
+left-leaning property and, if so, fixing it. <pre class="listing"><code class="language-python">    def remove_fixup(self, u):
+        while u.colour &gt; black:
+            if u == self.r:
+                u.colour = black
+            elif u.parent.left.colour == red:
+                u = self.remove_fixup_case1(u)
+            elif u == u.parent.left:
+                u = self.remove_fixup_case2(u)
+            else:
+                u = self.remove_fixup_case3(u)
+        if u != self.r:   # restore left-leaning property, if needed
+            w = u.parent
+            if w.right.colour == red and w.left.colour == black:
+                self.flip_left(w)</code></pre></p>
 <p>The <code>removeFixup(u)</code> method is illustrated in . Again, the following text
 will be difficult, if not impossible, to follow without referring to .
 Each iteration of the loop in <code>removeFixup(u)</code> processes the double-black
@@ -474,8 +534,9 @@ then proceed to the next iteration. Note that this action causes
 of <code>u</code> to increase. However, it also implies that the next
 iteration will be in Case 3 with <code>w</code> coloured red. When
 examining Case 3 below, we will see that the process will stop during
-the next iteration.
-<code>[listing: ods/RedBlackTree.removeFixupCase1(u)]</code></p>
+the next iteration. <pre class="listing"><code class="language-python">    def remove_fixup_case1(self, u):
+        self.flip_right(u.parent)
+        return u</code></pre></p>
 <p>Case 2: <code>u</code>’s sibling, <code>v</code>, is black, and <code>u</code>
 is the left child of its parent, <code>w</code>. In this case, we call
 <code>pullBlack(w)</code>, making <code>u</code> black, <code>v</code> red, and darkening
@@ -503,8 +564,21 @@ colour of <code>q</code> back to the original colour of <code>w</code>.</p>
 no-red-edge and black-height properties are reestablished. Only one
 possible problem remains: the right child of <code>v</code> may be red, in
 which case the left-leaning property would be violated. We check this
-and perform a <code>flipLeft(v)</code> to correct it if necessary.
-<code>[listing: ods/RedBlackTree.removeFixupCase2(u)]</code></p>
+and perform a <code>flipLeft(v)</code> to correct it if necessary. <pre class="listing"><code class="language-python">    def remove_fixup_case2(self, u):
+        w = u.parent
+        v = w.right
+        self.pull_black(w)
+        self.flip_left(w)
+        q = w.right
+        if q.colour == red:
+            self.rotate_left(w)
+            self.flip_right(v)
+            self.push_black(q)
+            if v.right.colour == red:
+                self.flip_left(v)
+            return q
+        else:
+            return v</code></pre></p>
 <p>Case 3: <code>u</code>’s sibling is black and <code>u</code> is the right
 child of its parent, <code>w</code>. This case is symmetric to Case 2 and
 is handled mostly the same way. The only differences come from the fact
@@ -528,7 +602,24 @@ left-leaning property, and we restore this with a call to <code>flipLeft(v)</cod
 We then return the node <code>v</code> so that the next iteration of
 <code>removeFixup(u)</code> then continues with <span
 class="math inline">\(<code>u</code>=<code>v</code>\)</span>.
-<code>[listing: ods/RedBlackTree.removeFixupCase3(u)]</code>.</p>
+<pre class="listing"><code class="language-python">    def remove_fixup_case3(self, u):
+        w = u.parent
+        v = w.left
+        self.pull_black(w)
+        self.flip_right(w)  # w is now red
+        q = w.left
+        if q.colour == red:  # q-w is red-red
+            self.rotate_right(w)
+            self.flip_left(v)
+            self.push_black(q)
+            return q
+        else:
+            if v.left.colour == red:
+                self.push_black(v)
+                return v
+            else:  # ensure left-leaning
+                self.flip_left(v)
+                return w</code></pre>.</p>
 <p>Each iteration of <code>removeFixup(u)</code> takes constant time. Cases 2 and 3
 either finish or move <code>u</code> closer to the root of the tree. Case 0
 (where <code>u</code> is the root) always terminates and Case 1 leads

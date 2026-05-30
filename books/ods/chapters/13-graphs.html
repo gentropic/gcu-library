@@ -88,8 +88,8 @@ Representing a Graph by a Matrix</h2>
 <p>An <em>adjacency matrix</em> is a way of representing an <code>n</code>
 vertex graph <span class="math inline">\(G=(V,E)\)</span> by an <span
 class="math inline">\(<code>n</code>\times<code>n</code>\)</span> matrix,
-<code>a</code>, whose entries are boolean values.
-<code>[listing: ods/AdjacencyMatrix.a.n.AdjacencyMatrix(n0)]</code></p>
+<code>a</code>, whose entries are boolean values. <pre class="listing"><code class="language-python">    def _initialize(self):
+        self.a = new_boolean_matrix(self.n, self.n)    </code></pre></p>
 <p>The matrix entry <code>a[i][j]</code> is defined as <span
 class="math display">\[<code>a[i][j]</code>=
     \begin{cases}
@@ -99,8 +99,15 @@ class="math display">\[<code>a[i][j]</code>=
 in .</p>
 <p>In this representation, the operations <code>addEdge(i,j)</code>, <code>removeEdge(i,j)</code>, and
 <code>hasEdge(i,j)</code> just involve setting or reading the matrix entry <code>a[i][j]</code>:
-<code>[listing: ods/AdjacencyMatrix.addEdge(i,j).removeEdge(i,j).hasEdge(i,j)]</code>
-These operations clearly take constant time per operation.</p>
+<pre class="listing"><code class="language-python">    def add_edge(self, i, j):
+        self.a[i][j] = True
+
+    def remove_edge(self, i, j):
+        self.a[i][j] = False
+
+    def has_edge(self, i, j):
+        return self.a[i][j]</code></pre> These operations clearly take constant time per
+operation.</p>
 <figure>
 <div class="center">
 <p><img src="figs/graph" alt="image" /><br />
@@ -380,8 +387,10 @@ representation, the graph <span class="math inline">\(G=(V,E)\)</span>
 is represented as an array, <code>adj</code>, of lists. The list <code>adj[i]</code>
 contains a list of all the vertices adjacent to vertex <code>i</code>. That
 is, it contains every index <code>j</code> such that <span
-class="math inline">\(<code>(i,j)</code>\in E\)</span>.
-<code>[listing: ods/AdjacencyLists.adj.n.AdjacencyLists(n0)]</code> (An
+class="math inline">\(<code>(i,j)</code>\in E\)</span>. <pre class="listing"><code class="language-python">    def _initialize(self):
+        self.adj = new_array(self.n)
+        for i in range(self.n):
+            self.adj[i] = ArrayStack()</code></pre> (An
 example is shown in .) In this particular implementation, we represent
 each list in <code>adj</code> as <code>ArrayStack</code>, because we would like constant
 time access by position. Other options are also possible. Specifically,
@@ -490,30 +499,39 @@ we could have implemented <code>adj</code> as a <code>DLList</code>.</p>
 <figcaption>A graph and its adjacency lists</figcaption>
 </figure>
 <p>The <code>addEdge(i,j)</code> operation just appends the value <code>j</code> to the
-list <code>adj[i]</code>:
-<code>[listing: ods/AdjacencyLists.addEdge(i,j)]</code> This takes
-constant time.</p>
+list <code>adj[i]</code>: <pre class="listing"><code class="language-python">    def add_edge(self, i, j):
+        self.adj[i].append(j)</code></pre> This takes constant time.</p>
 <p>The <code>removeEdge(i,j)</code> operation searches through the list <code>adj[i]</code> until
-it finds <code>j</code> and then removes it:
-<code>[listing: ods/AdjacencyLists.removeEdge(i,j)]</code> This takes
-<span class="math inline">\(O(\deg(<code>i</code>))\)</span> time, where
-<span class="math inline">\(\deg(<code>i</code>)\)</span> (the
-<em>degree</em> of <span class="math inline">\(<code>i</code>\)</span>)
-counts the number of edges in <span class="math inline">\(E\)</span>
-that have <span class="math inline">\(<code>i</code>\)</span> as their
-source.</p>
+it finds <code>j</code> and then removes it: <pre class="listing"><code class="language-python">    def remove_edge(self, i, j):
+        for k in range(length(self.adj[i])):
+            if self.adj[i].get(k) == j:
+                self.adj[i].remove(k)
+                return</code></pre> This takes <span
+class="math inline">\(O(\deg(<code>i</code>))\)</span> time, where <span
+class="math inline">\(\deg(<code>i</code>)\)</span> (the <em>degree</em> of
+<span class="math inline">\(<code>i</code>\)</span>) counts the number of
+edges in <span class="math inline">\(E\)</span> that have <span
+class="math inline">\(<code>i</code>\)</span> as their source.</p>
 <p>The <code>hasEdge(i,j)</code> operation is similar; it searches through the list
 <code>adj[i]</code> until it finds <code>j</code> (and returns true), or reaches
-the end of the list (and returns false):
-<code>[listing: ods/AdjacencyLists.hasEdge(i,j)]</code> This also takes
+the end of the list (and returns false): <pre class="listing"><code class="language-python">    def has_edge(self, i, j):
+        for k in self.adj[i]:
+            if k == j:
+                return True
+        return False</code></pre> This also takes
 <span class="math inline">\(O(\deg(<code>i</code>))\)</span> time.</p>
 <p>The <code>outEdges(i)</code> operation is very simple; it returns the list
 <code>adj[i]</code></p>
-<p>: <code>[listing: ods/AdjacencyLists.outEdges(i)]</code></p>
+<p>: <pre class="listing"><code class="language-python">    def out_edges(self, i):
+        return self.adj[i]</code></pre></p>
 <p>The <code>inEdges(i)</code> operation is much more work. It scans over every
 vertex <span class="math inline">\(j\)</span> checking if the edge
 <code>(i,j)</code> exists and, if so, adding <code>j</code> to the output list:
-<code>[listing: ods/AdjacencyLists.inEdges(i)]</code></p>
+<pre class="listing"><code class="language-python">    def in_edges(self, i):
+        out = ArrayStack()
+        for j in range(self.n):
+            if self.has_edge(j, i): out.append(j)
+        return out</code></pre></p>
 <p>This operation is very slow. It scans the adjacency list of every
 vertex, so it takes <span class="math inline">\(O(<code>n</code> +
 <code>m</code>)\)</span> time.</p>
@@ -579,10 +597,19 @@ breadth-first-search algorithm for graphs and the one for trees is that
 the algorithm for graphs has to ensure that it does not add the same
 vertex to <code>q</code> more than once. It does this by using an auxiliary
 boolean array, <code>seen</code>, that tracks which vertices have already been
-discovered. <code>[listing: ods/Algorithms.bfs(g,r)]</code> An example
-of running <code>bfs(g,0)</code> on the graph from is shown in . Different
-executions are possible, depending on the ordering of the adjacency
-lists; uses the adjacency lists in .</p>
+discovered. <pre class="listing"><code class="language-python">def bfs(g, r):
+    seen = new_boolean_array(n)
+    q = SLList()
+    q.add(r)
+    seen[r] = True
+    while q.size() &gt; 0:
+        i = q.remove()
+        for j in g.out_edges(i):
+            if seen[j] is False:
+                q.add(j)
+                seen[j] = True</code></pre> An example of running <code>bfs(g,0)</code> on the graph
+from is shown in . Different executions are possible, depending on the
+ordering of the adjacency lists; uses the adjacency lists in .</p>
 <figure>
 <div class="center">
 <img src="figs/graph-bfs" />
@@ -647,9 +674,18 @@ algorithm. It starts by visiting <code>r</code>. When visiting a vertex
 <code>i</code>, we first mark <code>i</code> as <code>grey</code>. Next, we scan
 <code>i</code>’s adjacency list and recursively visit any white vertex we
 find in this list. Finally, we are done processing <code>i</code>, so we
-colour <code>i</code> black and return.
-<code>[listing: ods/Algorithms.dfs(g,r).dfs(g,i,c)]</code> An example of
-the execution of this algorithm is shown in .</p>
+colour <code>i</code> black and return. <pre class="listing"><code class="language-python">def dfs(g, r):
+    c = new_array(g.n)
+    _dfs(g, r, c)
+
+def _dfs(g, i, c):
+    c[i] = grey
+    for j in g.out_edges(i):
+        if c[j] == white:
+            c[j] = grey
+            dfs(g, j, c)
+    c[i] = black</code></pre> An example of the
+execution of this algorithm is shown in .</p>
 <figure>
 <div class="center">
 <img src="figs/graph-dfs" />
@@ -664,11 +700,19 @@ algorithm, recursion is not the best way to implement it. Indeed, the
 code given above will fail for many large graphs by causing a stack
 overflow. An alternative implementation is to replace the recursion
 stack with an explicit stack, <code>s</code>. The following implementation
-does just that: <code>[listing: ods/Algorithms.dfs2(g,r)]</code> In the
-preceding code, when the next vertex, <code>i</code>, is processed,
-<code>i</code> is coloured <code>grey</code> and then replaced, on the stack,
-with its adjacent vertices. During the next iteration, one of these
-vertices will be visited.</p>
+does just that: <pre class="listing"><code class="language-python">def dfs2(g, r):
+    c = new_array(g.n)
+    s = SLList()
+    s.push(r)
+    while s.size() &gt; 0:
+        i = s.pop()
+        if c[i] == white:
+            c[i] = grey
+            for j in g.out_edges(i):
+                s.push(j)</code></pre> In the preceding code, when the next
+vertex, <code>i</code>, is processed, <code>i</code> is coloured <code>grey</code>
+and then replaced, on the stack, with its adjacent vertices. During the
+next iteration, one of these vertices will be visited.</p>
 <p>Not surprisingly, the running times of <code>dfs(g,r)</code> and <code>dfs2(g,r)</code>
 are the same as that of <code>bfs(g,r)</code>:</p>
 <div class="thm">

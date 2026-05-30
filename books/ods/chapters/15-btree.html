@@ -173,7 +173,12 @@ class="math inline">\(B\)</span>-tree, stores a <code>BlockStore</code>, <code>b
 that stores <code>BTree</code> nodes as well as the index, <code>ri</code>, of the
 root node. As usual, an integer, <code>n</code>, is used to keep track of
 the number of items in the data structure:</p>
-<p><code>[listing: ods/BTree.initialize(b)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _initialize(self, b):
+        self.b = b | 1
+        self.B = self.b // 2
+        self.bs = BlockStore()
+        self.ri = self.new_node().id
+        self.n = 0</code></pre></p>
 <h3 id="searching">Searching</h3>
 <p>The implementation of the <code>find(x)</code> operation, which is illustrated
 in , generalizes the <code>find(x)</code> operation in a binary search tree. The
@@ -197,11 +202,21 @@ the search continues in <code>u</code>’s rightmost child. Just like binary
 search trees, the algorithm keeps track of the most recently seen key,
 <code>z</code>, that is larger than <code>x</code>. In case <code>x</code> is not
 found, <code>z</code> is returned as the smallest value that is greater or
-equal to <code>x</code>. <code>[listing: ods/BTree.find(x)]</code> Central
-to the <code>find(x)</code> method is the <code>findIt(a,x)</code> method that searches in a
-<code>null</code>-padded sorted array, <code>a</code>, for the value <code>x</code>.
-This method, illustrated in , works for any array, <code>a</code>, where
-<span
+equal to <code>x</code>. <pre class="listing"><code class="language-python">    def find(self, x):
+        z = None
+        ui = self.ri
+        while ui &gt;= 0:
+            u = self.bs.read_block(ui)
+            i = find_it(u.keys, x)
+            if i &lt; 0:
+                return u.keys[-(i+1)] # found it
+            if u.keys[i] is not None:
+                z = u.keys[i]
+            ui = u.children[i]
+        return z</code></pre> Central to the <code>find(x)</code> method is
+the <code>findIt(a,x)</code> method that searches in a <code>null</code>-padded sorted array,
+<code>a</code>, for the value <code>x</code>. This method, illustrated in ,
+works for any array, <code>a</code>, where <span
 class="math inline">\(<code>a</code>[0],\ldots,<code>a</code>[k-1]\)</span> is a
 sequence of keys in sorted order and <span
 class="math inline">\(<code>a</code>[k],\ldots,<code>a</code>[<code>a.length</code>-1]\)</span>
@@ -215,10 +230,20 @@ class="math inline">\(<code>a[i]</code>=<code>null</code>\)</span>.</p>
 
 <figcaption>The execution of <code>findIt(a,27)</code>.</figcaption>
 </figure>
-<p><code>[listing: ods/BTree.findIt(a,x)]</code> The <code>findIt(a,x)</code> method
-uses a binary search that halves the search space at each step, so it
-runs in <span class="math inline">\(O(\log(<code>a.length</code>))\)</span> time.
-In our setting, <span class="math inline">\(<code>a.length</code>=2B\)</span>, so
+<p><pre class="listing"><code class="language-python">def find_it(a, x):
+    lo, hi = 0, len(a)
+    while hi != lo:
+        m = (hi+lo)//2
+        if a[m] is None or x &lt; a[m]:
+            hi = m # look in first half
+        elif x &gt; a[m]:
+            lo = m+1 # look in second half
+        else:
+            return -m-1 # found it
+    return lo</code></pre> The <code>findIt(a,x)</code> method uses a binary search that halves
+the search space at each step, so it runs in <span
+class="math inline">\(O(\log(<code>a.length</code>))\)</span> time. In our
+setting, <span class="math inline">\(<code>a.length</code>=2B\)</span>, so
 <code>findIt(a,x)</code> runs in <span class="math inline">\(O(\log B)\)</span>
 time.</p>
 <p>We can analyze the running time of a <span
@@ -324,14 +349,44 @@ to a descendant of <code>u</code>), the <code>addRecursive(x,ui)</code> method c
 class="math inline">\(2B-1\)</span>) keys. If so, then <code>u</code> needs
 to be <em>split</em> with a call to the <code>u.split()</code> method. The result
 of calling <code>u.split()</code> is a new node that is used as the return value
-for <code>addRecursive(x,ui)</code>.
-<code>[listing: ods/BTree.addRecursive(x,ui)]</code></p>
+for <code>addRecursive(x,ui)</code>. <pre class="listing"><code class="language-python">    def add_recursive(self, x, ui):
+        u = self.bs.read_block(ui)
+        i = find_it(u.keys, x)
+        if i &lt; 0: raise DuplicateValueError()
+        if u.children[i] &lt; 0:
+            u.add(x, -1)
+            self.bs.write_block(u.id, u)
+        else:
+            w = self.add_recursive(x, u.children[i])
+            if w is not None:
+                x = w.remove(0)
+                self.bs.write_block(w.id, w)
+                u.add(x, w.id)
+                self.bs.write_block(u.id, u)
+        if u.is_full(): return u.split()
+        return None</code></pre></p>
 <p>The <code>addRecursive(x,ui)</code> method is a helper for the <code>add(x)</code> method, which
 calls <code>addRecursive(x,ri)</code> to insert <code>x</code> into the root of the <span
 class="math inline">\(B\)</span>-tree. If <code>addRecursive(x,ri)</code> causes the root to
 split, then a new root is created that takes as its children both the
 old root and the new node created by the splitting of the old root.
-<code>[listing: ods/BTree.add(x)]</code></p>
+<pre class="listing"><code class="language-python">    def add(self, x):
+        w = None
+        try:
+            w = self.add_recursive(x, self.ri)
+        except DuplicateValueError:
+            return False
+        if w is not None:
+            newroot = BTree.Node(self)
+            x = w.remove(0)
+            self.bs.write_block(w.id, w)
+            newroot.children[0] = self.ri
+            newroot.keys[0] = x
+            newroot.children[1] = w.id
+            self.ri = newroot.id
+            self.bs.write_block(self.ri, newroot)
+        self.n += 1
+        return True</code></pre></p>
 <p>The <code>add(x)</code> method and its helper, <code>addRecursive(x,ui)</code>, can be analyzed
 in two phases:</p>
 <dl>
@@ -412,8 +467,30 @@ with the the value <span class="math inline">\(<code>x'</code>=11\)</span>
 and remove 11 from the leaf that contains it.</figcaption>
 </figure>
 <p>The <code>removeRecursive(x,ui)</code> method is a recursive implementation of the preceding
-algorithm:
-<code>[listing: ods/BTree.removeRecursive(x,ui).removeSmallest(ui)]</code></p>
+algorithm: <pre class="listing"><code class="language-python">    def remove_recursive(self, x, ui):
+        if ui &lt; 0: return False  # didn't find it
+        u = self.bs.read_block(ui)
+        i = find_it(u.keys, x)
+        if i &lt; 0:  # found it
+            i = -(i+1)
+            if u.is_leaf():
+                u.remove(i)
+            else:
+                u.keys[i] = self.remove_smallest(u.children[i+1])
+                self.check_underflow(u, i+1)
+            return True
+        elif self.remove_recursive(x, u.children[i]):
+            self.check_underflow(u, i)
+            return True
+        return False
+
+    def remove_smallest(self, ui):
+        u = self.bs.read_block(ui)
+        if u.is_leaf():
+            return u.remove(0)
+        y = self.remove_smallest(u.children[0])
+        self.check_underflow(u, 0)
+        return y</code></pre></p>
 <p>Note that, after recursively removing the value <code>x</code> from the
 <code>i</code>th child of <code>u</code>, <code>removeRecursive(x,ui)</code> needs to ensure that
 this child still has at least <span class="math inline">\(B-1\)</span>
@@ -430,8 +507,12 @@ class="math inline">\(<code>i</code>-1\)</span> of <code>u</code>, which is
 the sibling, <code>v</code>, of <code>w</code> directly to its left. The only
 time this doesn’t work is when <span
 class="math inline">\(<code>i</code>=0\)</span>, in which case we use the
-sibling directly to <code>w</code>’s right.
-<code>[listing: ods/BTree.checkUnderflow(u,i)]</code> In the following,
+sibling directly to <code>w</code>’s right. <pre class="listing"><code class="language-python">    def check_underflow(self, u, i):
+        if u.children[i] &lt; 0: return
+        if i == 0:
+            self.check_underflow_zero(u, i)
+        else:
+            self.check_underflow_nonzero(u, i)</code></pre> In the following,
 we focus on the case when <span class="math inline">\(<code>i</code>\neq
 0\)</span> so that any underflow at the <code>i</code>th child of
 <code>u</code> will be corrected with the help of the <span
@@ -481,7 +562,15 @@ class="math inline">\(B=3\)</span>).</figcaption>
 </figure>
 </dd>
 </dl>
-<p><code>[listing: ods/BTree.checkUnderflowNonZero(u,i).checkUnderflowZero(u,i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def check_underflow_zero(self, u, i):
+        w = self.bs.read_block(u.children[i])
+        if w.size() &lt; self.B-1: # underflow at w
+            v = self.bs.read_block(u.children[i+1]) # v right of w
+            if v.size() &gt; self.B:
+                self.shift_rl(u, i, v, w)
+            else:
+                self.merge(u, i, w, v)
+                u.children[i] = w.id</code></pre></p>
 <p>To summarize, the <code>remove(x)</code> method in a <span
 class="math inline">\(B\)</span>-tree follows a root to leaf path,
 removes a key <code>x'</code> from a leaf, <code>u</code>, and then performs

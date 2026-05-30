@@ -109,7 +109,19 @@ class="math inline">\(L_0\)</span> stores the elements of the <code>SSet</code>
 in sorted order. The <code>find(x)</code> method works by following the search
 path for the smallest value <code>y</code> such that <span
 class="math inline">\(<code>y</code>\ge<code>x</code>\)</span>:</p>
-<p><code>[listing: ods/SkiplistSSet.find(x).findPredNode(x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def find_pred_node(self, x):
+        u = self.sentinel
+        r = self.h
+        while r &gt;= 0:
+            while u.next[r] is not None and u.next[r].x &lt; x:
+                u = u.next[r]  # go right in list r
+            r -= 1  # go down into list r-1
+        return u
+
+    def find(self, x):
+        u = self.find_pred_node(x)
+        if u.next[0] is None: return None
+        return u.next[0].x</code></pre></p>
 <p>Following the search path for <code>y</code> is easy: when situated at
 some node, <code>u</code>, in <span
 class="math inline">\(L_{<code>r</code>}\)</span>, we look right to
@@ -127,7 +139,13 @@ node. We do so by picking a random integer, <code>z</code>, and counting the
 number of trailing <span class="math inline">\(1\)</span>s in the binary
 representation of <code>z</code>:<a href="#fn1" class="footnote-ref"
 id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<p><code>[listing: ods/SkiplistSSet.pickHeight()]</code></p>
+<p><pre class="listing"><code class="language-python">    def pick_height(self):
+        z = random.getrandbits(32)
+        k = 0
+        while z &amp; 1:
+            k += 1
+            z = z // 2
+        return k</code></pre></p>
 <p>To implement the <code>add(x)</code> method in a <code>SkiplistSSet</code> we search for
 <code>x</code> and then splice <code>x</code> into a few lists <span
 class="math inline">\(L_0\)</span>,…,<span
@@ -145,7 +163,24 @@ modify to insert <code>x</code> are precisely the nodes <span
 class="math inline">\(<code>stack[0]</code>,\ldots,<code>stack[k]</code>\)</span>. The
 following code implements this algorithm for <code>add(x)</code>: <span
 id="pg:skiplist-add" data-label="pg:skiplist-add"></span>
-<code>[listing: ods/SkiplistSSet.add(x)]</code></p>
+<pre class="listing"><code class="language-python">    def add(self, x):
+        u = self.sentinel
+        r = self.h
+        while r &gt;= 0:
+            while u.next[r] is not None and u.next[r].x &lt; x:
+                u = u.next[r]
+            if u.next[r] is not None and u.next[r].x == x: return False
+            self.stack[r] = u
+            r -= 1
+        w = self._new_node(x, self.pick_height())
+        while self.h &lt; w.height():
+            self.h += 1
+            self.stack[self.h] = self.sentinel   # height increased
+        for i in range(len(w.next)):
+            w.next[i] = self.stack[i].next[i]
+            self.stack[i].next[i] = w
+        self.n += 1
+        return True</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/skiplist-add" />
@@ -160,8 +195,21 @@ The removal can be done as we are following the search path. We search
 for <code>x</code> and each time the search moves downward from a node
 <code>u</code>, we check if <span
 class="math inline">\(<code>u.next.x</code>=<code>x</code>\)</span> and if so, we
-splice <code>u</code> out of the list:
-<code>[listing: ods/SkiplistSSet.remove(x)]</code></p>
+splice <code>u</code> out of the list: <pre class="listing"><code class="language-python">    def remove(self, x):
+        removed = False
+        u = self.sentinel
+        r = self.h
+        while r &gt;= 0:
+            while u.next[r] is not None and u.next[r].x &lt; x:
+                u = u.next[r]
+            if u.next[r] is not None and u.next[r].x == x:
+                removed = True
+                u.next[r] = u.next[r].next[r]
+                if u == self.sentinel and u.next[r] is None:
+                    self.h -= 1 # height has decreased
+            r -= 1
+        if removed: self.n -= 1
+        return removed    </code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/skiplist-remove" />
@@ -221,8 +269,25 @@ class="math inline">\(L_{<code>r</code>}\)</span>, we go right if
 <code>j</code> plus the length of the edge <code>u.next[r]</code> is less than
 <code>i</code>. Otherwise, we go down into <span
 class="math inline">\(L_{<code>r</code>-1}\)</span>.</p>
-<p><code>[listing: ods/SkiplistList.findPred(i)]</code>
-<code>[listing: ods/SkiplistList.get(i).set(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def find_pred(self, i):
+        u = self.sentinel
+        r = self.h
+        j = -1
+        while r &gt;= 0:
+            while u.next[r] is not None and j + u.length[r] &lt; i:
+                j += u.length[r]
+                u = u.next[r]  # go right in list r
+            r -= 1  # go down into list r-1
+        return u</code></pre> <pre class="listing"><code class="language-python">    def get(self, i):
+        if i &lt; 0 or i &gt; self.n-1: raise IndexError()
+        return self.find_pred(i).next[0].x
+
+    def set(self, i, x):
+        if i &lt; 0 or i &gt; self.n-1: raise IndexError()
+        u = self.find_pred(i).next[0]
+        y = u.x
+        u.x = x
+        return y</code></pre></p>
 <p>Since the hardest part of the operations <code>get(i)</code> and <code>set(i,x)</code>
 is finding the <code>i</code>th node in <span
 class="math inline">\(L_0\)</span>, these operations run in <span
@@ -267,8 +332,29 @@ update the lengths of the edges in constant time.</p>
 </figure>
 <p>This sounds more complicated than it is, for the code is actually
 quite simple:</p>
-<p><code>[listing: ods/SkiplistList.add(i,x)]</code>
-<code>[listing: ods/SkiplistList.add(i,w)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, i, x):
+        if i &lt; 0 or i &gt; self.n: raise IndexError()
+        w = self._new_node(x, self.pick_height())
+        if w.height() &gt; self.h:
+            self.h = w.height()
+        self._add(i, w)</code></pre> <pre class="listing"><code class="language-python">    def _add(self, i, w):
+        u = self.sentinel
+        k = w.height()
+        r = self.h
+        j = -1
+        while r &gt;= 0:
+            while u.next[r] is not None and j+u.length[r] &lt; i:
+                j += u.length[r]
+                u = u.next[r]
+            u.length[r] += 1
+            if r &lt;= k:
+                w.next[r] = u.next[r]
+                u.next[r] = w
+                w.length[r] = u.length[r] - (i-j)
+                u.length[r] = i - j
+            r -= 1
+        self.n += 1
+        return u</code></pre></p>
 <p>By now, the implementation of the <code>remove(i)</code> operation in a
 <code>SkiplistList</code> should be obvious. We follow the search path for the node at
 position <code>i</code>. Each time the search path takes a step down from a
@@ -282,7 +368,25 @@ that level. An example is shown in .</p>
 </div>
 <figcaption>Removing an element from a <code>SkiplistList</code>.</figcaption>
 </figure>
-<p><code>[listing: ods/SkiplistList.remove(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self, i):
+        if i &lt; 0 or i &gt; self.n-1: raise IndexError()
+        u = self.sentinel
+        r = self.h
+        j = -1
+        while r &gt;= 0:
+            while u.next[r] is not None and j + u.length[r] &lt; i:
+                j += u.length[r]
+                u = u.next[r]
+            u.length[r] -= 1
+            if j + u.length[r] + 1 == i and u.next[r] is not None:
+                x = u.next[r].x
+                u.length[r] += u.next[r].length[r]
+                u.next[r] = u.next[r].next[r]
+                if u == self.sentinel and u.next[r] is None:
+                    self.h -= 1
+            r -= 1
+        self.n -= 1
+        return x    </code></pre></p>
 <h3 id="summary-1">Summary</h3>
 <p>The following theorem summarizes the performance of the <code>SkiplistList</code>
 data structure:</p>

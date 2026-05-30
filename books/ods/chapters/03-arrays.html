@@ -85,12 +85,22 @@ track of the number of elements actually stored in <code>a</code>. In this
 way, the list elements are stored in <code>a[0]</code>,…,<code>a[n-1]</code> and, at all
 times, <span class="math inline">\(<code>a.length</code> \ge
 <code>n</code>\)</span>.</p>
-<p><code>[listing: ods/ArrayStack.a.n.size()]</code></p>
+<p><pre class="listing"><code class="language-python">    def _initialize(self):
+        self.a = new_array(1)
+        self.n = 0</code></pre></p>
 <h3 id="the-basics">The Basics</h3>
 <p>Accessing and modifying the elements of an <code>ArrayStack</code> using
 <code>get(i)</code> and <code>set(i,x)</code> is trivial. After performing any necessary
 bounds-checking we simply return or set, respectively, <code>a[i]</code>.</p>
-<p><code>[listing: ods/ArrayStack.get(i).set(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def get(self, i):
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        return self.a[i]
+
+    def set(self, i, x):
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        y = self.a[i]
+        self.a[i] = x
+        return y</code></pre></p>
 <p>The operations of adding and removing elements from an <code>ArrayStack</code> are
 illustrated in . To implement the <code>add(i,x)</code> operation, we first check
 if <code>a</code> is already full. If so, we call the method <code>resize()</code> to
@@ -110,11 +120,16 @@ position to make room for <code>x</code>, set <code>a[i]</code> equal to
 <code>ArrayStack</code>. Arrows denote elements being copied. Operations that result
 in a call to <code>resize()</code> are marked with an asterisk.</figcaption>
 </figure>
-<p><code>[listing: ods/ArrayStack.add(i,x)]</code> If we ignore the cost
-of the potential call to <code>resize()</code>, then the cost of the <code>add(i,x)</code>
-operation is proportional to the number of elements we have to shift to
-make room for <code>x</code>. Therefore the cost of this operation (ignoring
-the cost of resizing <code>a</code>) is <span
+<p><pre class="listing"><code class="language-python">    def add(self, i, x): 
+        if i &lt; 0 or i &gt; self.n: raise IndexError()
+        if self.n == len(self.a): self._resize()
+        self.a[i+1:self.n+1] = self.a[i:self.n]
+        self.a[i] = x
+        self.n += 1</code></pre> If we ignore the cost of the potential call to
+<code>resize()</code>, then the cost of the <code>add(i,x)</code> operation is proportional to
+the number of elements we have to shift to make room for <code>x</code>.
+Therefore the cost of this operation (ignoring the cost of resizing
+<code>a</code>) is <span
 class="math inline">\(O(<code>n</code>-<code>i</code>)\)</span>.</p>
 <p>Implementing the <code>remove(i)</code> operation is similar. We shift the
 elements <span
@@ -124,9 +139,15 @@ After doing this, we check if <code>n</code> is getting much smaller than
 <code>a.length</code> by checking if <span class="math inline">\(<code>a.length</code> \ge
 3<code>n</code>\)</span>. If so, then we call <code>resize()</code> to reduce the size
 of <code>a</code>.</p>
-<p><code>[listing: ods/ArrayStack.remove(i)]</code> If we ignore the
-cost of the <code>resize()</code> method, the cost of a <code>remove(i)</code> operation is
-proportional to the number of elements we shift, which is <span
+<p><pre class="listing"><code class="language-python">    def remove(self, i): 
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        x = self.a[i]
+        self.a[i:self.n-1] = self.a[i+1:self.n]
+        self.n -= 1
+        if len(self.a) &gt;= 3*self.n: self._resize()
+        return x</code></pre> If we ignore the cost of the <code>resize()</code> method, the cost
+of a <code>remove(i)</code> operation is proportional to the number of elements we
+shift, which is <span
 class="math inline">\(O(<code>n</code>-<code>i</code>)\)</span>.</p>
 <h3 id="growing-and-shrinking">Growing and Shrinking</h3>
 <p>The <code>resize()</code> method is fairly straightforward; it allocates a new
@@ -136,7 +157,10 @@ elements of <code>a</code> into the first <code>n</code> positions in
 <code>b</code>, and then sets <code>a</code> to <code>b</code>. Thus, after a call
 to <code>resize()</code>, <span class="math inline">\(<code>a.length</code> =
 2<code>n</code>\)</span>.</p>
-<p><code>[listing: ods/ArrayStack.resize()]</code></p>
+<p><pre class="listing"><code class="language-python">    def _resize(self):
+        b = new_array(max(1, 2*self.n))
+        b[0:self.n] = self.a[0:self.n]
+        self.a = b</code></pre></p>
 <p>Analyzing the actual cost of the <code>resize()</code> operation is easy. It
 allocates an array <code>b</code> of size <span
 class="math inline">\(2<code>n</code>\)</span> and copies the <code>n</code>
@@ -314,7 +338,10 @@ beginning of the array.</p>
 <p>The only remaining thing to worry about is taking care that the
 number of elements in the <code>ArrayQueue</code> does not exceed the size of
 <code>a</code>.</p>
-<p><code>[listing: ods/ArrayQueue.a.j.n]</code></p>
+<p><pre class="listing"><code class="language-python">    def _initialize(self):
+        self.a = new_array(1)
+        self.j = 0
+        self.n = 0</code></pre></p>
 <p>A sequence of <code>add(x)</code> and <code>remove()</code> operations on an
 <code>ArrayQueue</code> is illustrated in . To implement <code>add(x)</code>, we first check
 if <code>a</code> is full and, if necessary, call <code>resize()</code> to increase
@@ -328,7 +355,11 @@ increment <code>n</code>.</p>
 <code>ArrayQueue</code>. Arrows denote elements being copied. Operations that result
 in a call to <code>resize()</code> are marked with an asterisk.</figcaption>
 </figure>
-<p><code>[listing: ods/ArrayQueue.add(x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, x):
+        if self.n + 1 &gt; len(self.a): self._resize()
+        self.a[(self.j+self.n) % len(self.a)] = x
+        self.n += 1
+        return True</code></pre></p>
 <p>To implement <code>remove()</code>, we first store <code>a[j]</code> so that we can
 return it later. Next, we decrement <code>n</code> and increment
 <code>j</code> (modulo <code>a.length</code>) by setting <span
@@ -336,7 +367,13 @@ class="math inline">\(<code>j</code>=(<code>j</code>+1)\bmod
 <code>a.length</code>\)</span>. Finally, we return the stored value of
 <code>a[j]</code>. If necessary, we may call <code>resize()</code> to decrease the size
 of <code>a</code>.</p>
-<p><code>[listing: ods/ArrayQueue.remove()]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self):
+        if self.n == 0: raise IndexError()
+        x = self.a[self.j]
+        self.j = (self.j + 1) % len(self.a)
+        self.n -= 1
+        if len(self.a) &gt;= 3*self.n: self._resize()
+        return x</code></pre></p>
 <p>Finally, the <code>resize()</code> operation is very similar to the <code>resize()</code>
 operation of <code>ArrayStack</code>. It allocates a new array, <code>b</code>, of size
 <span class="math inline">\(2<code>n</code>\)</span> and copies <span
@@ -344,7 +381,12 @@ class="math display">\[<code>a[j]</code>,<code>a[(j+1)%a.length]</code>,\ldots,<
 onto <span
 class="math display">\[<code>b[0]</code>,<code>b[1]</code>,\ldots,<code>b[n-1]</code>\]</span>
 and sets <span class="math inline">\(<code>j</code>=0\)</span>.</p>
-<p><code>[listing: ods/ArrayQueue.resize()]</code></p>
+<p><pre class="listing"><code class="language-python">    def _resize(self):
+        b = new_array(max(1, 2*self.n))
+        for k in range(self.n):
+            b[k] = self.a[(self.j+k) % len(self.a)]
+        self.a = b
+        self.j = 0</code></pre></p>
 <h3 id="summary-1">Summary</h3>
 <p>The following theorem summarizes the performance of the <code>ArrayQueue</code>
 data structure:</p>
@@ -366,12 +408,23 @@ the sequence and remove from the other end. The <code>ArrayDeque</code> data
 structure allows for efficient addition and removal at both ends. This
 structure implements the <code>List</code> interface by using the same
 circular array technique used to represent an <code>ArrayQueue</code>.</p>
-<p><code>[listing: ods/ArrayDeque.a.j.n]</code></p>
+<p><pre class="listing"><code class="language-python">    def _initialize(self):
+        self.a = new_array(1)
+        self.j = 0
+        self.n = 0</code></pre></p>
 <p>The <code>get(i)</code> and <code>set(i,x)</code> operations on an <code>ArrayDeque</code> are
 straightforward. They get or set the array element <span
 class="math inline">\(<code>a[</code>{<code>(j+i)</code>\bmod
 <code>a.length</code>}<code>]</code>\)</span>.</p>
-<p><code>[listing: ods/ArrayDeque.get(i).set(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def get(self, i):
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        return self.a[(i+self.j)%len(self.a)]
+
+    def set(self, i, x):
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        y = self.a[(i+self.j)%len(self.a)]
+        self.a[(i+self.j)%len(self.a)] = x
+        return y</code></pre></p>
 <p>The implementation of <code>add(i,x)</code> is a little more interesting. As
 usual, we first check if <code>a</code> is full and, if necessary, call
 <code>resize()</code> to resize <code>a</code>. Remember that we want this operation
@@ -393,7 +446,18 @@ operations on an <code>ArrayDeque</code>.</p>
 <figcaption>A sequence of <code>add(i,x)</code> and <code>remove(i)</code> operations on an
 <code>ArrayDeque</code>. Arrows denote elements being copied.</figcaption>
 </figure>
-<p><code>[listing: ods/ArrayDeque.add(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, i, x): 
+        if i &lt; 0 or i &gt; self.n: raise IndexError()
+        if self.n == len(self.a): self._resize()
+        if i &lt; self.n/2:
+            self.j = (self.j-1) % len(self.a)
+            for k in range(i):
+                self.a[(self.j+k)%len(self.a)] = self.a[(self.j+k+1)%len(self.a)]
+        else:
+            for k in range(self.n, i, -1):
+                self.a[(self.j+k)%len(self.a)] = self.a[(self.j+k-1)%len(self.a)]
+        self.a[(self.j+i)%len(self.a)] = x
+        self.n += 1</code></pre></p>
 <p>By doing the shifting in this way, we guarantee that <code>add(i,x)</code>
 never has to shift more than <span class="math inline">\(\min\{
 <code>i</code>, <code>n</code>-<code>i</code> \}\)</span> elements. Thus, the
@@ -410,7 +474,19 @@ class="math inline">\(<code>i</code>&lt;<code>n</code>/2\)</span>. Again, this
 means that <code>remove(i)</code> never spends more than <span
 class="math inline">\(O(1+\min\{<code>i</code>,<code>n</code>-<code>i</code>\})\)</span>
 time to shift elements.</p>
-<p><code>[listing: ods/ArrayDeque.remove(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self, i): 
+        if i &lt; 0 or i &gt;= self.n: raise IndexError()
+        x = self.a[(self.j+i)%len(self.a)]
+        if i &lt; self.n / 2:
+            for k in range(i, 0, -1):
+                self.a[(self.j+k)%len(self.a)] = self.a[(self.j+k-1)%len(self.a)]
+            self.j = (self.j+1) % len(self.a)
+        else:
+            for k in range(i, self.n-1): 
+                self.a[(self.j+k)%len(self.a)] = self.a[(self.j+k+1)%len(self.a)]
+        self.n -= 1
+        if len(self.a) &gt;= 3*self.n: self._resize()
+        return x</code></pre></p>
 <h3 id="summary-2">Summary</h3>
 <p>The following theorem summarizes the performance of the <code>ArrayDeque</code>
 data structure:</p>
@@ -444,13 +520,16 @@ two simpler data structures.</p>
 an <code>ArrayStack</code> is fast when the operations on it modify elements near
 the end. A <code>DualArrayDeque</code> places two <code>ArrayStack</code>s, called <code>front</code> and
 <code>back</code>, back-to-back so that operations are fast at either end.</p>
-<p><code>[listing: ods/DualArrayDeque.front.back]</code></p>
+<p><pre class="listing"><code class="language-python">    def _initialize(self):
+        self.front = ArrayStack()
+        self.back = ArrayStack()</code></pre></p>
 <p>A <code>DualArrayDeque</code> does not explicitly store the number, <code>n</code>, of
 elements it contains. It doesn’t need to, since it contains <span
 class="math inline">\(<code>n</code>=<code>front.size()</code> + <code>back.size()</code>\)</span>
 elements. Nevertheless, when analyzing the <code>DualArrayDeque</code> we will still use
 <code>n</code> to denote the number of elements it contains.</p>
-<p><code>[listing: ods/DualArrayDeque.size()]</code></p>
+<p><pre class="listing"><code class="language-python">    def size(self):
+        return self.front.size() + self.back.size()</code></pre></p>
 <p>The <code>front</code> <code>ArrayStack</code> stores the list elements that whose
 indices are <span class="math inline">\(0,\ldots,<code>front.size()</code>-1\)</span>,
 but stores them in reverse order. The <code>back</code> <code>ArrayStack</code> contains
@@ -460,7 +539,17 @@ normal order. In this way, <code>get(i)</code> and <code>set(i,x)</code> transla
 appropriate calls to <code>get(i)</code> or <code>set(i,x)</code> on either <code>front</code> or
 <code>back</code>, which take <span class="math inline">\(O(1)\)</span> time
 per operation.</p>
-<p><code>[listing: ods/DualArrayDeque.get(i).set(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def get(self, i):
+        if i &lt; self.front.size():
+            return self.front.get(self.front.size()-i-1)
+        else:
+            return self.back.get(i-self.front.size())
+
+    def set(self, i, x):
+        if i &lt; self.front.size():
+            return self.front.set(self.front.size()-i-1, x)
+        else:
+            return self.back.set(i-self.front.size(), x)</code></pre></p>
 <p>Note that if an index <span
 class="math inline">\(<code>i</code>&lt;<code>front.size()</code>\)</span>, then it
 corresponds to the element of <code>front</code> at position <span
@@ -478,7 +567,12 @@ as appropriate:</p>
 in a rebalancing by <code>balance()</code> are marked with an
 asterisk.</figcaption>
 </figure>
-<p><code>[listing: ods/DualArrayDeque.add(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, i, x):
+        if i &lt; self.front.size():
+            self.front.add(self.front.size()-i, x)
+        else:
+            self.back.add(i-self.front.size(), x)
+        self._balance()</code></pre></p>
 <p>The <code>add(i,x)</code> method performs rebalancing of the two <code>ArrayStack</code>s
 <code>front</code> and <code>back</code>, by calling the <code>balance()</code> method. The
 implementation of <code>balance()</code> is described below, but for now it is
@@ -533,7 +627,13 @@ class="math inline">\(O(1+\min\{<code>i</code>,
 <code>n</code>-<code>i</code>\})\)</span>.</p>
 <p>The <code>remove(i)</code> operation and its analysis resemble the <code>add(i,x)</code>
 operation and analysis.</p>
-<p><code>[listing: ods/DualArrayDeque.remove(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self, i):
+        if i &lt; self.front.size():
+            x = self.front.remove(self.front.size()-i-1)
+        else:
+            x = self.back.remove(i-self.front.size())
+        self._balance()
+        return x</code></pre></p>
 <h3 id="balancing">Balancing</h3>
 <p>Finally, we turn to the <code>balance()</code> operation performed by
 <code>add(i,x)</code> and <code>remove(i)</code>. This operation ensures that neither
@@ -546,7 +646,18 @@ the case, then it moves elements between them so that <code>front</code> and
 class="math inline">\(\lfloor<code>n</code>/2\rfloor\)</span> elements and
 <span class="math inline">\(\lceil<code>n</code>/2\rceil\)</span> elements,
 respectively.</p>
-<p><code>[listing: ods/DualArrayDeque.balance()]</code></p>
+<p><pre class="listing"><code class="language-python">    def _balance(self):
+        n = self.size()
+        mid = n//2
+        if 3*self.front.size() &lt; self.back.size() or 3*self.back.size() &lt; self.front.size():
+            f = ArrayStack()
+            for i in range(mid):
+                f.add(i, self.get(mid-i-1))
+            b = ArrayStack()
+            for i in range(n-mid):
+                b.add(i, self.get(mid+i)) 
+            self.front = f
+            self.back = b</code></pre></p>
 <p>Here there is little to analyze. If the <code>balance()</code> operation does
 rebalancing, then it moves <span
 class="math inline">\(O(<code>n</code>)\)</span> elements and this takes
@@ -655,7 +766,9 @@ formula can be obtained as shown in .</p>
 <figcaption>A sequence of <code>add(i,x)</code> and <code>remove(i)</code> operations on a
 <code>RootishArrayStack</code>. Arrows denote elements being copied. </figcaption>
 </figure>
-<p><code>[listing: ods/RootishArrayStack.blocks.n]</code></p>
+<p><pre class="listing"><code class="language-python">    def _initialize(self):
+        self.n = 0
+        self.blocks = ArrayStack()</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/gauss" />
@@ -707,12 +820,25 @@ class="math inline">\(<code>b</code>\)</span> such that <span
 class="math inline">\(<code>b</code> \ge (-3 + \sqrt{9+8i}) / 2\)</span>.
 This is simply <span class="math display">\[<code>b</code> = \left\lceil(-3
 + \sqrt{9+8i}) / 2\right\rceil \enspace .\]</span></p>
-<p><code>[listing: ods/RootishArrayStack.i2b(i)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _i2b(self, i):
+        return int(ceil((-3.0 + sqrt(9 + 8*i)) / 2.0))</code></pre></p>
 <p>With this out of the way, the <code>get(i)</code> and <code>set(i,x)</code> methods are
 straightforward. We first compute the appropriate block <code>b</code> and
 the appropriate index <code>j</code> within the block and then perform the
 appropriate operation:</p>
-<p><code>[listing: ods/RootishArrayStack.get(i).set(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def get(self, i):
+        if i &lt; 0 or i &gt; self.n - 1: raise IndexError()
+        b = self._i2b(i)
+        j = i - b*(b+1)/2
+        return self.blocks.get(b)[j]
+
+    def set(self, i, x):
+        if i &lt; 0 or i &gt; self.n - 1: raise IndexError()
+        b = self._i2b(i)
+        j = i - b*(b+1)/2
+        y = self.blocks.get(b)[j]
+        self.blocks.get(b)[j] = x
+        return y</code></pre></p>
 <p>If we use any of the data structures in this chapter for representing
 the <code>blocks</code> list, then <code>get(i)</code> and <code>set(i,x)</code> will each run in
 constant time.</p>
@@ -725,9 +851,17 @@ With this done, we shift elements with indices <span
 class="math inline">\(<code>i</code>,\ldots,<code>n</code>-1\)</span> to the
 right by one position to make room for the new element with index
 <code>i</code>:</p>
-<p><code>[listing: ods/RootishArrayStack.add(i,x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, i, x):
+        if i &lt; 0 or i &gt; self.n: raise IndexError()
+        r = self.blocks.size()
+        if r*(r+1)/2 &lt; self.n + 1: self.grow()
+        self.n += 1
+        for j in range(self.n-1, i, -1):
+            self.set(j, self.get(j-1))
+        self.set(i, x)</code></pre></p>
 <p>The <code>grow()</code> method does what we expect. It adds a new block:</p>
-<p><code>[listing: ods/RootishArrayStack.grow()]</code></p>
+<p><pre class="listing"><code class="language-python">    def grow(self):
+        self.blocks.append(new_array(self.blocks.size()+1))</code></pre></p>
 <p>Ignoring the cost of the <code>grow()</code> operation, the cost of an
 <code>add(i,x)</code> operation is dominated by the cost of shifting and is
 therefore <span
@@ -738,8 +872,19 @@ elements with indices <span
 class="math inline">\(<code>i</code>+1,\ldots,<code>n</code>\)</span> left by
 one position and then, if there is more than one empty block, it calls
 the <code>shrink()</code> method to remove all but one of the unused blocks:</p>
-<p><code>[listing: ods/RootishArrayStack.remove(i)]</code>
-<code>[listing: ods/RootishArrayStack.shrink()]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self, i):
+        if i &lt; 0 or i &gt; self.n - 1: raise IndexError()
+        x = self.get(i)
+        for j in range(i, self.n-1):
+            self.set(j, self.get(j+1))
+        self.n -= 1
+        r = self.blocks.size()
+        if (r-2)*(r-1)/2 &gt;= self.n: self.shrink()
+        return x</code></pre> <pre class="listing"><code class="language-python">    def shrink(self):
+        r = self.blocks.size()
+        while r &gt; 0 and (r-2)*(r-1)/2 &gt;= self.n:
+            self.blocks.remove(self.blocks.size()-1)
+            r -= 1</code></pre></p>
 <p>Once again, ignoring the cost of the <code>shrink()</code> operation, the cost
 of a <code>remove(i)</code> operation is dominated by the cost of shifting and is
 therefore <span

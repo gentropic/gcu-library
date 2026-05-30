@@ -9,9 +9,11 @@
 //   3. pandoc -f latex -t html --mathjax → math stays as \(…\)/\[…\] verbatim,
 //      which the reader's KaTeX renders to MathML.
 //
-// v1: "Python edition" prose = the language-neutral \pcodeonly content (ODS has
-// no \pythononly; cpp/java prose is dropped). Code listings are STUBBED with
-// their label (resolved from ../ods/{python,…} source in a later pass).
+// "Python edition": prose = the language-neutral \pcodeonly content (ODS has no
+// \pythononly; cpp/java prose is dropped). Code listings (\codeimport /
+// \pcodeimport) are resolved to RAW PYTHON pulled from ../ods/python/ods/*.py
+// — we reimplement snarf-python.py's label→def extraction (NOT its
+// pseudocode translation), so the reader shows real, highlightable code.
 //
 // Usage: node tools/ods-convert.mjs [odsLatexDir] [outDir]
 
@@ -23,6 +25,7 @@ import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ODS = process.argv[2] || path.resolve(here, '../../ods/latex');
 const OUT = process.argv[3] || path.resolve(here, '../books/ods');
+const PYDIR = path.resolve(ODS, '../python/ods');   // ../ods/python/ods/*.py
 
 // Chapter order from ods.tex's \include list (the -lang suffix is the build's
 // generated variant; the base file is <name>.tex).
@@ -38,8 +41,6 @@ const PREAMBLE = String.raw`
 \newcommand{\pcodeonly}[1]{#1}
 \newcommand{\javaonly}[1]{}
 \newcommand{\cpponly}[1]{}
-\newcommand{\pcodeimport}[1]{\texttt{[listing: #1]}}
-\newcommand{\codeimport}[1]{\texttt{[listing: #1]}}
 \newcommand{\cppimport}[1]{}
 \newcommand{\javaimport}[1]{}
 \newcommand{\htmlonly}[1]{}
@@ -53,6 +54,68 @@ const PREAMBLE = String.raw`
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Python code-listing resolution (reimplements snarf-python.py extraction) ──
+const _pyCache = new Map();
+function pySource(clazz) {
+  const key = clazz.toLowerCase();
+  if (!_pyCache.has(key)) {
+    const f = path.join(PYDIR, key + '.py');
+    _pyCache.set(key, fs.existsSync(f) ? fs.readFileSync(f, 'utf8').split('\n') : null);
+  }
+  return _pyCache.get(key);
+}
+// Normalized signature of a `def` line: name (sans leading/trailing _) +
+// args (sans self, sans spaces). Mirrors snarf's matches().
+function defSig(line) {
+  const m = line.match(/^(\s{4})?def\s+(\w+)(\(.*\))\s*:/);
+  if (!m) return null;
+  const name = m[2].replace(/^_+|_+$/g, '');
+  const args = m[3].replace(/^\(self\s*,?\s*/, '(').replace(/\s+/g, '');
+  return name + args;
+}
+let _stats = { resolved: 0, stub: 0 };
+// label e.g. "ods/ArrayStack.add(i,x)" → the matching method bodies as raw
+// Python, or null if the class file or methods aren't found.
+function resolveListing(label) {
+  const lm = label.match(/^\w+\/(\w+)(.*)$/);
+  if (!lm) return null;
+  const clazz = lm[1];
+  let methods = lm[2].replace(/^\./, '').split('.').filter(Boolean);
+  // a bare-word member (no parens) → also pull initialize() (sets the members)
+  if (methods.some((s) => /^\w+$/.test(s))) methods.push('initialize()');
+  methods = methods.map((s) => s.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase());
+  const code = pySource(clazz);
+  if (!code) return null;
+  const out = [];
+  let printing = false, indent = '';
+  for (const line of code) {
+    if (printing) printing = (line.trim() === '' || line.startsWith(indent));
+    if (!printing) {
+      const sig = defSig(line);
+      if (sig && methods.includes(sig)) {
+        indent = (line.match(/^\s*/)[0]) + '    ';
+        if (out.length) out.push('');
+        printing = true;
+      }
+    }
+    if (printing && line.trim().length > 0) out.push(line);
+  }
+  return out.length ? out.join('\n') : null;
+}
+// Replace \codeimport / \pcodeimport (the current edition's listings) with
+// placeholders, resolving each to Python. \cppimport / \javaimport stay
+// dropped by the preamble (other-language listings).
+function stashListings(tex) {
+  const listings = [];
+  const out = tex.replace(/\\(?:code|pcode)import\{([^}]*)\}/g, (_, label) => {
+    const code = resolveListing(label);
+    if (code) _stats.resolved++; else _stats.stub++;
+    listings.push({ label, code });
+    return `@@LISTING${listings.length - 1}@@`;
+  });
+  return { out, listings };
 }
 
 // `#…#` ODS inline-code shorthand → placeholder (pandoc can't parse the
@@ -79,12 +142,19 @@ function convertChapter(name) {
   if (!fs.existsSync(src)) { console.warn('skip (missing):', name); return null; }
   const tex = fs.readFileSync(src, 'utf8');
   const title = chapterTitle(tex, name);
-  const { out, codes } = stashInlineCode(tex);
+  const { out: t1, codes } = stashInlineCode(tex);
+  const { out: t2, listings } = stashListings(t1);
   let html;
-  try { html = runPandoc(PREAMBLE + '\n' + out); }
+  try { html = runPandoc(PREAMBLE + '\n' + t2); }
   catch (e) { console.error('pandoc failed for', name, ':', (e.stderr || e.message || '').toString().slice(0, 400)); return null; }
-  // restore inline code
+  // restore inline code + code listings
   html = html.replace(/@@CODE(\d+)@@/g, (_, i) => `<code>${esc(codes[+i] || '')}</code>`);
+  html = html.replace(/@@LISTING(\d+)@@/g, (_, i) => {
+    const l = listings[+i];
+    return l && l.code
+      ? `<pre class="listing"><code class="language-python">${esc(l.code)}</code></pre>`
+      : `<pre class="listing-stub"><code>[listing: ${esc(l ? l.label : '?')}]</code></pre>`;
+  });
   return { id: name, title, html };
 }
 
@@ -112,6 +182,7 @@ function main() {
   };
   fs.writeFileSync(path.join(OUT, 'book.json'), JSON.stringify(book, null, 2));
   console.log(`\nWrote ${chapters.length} chapters + book.json to ${OUT}`);
+  console.log(`Code listings: ${_stats.resolved} resolved → Python, ${_stats.stub} stubbed (unresolved label/class)`);
 }
 
 main();

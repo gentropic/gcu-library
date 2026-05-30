@@ -16,21 +16,53 @@ element <code>a[m]</code> becomes the root of the new subtree, <span
 class="math inline">\(<code>a</code>[0],\ldots,<code>a</code>[<code>m</code>-1]\)</span>
 get stored recursively in the left subtree and <span
 class="math inline">\(<code>a</code>[<code>m</code>+1],\ldots,<code>a</code>[<code>a.length</code>-1]\)</span>
-get stored recursively in the right subtree.
-<code>[listing: ods/ScapegoatTree.rebuild(u).packIntoArray(u,a,i).buildBalanced(a,i,ns)]</code>
-A call to <code>rebuild(u)</code> takes <span
-class="math inline">\(O(<code>size(u)</code>)\)</span> time. The resulting subtree
-has minimum height; there is no tree of smaller height that has
-<code>size(u)</code> nodes.</p>
+get stored recursively in the right subtree. <pre class="listing"><code class="language-python">    def rebuild(self, u):
+        ns = self._size(u)
+        p = u.parent
+        a = new_array(ns)
+        self.pack_into_array(u, a, 0)
+        if p == self.nil:
+            self.r = self.build_balanced(a, 0, ns)
+            self.r.parent = nil
+        elif p.right == u:
+            p.right = self.build_balanced(a, 0, ns)
+            p.right.parent = p
+        else:
+            p.left = self.build_balanced(a, 0, ns)
+            p.left.parent = p
+
+    def pack_into_array(self, u, a, i):
+        if u == self.nil:
+            return i
+        i = self.pack_into_array(u.left, a, i)
+        a[i] = u
+        i += 1
+        return self.pack_into_array(u.right, a, i)
+
+    def build_balanced(self, a, i, ns):
+        if ns == 0:
+            return self.nil
+        m = ns // 2
+        a[i+m].left = self.build_balanced(a, i, m)
+        if a[i+m].left != self.nil:
+            a[i+m].left.parent = a[i+m]
+        a[i+m].right = self.build_balanced(a, i+m+1, ns-m-1)
+        if a[i+m].right != self.nil:
+            a[i+m].right.parent = a[i+m]
+        return a[i+m]</code></pre> A call to
+<code>rebuild(u)</code> takes <span class="math inline">\(O(<code>size(u)</code>)\)</span>
+time. The resulting subtree has minimum height; there is no tree of
+smaller height that has <code>size(u)</code> nodes.</p>
 <h2 id="code19-a-binary-search-tree-with-partial-rebuilding"><code>ScapegoatTree</code>:
 A Binary Search Tree with Partial Rebuilding</h2>
 <p>A <code>ScapegoatTree</code> is a <code>BinarySearchTree</code> that, in addition to keeping track of
 the number, <code>n</code>, of nodes in the tree also keeps a counter,
 <code>q</code>, that maintains an upper-bound on the number of nodes.
-<code>[listing: ods/ScapegoatTree.q]</code> At all times, <code>n</code> and
-<code>q</code> obey the following inequalities: <span
-class="math display">\[<code>q</code>/2 \le  <code>n</code> \le
-<code>q</code>  \enspace .\]</span> In addition, a <code>ScapegoatTree</code> has
+<pre class="listing"><code class="language-python">    def _initialize(self):
+        self.n = 0
+        self.q = 0</code></pre> At all times, <code>n</code> and <code>q</code> obey the following
+inequalities: <span class="math display">\[<code>q</code>/2 \le  <code>n</code>
+\le <code>q</code>  \enspace .\]</span> In addition, a <code>ScapegoatTree</code> has
 logarithmic height; at all times, the height of the scapegoat tree does
 not exceed <span class="math display">\[\begin{equation}
      \log_{3/2} <code>q</code> \le \log_{3/2} 2<code>n</code> &lt; \log_{3/2}
@@ -79,7 +111,15 @@ We know, from , that, even before the addition of <code>u</code>,
 rebuild <code>w</code>, the height decreases by at least 1 so that the
 height of the <code>ScapegoatTree</code> is once again at most <span
 class="math inline">\(\log_{3/2}<code>q</code>\)</span>.</p>
-<p><code>[listing: ods/ScapegoatTree.add(x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def add(self, x):
+        (u, d) = self.add_with_depth(x)
+        if d &gt; log32(self.q):
+            # depth exceeded, find scapegoat
+            w = u.parent
+            while 3*self._size(w) &lt;= 2*self._size(w.parent):
+                w = w.parent
+            self.rebuild(w.parent)
+        return d &gt;= 0</code></pre></p>
 <figure>
 <div class="center">
 <table>
@@ -112,11 +152,16 @@ the height of the tree.) Next, we decrement <code>n</code>, but leave
 class="math inline">\(<code>q</code> &gt; 2<code>n</code>\)</span> and, if so,
 then we <em>rebuild the entire tree</em> into a perfectly balanced
 binary search tree and set <span
-class="math inline">\(<code>q</code>=<code>n</code>\)</span>.
-<code>[listing: ods/ScapegoatTree.remove(x)]</code> Again, if we ignore
-the cost of rebuilding, the running time of the <code>remove(x)</code> operation is
-proportional to the height of the tree, and is therefore <span
-class="math inline">\(O(\log <code>n</code>)\)</span>.</p>
+class="math inline">\(<code>q</code>=<code>n</code>\)</span>. <pre class="listing"><code class="language-python">    def remove(self, x):
+        if super(ScapegoatTree, self).remove(x):
+            if 2*self.n &lt; self.q:
+                self.rebuild(self.r)
+                self.q = self.n
+            return True
+        return False</code></pre>
+Again, if we ignore the cost of rebuilding, the running time of the
+<code>remove(x)</code> operation is proportional to the height of the tree, and is
+therefore <span class="math inline">\(O(\log <code>n</code>)\)</span>.</p>
 <h3 id="analysis-of-correctness-and-running-time">Analysis of
 Correctness and Running-Time</h3>
 <p>In this section, we analyze the correctness and amortized running

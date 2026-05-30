@@ -18,7 +18,11 @@ Chaining</h2>
 <p>A <code>ChainedHashTable</code> data structure uses <em>hashing with chaining</em> to
 store data as an array, <code>t</code>, of lists. An integer, <code>n</code>,
 keeps track of the total number of items in all lists (see ):
-<code>[listing: ods/ChainedHashTable.t.n]</code></p>
+<pre class="listing"><code class="language-python">    def _initialize(self):
+        self.d = 1
+        self.t = self._alloc_table((1&lt;&lt;self.d))
+        self.z = self._random_odd_int()
+        self.n = 0</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/chainedhashtable" />
@@ -41,9 +45,13 @@ the length of <code>t</code> needs to be increased and, if so, we grow
 <code>t</code>. With this out of the way we hash <code>x</code> to get an
 integer, <code>i</code>, in the range <span
 class="math inline">\(\{0,\ldots,<code>t.length</code>-1\}\)</span>, and we append
-<code>x</code> to the list <code>t[i]</code>:
-<code>[listing: ods/ChainedHashTable.add(x)]</code> Growing the table,
-if necessary, involves doubling the length of <code>t</code> and reinserting
+<code>x</code> to the list <code>t[i]</code>: <pre class="listing"><code class="language-python">    def add(self, x):
+        if self.find(x) is not None: return False
+        if self.n+1 &gt; len(self.t): self._resize()
+        self.t[self._hash(x)].append(x)
+        self.n += 1
+        return True</code></pre> Growing the table, if
+necessary, involves doubling the length of <code>t</code> and reinserting
 all elements into the new table. This strategy is exactly the same as
 the one used in the implementation of <code>ArrayStack</code> and the same result
 applies: The cost of growing is only constant when amortized over a
@@ -58,14 +66,25 @@ data-reference="chap:linkedlists">[chap:linkedlists]</a>, this takes
 only constant time.</p>
 <p>To remove an element, <code>x</code>, from the hash table, we iterate
 over the list <code>t[hash(x)]</code> until we find <code>x</code> so that we can remove
-it: <code>[listing: ods/ChainedHashTable.remove(x)]</code> This takes
-<span class="math inline">\(O(<code>n</code>_{<code>hash(x)</code>})\)</span> time,
-where <span class="math inline">\(<code>n</code>_{<code>i</code>}\)</span>
-denotes the length of the list stored at <code>t[i]</code>.</p>
+it: <pre class="listing"><code class="language-python">    def remove(self, x):
+        ell = self.t[self._hash(x)]
+        for y in ell:
+            if y == x:
+                ell.remove_value(y)
+                self.n -= 1
+                if 3*self.n &lt; len(self.t): self._resize() 
+                return y
+        return None </code></pre> This takes <span
+class="math inline">\(O(<code>n</code>_{<code>hash(x)</code>})\)</span> time, where
+<span class="math inline">\(<code>n</code>_{<code>i</code>}\)</span> denotes the
+length of the list stored at <code>t[i]</code>.</p>
 <p>Searching for the element <code>x</code> in a hash table is similar. We
-perform a linear search on the list <code>t[hash(x)]</code>:
-<code>[listing: ods/ChainedHashTable.find(x)]</code> Again, this takes
-time proportional to the length of the list <code>t[hash(x)]</code>.</p>
+perform a linear search on the list <code>t[hash(x)]</code>: <pre class="listing"><code class="language-python">    def find(self, x):
+        for y in self.t[self._hash(x)]:
+            if y == x:
+                return y
+        return None</code></pre> Again, this
+takes time proportional to the length of the list <code>t[hash(x)]</code>.</p>
 <p>The performance of a hash table depends critically on the choice of
 the hash function. A good hash function will spread the elements evenly
 among the <code>t.length</code> lists, so that the expected size of the list
@@ -105,8 +124,8 @@ to dropping the rightmost <span
 class="math inline">\(<code>w</code>-<code>d</code>\)</span> bits in a binary
 representation (which is implemented by shifting the bits right by <span
 class="math inline">\(<code>w</code>-<code>d</code>\)</span> using the
-<code>&gt;&gt;</code> operator).
-<code>[listing: ods/ChainedHashTable.hash(x)]</code></p>
+<code>&gt;&gt;</code> operator). <pre class="listing"><code class="language-python">    def _hash(self, x):
+        return ((self.z * hash(x)) % (1&lt;&lt;w)) &gt;&gt; (w-self.d)</code></pre></p>
 <figure>
 <div class="center">
 
@@ -366,7 +385,14 @@ track of the number of data elements and non-<code>null</code> values of
 table sizes that are a power of 2, we also keep an integer <code>d</code>
 and maintain the invariant that <span
 class="math inline">\(<code>t.length</code>=2^<code>d</code>\)</span>.
-<code>[listing: ods/LinearHashTable.t.n.q.d]</code></p>
+<pre class="listing"><code class="language-python">    def _initialize(self):
+        self.dl = object()
+
+    def initialize(self):
+        self.d = 1
+        self.t = new_array((1&lt;&lt;self.d))
+        self.q = 0
+        self.n = 0</code></pre></p>
 <p>The <code>find(x)</code> operation in a <code>LinearHashTable</code> is simple. We start at
 array entry <code>t[i]</code> where <span
 class="math inline">\(<code>i</code>=<code>hash(x)</code>\)</span> and search
@@ -377,8 +403,12 @@ class="math inline">\(<code>t</code>[(<code>i</code>+2)\bmod
 <code>t.length</code>]\)</span>, and so on, until we find an index <code>i'</code>
 such that, either, <code>t[i']=x</code>, or <code>t[i']=null</code>. In the former case we
 return <code>t[i']</code>. In the latter case, we conclude that <code>x</code> is
-not contained in the hash table and return <code>null</code>.
-<code>[listing: ods/LinearHashTable.find(x)]</code></p>
+not contained in the hash table and return <code>null</code>. <pre class="listing"><code class="language-python">    def find(self, x):
+        i = self._hash(x)
+        while self.t[i] is not None:
+            if self.t[i] != self.dl and x == self.t[i]: 
+                return self.t[i]
+            i = (i + 1) % len(self.t)</code></pre></p>
 <p>The <code>add(x)</code> operation is also fairly easy to implement. After
 checking that <code>x</code> is not already stored in the table (using
 <code>find(x)</code>), we search <code>t[i]</code>, <span
@@ -387,8 +417,16 @@ class="math inline">\(<code>t</code>[(<code>i</code>+1)\bmod
 class="math inline">\(<code>t</code>[(<code>i</code>+2)\bmod
 <code>t.length</code>]\)</span>, and so on, until we find a <code>null</code> or
 <code>del</code> and store <code>x</code> at that location, increment
-<code>n</code>, and <code>q</code>, if appropriate.
-<code>[listing: ods/LinearHashTable.add(x)]</code></p>
+<code>n</code>, and <code>q</code>, if appropriate. <pre class="listing"><code class="language-python">    def add(self, x):
+        if self.find(x) is not None: return False
+        if 2*(self.q+1) &gt; len(self.t): self._resize()
+        i = self._hash(x)
+        while self.t[i] is not None and self.t[i] != self.dl:
+            i = (i + 1) % len(self.t)
+        if self.t[i] is None: self.q += 1
+        self.n += 1
+        self.t[i] = x
+        return True</code></pre></p>
 <p>By now, the implementation of the <code>remove(x)</code> operation should be
 obvious. We search <code>t[i]</code>, <span
 class="math inline">\(<code>t</code>[(<code>i</code>+1)\bmod
@@ -398,7 +436,17 @@ class="math inline">\(<code>t</code>[(<code>i</code>+2)\bmod
 that <code>t[i']=x</code> or <code>t[i']=null</code>. In the former case, we set <code>t[i']=del</code>
 and return <code>true</code>. In the latter case we conclude that <code>x</code>
 was not stored in the table (and therefore cannot be deleted) and return
-<code>false</code>. <code>[listing: ods/LinearHashTable.remove(x)]</code></p>
+<code>false</code>. <pre class="listing"><code class="language-python">    def remove(self, x):
+        i = self._hash(x)
+        while self.t[i] is not None:
+            y = self.t[i]
+            if y != self.dl and x == y:
+                self.t[i] = self.dl
+                self.n -= 1
+                if 8*self.n &lt; len(self.t): resize()
+                return y
+            i = (i + 1) % len(self.t)
+        return None</code></pre></p>
 <p>The correctness of the <code>find(x)</code>, <code>add(x)</code>, and <code>remove(x)</code>
 methods is easy to verify, though it relies on the use of <code>del</code>
 values. Notice that none of these operations ever sets a non-<code>null</code>
@@ -419,8 +467,18 @@ it has size <span class="math inline">\(2^{<code>d</code>}\)</span>, and
 then we insert all the elements in the old version of <code>t</code> into
 the newly-resized copy of <code>t</code>. While doing this, we reset
 <code>q</code> equal to <code>n</code> since the newly-allocated <code>t</code>
-contains no <code>del</code> values.
-<code>[listing: ods/LinearHashTable.resize()]</code></p>
+contains no <code>del</code> values. <pre class="listing"><code class="language-python">    def _resize(self):
+        self.d = 1
+        while ((1&lt;&lt;self.d) &lt; 3*self.n): self.d += 1
+        told = self.t
+        self.t = new_array((1&lt;&lt;self.d))
+        self.q = self.n
+        for x in told:
+            if x is not None and x != self.dl:
+                i = self._hash(x)
+                while self.t[i] is not None: 
+                    i = (i+1) % len(self.t)
+                self.t[i] = x</code></pre></p>
 <h3 id="analysis-of-linear-probing">Analysis of Linear Probing</h3>
 <p>Notice that each operation, <code>add(x)</code>, <code>remove(x)</code>, or <code>find(x)</code>,
 finishes as soon as (or before) it discovers the first <code>null</code> entry
@@ -597,11 +655,11 @@ achieve this is to store a giant array, <code>tab</code>, of length <span
 class="math inline">\(2^{<code>w</code>}\)</span>, where each entry is a
 random <code>w</code>-bit integer, independent of all the other entries. In
 this way, we could implement <code>hash(x)</code> by extracting a <code>d</code>-bit
-integer from <code>tab[x.hashCode()]</code>:
-<code>[listing: ods/LinearHashTable.idealHash(x)]</code> Here,
-<code>&gt;&gt;</code>, is the <em>bitwise right shift</em> operator, so
-<code>x.hashCode() &gt;&gt; w-d</code> extracts the <code>d</code> most significant bits of
-<code>x</code>’s <code>w</code>-bit hash code.</p>
+integer from <code>tab[x.hashCode()]</code>: <pre class="listing"><code class="language-python">    def ideal_hash(self, x):
+        return tab[x.hashCode() &gt;&gt; w-d]</code></pre> Here, <code>&gt;&gt;</code>, is the
+<em>bitwise right shift</em> operator, so <code>x.hashCode() &gt;&gt; w-d</code> extracts the
+<code>d</code> most significant bits of <code>x</code>’s <code>w</code>-bit hash
+code.</p>
 <p>Unfortunately, storing an array of size <span
 class="math inline">\(2^{<code>w</code>}\)</span> is prohibitive in terms
 of memory usage. The approach used by <em>tabulation hashing</em> is to,
@@ -618,9 +676,13 @@ integers and use these as indices into these arrays. We then combine all
 these values with the bitwise exclusive-or operator to obtain
 <code>hash(x)</code>. The following code shows how this works when <span
 class="math inline">\(<code>w</code>=32\)</span> and <span
-class="math inline">\(<code>r</code>=4\)</span>:
-<code>[listing: ods/LinearHashTable.hash(x)]</code> In this case,
-<code>tab</code> is a two-dimensional array with four columns and <span
+class="math inline">\(<code>r</code>=4\)</span>: <pre class="listing"><code class="language-python">    def _hash(self, x):
+        h = self.hash_code(x)
+        return  (self.tab[0][h&amp;0xff] \
+                 ^ self.tab[1][(h&gt;&gt;8)&amp;0xff] \
+                 ^ self.tab[2][(h&gt;&gt;16)&amp;0xff] \
+                 ^ self.tab[3][(h&gt;&gt;24)&amp;0xff]) &gt;&gt; (w-self.d)</code></pre> In this
+case, <code>tab</code> is a two-dimensional array with four columns and <span
 class="math inline">\(2^{32/4}=256\)</span> rows.</p>
 <p>Quantities like <code>0xff</code>, used above, are <em>hexadecimal
 numbers</em> whose digits have 16 possible values 0–9, which have their
@@ -713,9 +775,12 @@ class="math inline">\(2<code>w</code>\)</span>-bit intermediate result and
 reduce it to a <code>w</code>-bit final result. Here is an example of this
 method applied to a simple compound object with three parts <code>x0</code>,
 <code>x1</code>, and <code>x2</code>:</p>
-<p><code>[listing: ods/Point3d.hashCode()]</code> The following theorem
-shows that, in addition to being straightforward to implement, this
-method is provably good:</p>
+<p><pre class="listing"><code class="language-python">    def hash_code(self):
+        z = [0x2058cc50, 0xcb19137e, 0x2cb6b6fd]
+        zz = 0xbea0107e5067d19d
+        h = [x0.hash_code(), x1.hash_code(), x2.hash_code()]
+        return \ensuremath{(((z[0]*h[0] + z[1]*h[1] + z[2]*h[2])*zz)%(1&lt;&lt;2*w)) &gt;&gt; w}</code></pre> The following theorem shows that, in addition to being
+straightforward to implement, this method is provably good:</p>
 <div class="thm">
 <p><strong>Theorem 1.3</strong>. <em>Let <span
 class="math inline">\(<code>x</code>_0,\ldots,<code>x</code>_{r-1}\)</span>
@@ -927,7 +992,19 @@ h(<code>x</code>_0,\ldots,<code>x</code>_{r-1})
 </div>
 <p>The following example code shows how this hash function is applied to
 an object that contains an array, <code>x</code>, of values:</p>
-<p><code>[listing: ods/GeomVector.hashCode()]</code></p>
+<p><pre class="listing"><code class="language-python">    def hash_code(self):
+        p = (1&lt;&lt;32)-5    # this is a prime number
+        z = 0x64b6055a  # 32 bits from random.org
+        z2 = 0x5067d19d  # random odd 32 bit number
+        s = 0
+        zi = 1
+        for i in range(len(x)):
+            # reduce to 31 bits
+            xi = ((x[i].hash_code() * z2)%(1&lt;&lt;32)) &gt;&gt; 1 
+            s = (s + zi * xi) % p
+            zi = (zi * z) % p      
+        s = (s + zi * (p-1)) % p
+        return s%(1&lt;&lt;32)</code></pre></p>
 <p>The preceding code sacrifices some collision probability for
 implementation convenience. In particular, it applies the multiplicative
 hash function from , with <span
@@ -1093,7 +1170,16 @@ finds. Explain why this could be very slow by giving an example of a
 sequence of <span class="math inline">\(O(<code>n</code>)\)</span>
 <code>add(x)</code>, <code>remove(x)</code>, and <code>find(x)</code> operations that would take on
 the order of <span class="math inline">\(<code>n</code>^2\)</span> time to
-execute. <code>[listing: ods/LinearHashTable.addSlow(x)]</code></em></p>
+execute. <pre class="listing"><code class="language-python">    def add_slow(self, x):
+        if 2*(self.q+1) &gt; len(self.t): resize()
+        i = self._hash(x)
+        while self.t[i] is not None:
+            if self.t[1] != self.dl and x == self.t[i]: return False
+            i = (i + 1) % len(self.t[i])
+        t[i] = x
+        self.n += 1
+        self.q += 1
+        return True</code></pre></em></p>
 </div>
 <div class="exc">
 <p><strong>Exercise 1.6</strong>. <em>Early versions of the Java

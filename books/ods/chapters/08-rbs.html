@@ -366,11 +366,43 @@ tree.</figcaption>
 <p>The code that implements this has to handle these two possibilities
 and be careful of a boundary case (when <code>u</code> is the root), so the
 actual code is a little longer than would lead a reader to believe:
-<code>[listing: ods/BinarySearchTree.rotateLeft(u).rotateRight(u)]</code>
-<span id="page:rotations" data-label="page:rotations"></span> In terms
-of the <code>Treap</code> data structure, the most important property of a
-rotation is that the depth of <code>w</code> decreases by one while the
-depth of <code>u</code> increases by one.</p>
+<pre class="listing"><code class="language-python">    def rotate_left(self, u):
+        w = u.right
+        w.parent = u.parent
+        if w.parent != self.nil:
+            if w.parent.left == u:
+                w.parent.left = w
+            else:
+                w.parent.right = w
+        u.right = w.left
+        if u.right != self.nil:
+            u.right.parent = u
+        u.parent = w
+        w.left = u
+        if u == self.r: 
+            self.r = w
+            self.r.parent = self.nil
+
+    def rotate_right(self, u):
+        w = u.left
+        w.parent = u.parent
+        if w.parent != self.nil:
+            if w.parent.left == u:
+                w.parent.left = w
+            else:
+                w.parent.right = w
+        u.left = w.right
+        if u.left != self.nil:
+            u.left.parent = u
+        u.parent = w
+        w.right = u
+        if u == self.r:
+            self.r = w
+            self.r.parent = self.nil</code></pre> <span id="page:rotations"
+data-label="page:rotations"></span> In terms of the <code>Treap</code> data
+structure, the most important property of a rotation is that the depth
+of <code>w</code> decreases by one while the depth of <code>u</code> increases
+by one.</p>
 <p>Using rotations, we can implement the <code>add(x)</code> operation as
 follows: We create a new node, <code>u</code>, assign <code>u.x=x</code>, and pick
 a random value for <code>u.p</code>. Next we add <code>u</code> using the usual
@@ -383,9 +415,22 @@ then we perform a rotation at node <code>w</code>=<code>u.parent</code> so that
 to violate the heap property, we will have to repeat this, decreasing
 <code>u</code>’s depth by one every time, until <code>u</code> either becomes
 the root or <span class="math inline">\(<code>u.parent.p</code> &lt;
-<code>u.p</code>\)</span>.
-<code>[listing: ods/Treap.add(x).bubbleUp(u)]</code> An example of an
-<code>add(x)</code> operation is shown in .</p>
+<code>u.p</code>\)</span>. <pre class="listing"><code class="language-python">    def add(self, x):
+        u = self._new_node(x)
+        if self.add_node(u):
+            self.bubble_up(u)
+            return True
+        return False
+
+    def bubble_up(self, u):
+        while u != self.r and u.parent.p &gt; u.p:
+            if u.parent.right == u:
+                self.rotate_left(u.parent)
+            else:
+                self.rotate_right(u.parent)
+        if u.parent == self.nil:
+            self.r = u</code></pre> An example of an <code>add(x)</code>
+operation is shown in .</p>
 <figure>
 <div class="center">
 <p><img src="figs/treap-insert-a" alt="image" /><br />
@@ -429,8 +474,27 @@ respectively) at <code>u</code>.</p></li>
 </ol>
 <p>These three rules ensure that the <code>Treap</code> doesn’t become
 disconnected and that the heap property is restored once <code>u</code> is
-removed. <code>[listing: ods/Treap.remove(x).trickleDown(u)]</code> An
-example of the <code>remove(x)</code> operation is shown in .</p>
+removed. <pre class="listing"><code class="language-python">    def remove(self, x):
+        u = self._find_last(x)
+        if u is not None and u.x == x:
+            self.trickle_down(u)
+            self.splice(u)
+            return True
+        return False
+
+    def trickle_down(self, u):
+        while u.left is not None or u.right is not None:
+            if u.left is None:
+                self.rotate_left(u)
+            elif u.right is None:
+                self.rotate_right(u)
+            elif u.left.p &lt; u.right.p:
+                self.rotate_right(u)
+            else:
+                self.rotate_left(u)
+            if self.r == u:
+                self.r = u.parent</code></pre> An example of the <code>remove(x)</code> operation is shown
+in .</p>
 <figure>
 <div class="center">
 <p><img src="figs/treap-delete-a" alt="image" /><br />

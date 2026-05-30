@@ -72,25 +72,38 @@ to explicitly store the (at most three) neighbours of <code>u</code>.</p>
 <code>nil</code>. In this way, both external nodes of the tree and the parent
 of the root correspond to the value <code>nil</code>.</p>
 <p>The binary tree itself can then be represented by a reference to its
-root node, <code>r</code>: <code>[listing: ods/BinaryTree.r]</code></p>
+root node, <code>r</code>: <pre class="listing"><code class="language-python">    def initialize(self):
+        self.r = None</code></pre></p>
 <p>We can compute the depth of a node, <code>u</code>, in a binary tree by
 counting the number of steps on the path from <code>u</code> to the root:
-<code>[listing: ods/BinaryTree.depth(u)]</code></p>
+<pre class="listing"><code class="language-python">    def depth(self, u):
+        d = 0
+        while (u != self.r):
+            u = u.parent
+            d += 1
+        return d</code></pre></p>
 <h3 id="recursive-algorithms">Recursive Algorithms</h3>
 <p>Using recursive algorithms makes it very easy to compute facts about
 binary trees. For example, to compute the size of (number of nodes in) a
 binary tree rooted at node <code>u</code>, we recursively compute the sizes
 of the two subtrees rooted at the children of <code>u</code>, sum up these
 sizes, and add one:</p>
-<p><code>[listing: ods/BinaryTree.size(u)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _size(self, u):
+        if u == self.nil: return 0
+        return 1 + self._size(u.left) + self._size(u.right)</code></pre></p>
 <p>To compute the height of a node <code>u</code>, we can compute the height
 of <code>u</code>’s two subtrees, take the maximum, and add one:</p>
-<p><code>[listing: ods/BinaryTree.height(u)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _height(self, u):
+        if u == self.nil: return -1 
+        return 1 + max(self._height(u.left), self._height(u.right))</code></pre></p>
 <h3 id="traversing-binary-trees">Traversing Binary Trees</h3>
 <p>The two algorithms from the previous section both use recursion to
 visit all the nodes in a binary tree. Each of them visits the nodes of
 the binary tree in the same order as the following code:
-<code>[listing: ods/BinaryTree.traverse(u)]</code></p>
+<pre class="listing"><code class="language-python">    def traverse(self, u):
+        if u == self.nil: return
+        self.traverse(u.left)
+        self.traverse(u.right)</code></pre></p>
 <p>Using recursion this way produces very short, simple code, but it can
 also be problematic. The maximum depth of the recursion is given by the
 maximum depth of a node in the binary tree, i.e., the tree’s height. If
@@ -105,7 +118,21 @@ arrive at <code>u</code> from <code>u.right</code>, then we are done visiting
 <code>u</code>’s subtree, and so we return to <code>u.parent</code>. The following code
 implements this idea, with code included for handling the cases where
 any of <code>u.left</code>, <code>u.right</code>, or <code>u.parent</code> is <code>nil</code>:
-<code>[listing: ods/BinaryTree.traverse2()]</code></p>
+<pre class="listing"><code class="language-python">    def traverse2(self):
+        u = self.r
+        prv = self.nil
+        while u != self.nil:
+            if prv == u.parent:
+                if u.left != self.nil: nxt = u.left
+                elif u.right != self.nil: nxt = u.right
+                else: nxt = u.parent
+            elif prv == u.left:
+                if u.right != self.nil: nxt = u.right
+                else: nxt = u.parent
+            else:
+                nxt = u.parent
+            prv = u
+            u = nxt</code></pre></p>
 <figure>
 <div class="center">
 <table>
@@ -125,8 +152,24 @@ the tree.</figcaption>
 <p>The same facts that can be computed with recursive algorithms can
 also be computed in this way, without recursion. For example, to compute
 the size of the tree we keep a counter, <code>n</code>, and increment
-<code>n</code> whenever visiting a node for the first time:
-<code>[listing: ods/BinaryTree.size2()]</code></p>
+<code>n</code> whenever visiting a node for the first time: <pre class="listing"><code class="language-python">    def size2(self):
+        u = self.r
+        prv = self.nil
+        n = 0
+        while u != self.nil:
+            if prv == u.parent:
+                n += 1
+                if u.left != self.nil: nxt = u.left
+                elif u.right != self.nil: nxt = u.right
+                else: nxt = u.parent
+            elif prv == u.left:
+                if u.right != self.nil: nxt = u.right
+                else: nxt = u.parent
+            else:
+                nxt = u.parent
+            prv = u
+            u = nxt
+        return n </code></pre></p>
 <p>In some implementations of binary trees, the <code>parent</code> field is not
 used. When this is the case, a non-recursive implementation is still
 possible, but the implementation has to use a <code>List</code> (or <code>Stack</code>)
@@ -140,8 +183,13 @@ English text. Breadth-first traversal is implemented using a queue,
 <code>q</code>, that initially contains only the root, <code>r</code>. At each
 step, we extract the next node, <code>u</code>, from <code>q</code>, process
 <code>u</code> and add <code>u.left</code> and <code>u.right</code> (if they are
-non-<code>nil</code>) to <code>q</code>:
-<code>[listing: ods/BinaryTree.bfTraverse()]</code></p>
+non-<code>nil</code>) to <code>q</code>: <pre class="listing"><code class="language-python">    def bf_traverse(self):
+        q = ArrayQueue()
+        if self.r != self.nil: q.add(self.r)
+        while q.size() &gt; 0:
+            u = q.remove()
+            if u.left != self.nil: q.add(u.left)
+            if u.right != self.nil: q.add(u.right)</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/bintree-4" />
@@ -180,8 +228,16 @@ then we have found the node <code>u</code> containing <code>x</code>.</p></li>
 </ol>
 <p>The search terminates when Case 3 occurs or when <code>u=nil</code>. In the
 former case, we found <code>x</code>. In the latter case, we conclude that
-<code>x</code> is not in the binary search tree.
-<code>[listing: ods/BinarySearchTree.findEQ(x)]</code></p>
+<code>x</code> is not in the binary search tree. <pre class="listing"><code class="language-python">    def find_eq(self, x):
+        w = self.r
+        while w != self.nil:
+            if x &lt; w.x:
+                w = w.left
+            elif x &gt; w.x:
+                w = w.right
+            else:
+                return w.x
+        return None</code></pre></p>
 <p>Two examples of searches in a binary search tree are shown in . As
 the second example shows, even if we don’t find <code>x</code> in the tree,
 we still gain some valuable information. If we look at the last node,
@@ -192,7 +248,19 @@ tree that is less than <code>x</code>. Therefore, by keeping track of the
 last node, <code>z</code>, at which Case 1 occurs, a <code>BinarySearchTree</code> can
 implement the <code>find(x)</code> operation that returns the smallest value
 stored in the tree that is greater than or equal to <code>x</code>:
-<code>[listing: ods/BinarySearchTree.find(x)]</code></p>
+<pre class="listing"><code class="language-python">    def find(self, x):
+        w = self.r
+        z = self.nil
+        while w != self.nil:
+            if x &lt; w.x:
+                z = w
+                w = w.left
+            elif x &gt; w.x:
+                w = w.right
+            else:
+                return w.x
+        if z == self.nil: return None 
+        return z.x</code></pre></p>
 <figure>
 <div class="center">
 <table>
@@ -221,14 +289,37 @@ for <code>x</code>. If we find it, then there is no need to insert it.
 Otherwise, we store <code>x</code> at a leaf child of the last node,
 <code>p</code>, encountered during the search for <code>x</code>. Whether the
 new node is the left or right child of <code>p</code> depends on the result
-of comparing <code>x</code> and <code>p.x</code>.
-<code>[listing: ods/BinarySearchTree.add(x)]</code>
-<code>[listing: ods/BinarySearchTree.findLast(x)]</code>
-<code>[listing: ods/BinarySearchTree.addChild(p,u)]</code> An example is
-shown in . The most time-consuming part of this process is the initial
-search for <code>x</code>, which takes an amount of time proportional to
-the height of the newly added node <code>u</code>. In the worst case, this
-is equal to the height of the <code>BinarySearchTree</code>.</p>
+of comparing <code>x</code> and <code>p.x</code>. <pre class="listing"><code class="language-python">    def add(self, x):
+        p = self._find_last(x)
+        return self._add_child(p, self._new_node(x))</code></pre> <pre class="listing"><code class="language-python">    def _find_last(self, x):
+        w = self.r
+        prev = self.nil
+        while w is not self.nil: 
+            prev = w
+            if (x &lt; w.x):
+                w = w.left
+            elif (x &gt; w.x):
+                w = w.right
+            else:
+                return w
+        return prev</code></pre>
+<pre class="listing"><code class="language-python">    def _add_child(self, p, u):
+        if p == self.nil:
+            self.r = u # inserting into empty tree
+        else:
+            if u.x &lt; p.x:
+                p.left = u
+            elif u.x &gt; p.x:
+                p.right = u
+            else:
+                return False # u.x is already in the tree
+            u.parent = p
+        self.n += 1
+        return True  </code></pre> An example is shown in . The most time-consuming part of
+this process is the initial search for <code>x</code>, which takes an
+amount of time proportional to the height of the newly added node
+<code>u</code>. In the worst case, this is equal to the height of the
+<code>BinarySearchTree</code>.</p>
 <figure>
 <div class="center">
 <table>
@@ -250,8 +341,23 @@ into a binary search tree.</figcaption>
 little more difficult. If <code>u</code> is a leaf, then we can just detach
 <code>u</code> from its parent. Even better: If <code>u</code> has only one
 child, then we can splice <code>u</code> from the tree by having
-<code>u.parent</code> adopt <code>u</code>’s child (see ):
-<code>[listing: ods/BinarySearchTree.splice(u)]</code></p>
+<code>u.parent</code> adopt <code>u</code>’s child (see ): <pre class="listing"><code class="language-python">    def splice(self, u):
+        if u.left != self.nil:
+            s = u.left
+        else:
+            s = u.right
+        if u == self.r:
+            self.r = s
+            p = self.nil
+        else:
+            p = u.parent
+            if p.left == u:
+                p.left = s
+            else:
+                p.right = s 
+        if s != self.nil: 
+            s.parent = p
+        self.n -= 1</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/bst-splice" />
@@ -269,7 +375,15 @@ choosing <code>w</code> such that <code>w.x</code> is the smallest value greater
 than <code>u.x</code> will work. Finding the node <code>w</code> is easy; it is
 the smallest value in the subtree rooted at <code>u.right</code>. This node can
 be easily removed because it has no left child (see ).</p>
-<p><code>[listing: ods/BinarySearchTree.remove_node(u)]</code></p>
+<p><pre class="listing"><code class="language-python">    def _remove_node(self, u):
+        if u.left == self.nil or u.right == self.nil:
+            self.splice(u)
+        else: 
+            w = u.right
+            while w.left != self.nil: 
+                    w = w.left
+            u.x = w.x
+            self.splice(w)</code></pre></p>
 <figure>
 <div class="center">
 <table>

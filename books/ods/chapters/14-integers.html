@@ -88,7 +88,19 @@ or right child, respectively. In the former case (<code>u</code> is missing
 its left child), we have found the node we want. In the latter case
 (<code>u</code> is missing its right child), we can use the linked list to
 reach the node we want. Each of these cases is illustrated in .
-<code>[listing: ods/BinaryTrie.find(x)]</code></p>
+<pre class="listing"><code class="language-python">    def find(self, x):
+        ix = int(x)
+        u = self.r
+        i = 0
+        while i &lt; w:
+            c = (ix &gt;&gt; w-i-1) &amp; 1
+            if u.child[c] is None: break
+            u = u.child[c]
+            i += 1
+        if i == w: return u.x  # found it
+        u = [u.jump, u.jump.next][c]
+        if u is self.dummy: return None
+        return u.x</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/binarytrie-ex-3" />
@@ -122,10 +134,46 @@ point to <code>x</code>.</p></li>
 <figcaption>Adding the values 2 and 15 to the <code>BinaryTrie</code> in
 .</figcaption>
 </figure>
-<p><code>[listing: ods/BinaryTrie.add(x)]</code> This method performs
-one walk down the search path for <code>x</code> and one walk back up. Each
-step of these walks takes constant time, so the <code>add(x)</code> method runs
-in <span class="math inline">\(O(<code>w</code>)\)</span> time.</p>
+<p><pre class="listing"><code class="language-python">    def add(self, x):
+        ix = int(x)
+        u = self.r
+        # 1 - search for ix until falling out of the tree
+        i = 0
+        while i &lt; w:
+            c = (ix &gt;&gt; w-i-1) &amp; 1
+            if u.child[c] is None: break
+            u = u.child[c]
+            i += 1
+        if i == w: return False  # already contains x - abort
+        pred = [u.jump.prev, u.jump][c]
+        u.jump = None  # u will soon have two children
+        # 2 - add the path to ix
+        while i &lt; w:
+            c = (ix &gt;&gt; w-i-1) &amp; 1
+            u.child[c] = self._new_node()
+            u.child[c].parent = u
+            u = u.child[c]
+            i += 1
+        u.x = x
+        # 3 - add u to the linked list
+        u.prev = pred
+        u.next = pred.next
+        u.prev.next = u
+        u.next.prev = u
+        # 4 - walk back up, updating jump pointers
+        v = u.parent
+        while v is not None:
+            if (v.left is None  
+                    and (v.jump is None or int(v.jump.x) &gt; ix)) \
+                or (v.right is None
+                    and (v.jump is None or int(v.jump.x) &lt; ix)):
+                v.jump = u
+            v = v.parent
+        self.n += 1
+        return True</code></pre> This method performs one walk down the search path for
+<code>x</code> and one walk back up. Each step of these walks takes
+constant time, so the <code>add(x)</code> method runs in <span
+class="math inline">\(O(<code>w</code>)\)</span> time.</p>
 <p>The <code>remove(x)</code> operation undoes the work of <code>add(x)</code>. Like
 <code>add(x)</code>, it has a lot of work to do:</p>
 <ol>
@@ -145,7 +193,37 @@ child that is not on the search path for <code>x</code>.</p></li>
 </div>
 <figcaption>Removing the value 9 from the <code>BinaryTrie</code> in .</figcaption>
 </figure>
-<p><code>[listing: ods/BinaryTrie.remove(x)]</code></p>
+<p><pre class="listing"><code class="language-python">    def remove(self, x):
+        ix = int(x)
+        u = self.r
+        # 1 - find leaf, u, that contains x
+        i = 0
+        while i &lt; w:
+            c = (ix &gt;&gt; w-i-1) &amp; 1
+            if u.child[c] is None: return False
+            u = u.child[c]
+            i += 1
+        # 2 - remove u from linked list
+        u.prev.next = u.next
+        u.next.prev = u.prev
+        v = u
+        # 3 - delete nodes on path to u
+        for i in range(w-1, -1, -1):
+            c = (ix &gt;&gt; w-i-1) &amp; 1
+            v = v.parent
+            v.child[c] = None
+            if v.child[1-c] is not None: break
+        # 4 - update jump pointers
+        pred = u.prev
+        succ = u.next
+        v.jump = [pred, succ][v.left is None]
+        v = v.parent
+        while v is not None:
+            if v.jump is u:
+                v.jump = [pred, succ][v.left is None]
+            v = v.parent
+        self.n -= 1
+        return True</code></pre></p>
 <div class="thm">
 <p><strong>Theorem 1.1</strong>. <em>A <code>BinaryTrie</code> implements the
 <code>SSet</code> interface for <code>w</code>-bit integers. A <code>BinaryTrie</code>
@@ -223,8 +301,25 @@ set <code>h=i</code> (<code>u</code> is above level <code>i</code>). This proces
 terminates when <span class="math inline">\(<code>h-l</code>\le 1\)</span>,
 in which case we determine that <code>u</code> is at level <code>l</code>. We
 then complete the <code>find(x)</code> operation using <code>u.jump</code> and the
-doubly-linked list of leaves.
-<code>[listing: ods/XFastTrie.find(x)]</code> Each iteration of the
+doubly-linked list of leaves. <pre class="listing"><code class="language-python">    def find(self, x):
+        ix = int(x)
+        l, h = 0, w+1
+        u = self.r
+        q = self._new_node()
+        while h-l &gt; 1:
+            i = (l+h)/2
+            q.prefix = ix &gt;&gt; w-i
+            v = self.t[i].find(q)
+            if v is None:
+                h = i
+            else:
+                u = v
+                l = i
+        if l == w: return u.x
+        c = ix &gt;&gt; (w-l-1) &amp; 1
+        pred = [u.jump.prev, u.jump][c]
+        if pred.next is None: return None
+        return pred.next.x</code></pre> Each iteration of the
 <code>while</code> loop in the above method decreases <code>h-l</code> by roughly a
 factor of two, so this loop finds <code>u</code> after <span
 class="math inline">\(O(\log <code>w</code>)\)</span> iterations. Each
@@ -322,8 +417,8 @@ class="math inline">\(<code>x</code>_i\)</span> associated with the treap
 <span class="math inline">\(<code>t</code>_i\)</span>. We then use the
 treap <code>find(x)</code> method on <span
 class="math inline">\(<code>t</code>_i\)</span> to answer the query. The
-entire method is a one-liner:
-<code>[listing: ods/YFastTrie.find(x)]</code> The first <code>find(x)</code>
+entire method is a one-liner: <pre class="listing"><code class="language-python">    def find(self, x):
+        return self.xft.find(Pair(int(x)))[1].find(x)</code></pre> The first <code>find(x)</code>
 operation (on <code>xft</code>) takes <span
 class="math inline">\(O(\log<code>w</code>)\)</span> time. The second
 <code>find(x)</code> operation (on a treap) takes <span
@@ -349,7 +444,16 @@ two treaps, <code>t1</code> and <code>t'</code>. The treap <code>t1</code> conta
 all the values less than or equal to <code>x</code>; <code>t'</code> is the
 original treap, <code>t</code>, with the elements of <code>t1</code> removed.
 Once this is done, we add the pair <code>(x,t1)</code> to <code>xft</code>. shows an
-example. <code>[listing: ods/YFastTrie.add(x)]</code></p>
+example. <pre class="listing"><code class="language-python">    def add(self, x):
+        ix = int(x)
+        t = self.xft.find(Pair(ix))[1]
+        if t.add(x):
+            self.n += 1
+            if random.randrange(w) == 0:
+                t1 = t.split(x)
+                self.xft.add(Pair(ix, t1))
+            return True
+        return False</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/yfast-add" />
@@ -380,8 +484,16 @@ contains the answer to <code>xft.find(x)</code>. From <code>u</code>, we get the
 class="math inline">\(2^{<code>w</code>}-1\)</span>) then we remove
 <code>x</code> from <code>xft</code> and add the elements from <code>x</code>’s
 treap to the treap, <code>t2</code>, that is stored by <code>u</code>’s
-successor in the linked list. This is illustrated in .
-<code>[listing: ods/YFastTrie.remove(x)]</code></p>
+successor in the linked list. This is illustrated in . <pre class="listing"><code class="language-python">    def remove(self, x):
+        ix = int(x)
+        u = self.xft.find_node(ix)
+        ret = u.x[1].remove(x)
+        if ret: self.n -= 1
+        if u.x[0] == ix and ix != (1&lt;&lt;w) - 1:
+            t2 = u.next.x[1]
+            t2.absorb(u.x[1])
+            self.xft.remove(u.x)
+        return ret</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/yfast-remove" />

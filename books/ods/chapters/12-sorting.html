@@ -58,8 +58,14 @@ class="math inline">\(<code>a1</code>=<code>a[n/2]</code>,\ldots,<code>a[n-1]</c
 We recursively sort <code>a0</code> and <code>a1</code>, and then we merge (the
 now sorted) <code>a0</code> and <code>a1</code> to get our fully sorted array
 <code>a</code>:</p>
-<p><code>[listing: ods/Algorithms.mergeSort(a)]</code> An example is
-shown in .</p>
+<p><pre class="listing"><code class="language-python">def merge_sort(a):
+    if len(a) &lt;= 1:
+        return a
+    m = len(a)//2
+    a0 = merge_sort(a[:m])
+    a1 = merge_sort(a[m:])
+    merge(a0, a1, a)
+    return a</code></pre> An example is shown in .</p>
 <figure>
 <div class="center">
 <img src="figs/mergesort" />
@@ -72,10 +78,23 @@ If <code>a0</code> or <code>a1</code> is empty, then we add the next elements fr
 the other (non-empty) array. Otherwise, we take the minimum of the next
 element in <code>a0</code> and the next element in <code>a1</code> and add it to
 <code>a</code>:</p>
-<p><code>[listing: ods/Algorithms.merge(a0,a1,a)]</code> Notice that the
-<code>merge(a0,a1,a,c)</code> algorithm performs at most <span
-class="math inline">\(<code>n</code>-1\)</span> comparisons before running
-out of elements in one of <code>a0</code> or <code>a1</code>.</p>
+<p><pre class="listing"><code class="language-python">def merge(a0, a1, a):
+    i0 = i1 = 0
+    for i in range(len(a)):
+        if i0 == len(a0):
+            a[i] = a1[i1]
+            i1 += 1
+        elif i1 == len(a1):
+            a[i] = a0[i0]
+            i0 += 1
+        elif a0[i0] &lt;= a1[i1]:
+            a[i] = a0[i0]
+            i0 += 1
+        else:
+            a[i] = a1[i1]
+            i1 += 1</code></pre> Notice that the <code>merge(a0,a1,a,c)</code> algorithm performs at most
+<span class="math inline">\(<code>n</code>-1\)</span> comparisons before
+running out of elements in one of <code>a0</code> or <code>a1</code>.</p>
 <p>To understand the running-time of merge-sort, it is easiest to think
 of it in terms of its recursion tree. Suppose for now that <code>n</code> is
 a power of two, so that <span class="math inline">\(<code>n</code>=2^{\log
@@ -179,7 +198,25 @@ set of elements less than <code>x</code>, the set of elements equal to
 <code>x</code>, and the set of elements greater than <code>x</code>; and,
 finally, recursively sort the first and third sets in this partition. An
 example is shown in .</p>
-<p><code>[listing: ods/Algorithms.quickSort(a).quickSort(a,i,n)]</code></p>
+<p><pre class="listing"><code class="language-python">def quick_sort(a):
+    _quick_sort(a, 0, len(a))
+
+def _quick_sort(a, i, n):
+    if n &lt;= 1: return
+    x = a[i + _random_int(n)]
+    (p, j, q) = (i-1, i, i+n)
+    while j &lt; q:
+        if a[j] &lt; x:
+            p += 1
+            a[j], a[p] = a[p], a[j]
+            j += 1
+        elif a[j] &gt; x:
+            q -= 1
+            a[j], a[q] = a[q], a[j]
+        else:
+           j += 1
+    _quick_sort(a, i, p-i+1)
+    _quick_sort(a, q, n-(q-i))</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/quicksort" />
@@ -300,7 +337,18 @@ During the next iteration, element <span
 class="math inline">\(5\)</span> will be placed into array location
 <span class="math inline">\(8\)</span>.</figcaption>
 </figure>
-<p><code>[listing: ods/Algorithms.heapSort(a)]</code></p>
+<p><pre class="listing"><code class="language-python">def heap_sort(a):
+    h = BinaryHeap()
+    h.a = a
+    h.n = len(a)
+    m = h.n//2
+    for i in range(m-1, -1, -1):
+        h.trickle_down(i)
+    while h.n &gt; 1:
+        h.n -= 1
+        h.a[h.n], h.a[0] = h.a[0], h.a[h.n]
+        h.trickle_down(0)
+    a.reverse()</code></pre></p>
 <p>A key subroutine in heap sort is the constructor for turning an
 unsorted array <code>a</code> into a heap. It would be easy to do this in
 <span class="math inline">\(O(<code>n</code>\log<code>n</code>)\)</span> time
@@ -560,8 +608,17 @@ this in <code>c[i]</code>. Now, after sorting, the output will look like
 <code>c[0]</code> occurrences of 0, followed by <code>c[1]</code> occurrences of 1,
 followed by <code>c[2]</code> occurrences of 2,…, followed by <code>c[k-1]</code>
 occurrences of <code>k-1</code>. The code that does this is very slick, and
-its execution is illustrated in :
-<code>[listing: ods/Algorithms.countingSort(a,k)]</code></p>
+its execution is illustrated in : <pre class="listing"><code class="language-python">def counting_sort(a, k):
+    c = new_zero_array(k)
+    for i in range(len(a)):
+        c[a[i]] += 1 
+    for i in range(1, k):
+        c[i] += c[i-1]  
+    b = new_array(len(a))
+    for i in range(len(a)-1, -1, -1):
+        c[a[i]] -= 1        
+        b[c[a[i]]] = a[i]   
+    return b</code></pre></p>
 <figure>
 <div class="center">
 <img src="figs/countingsort" />
@@ -618,9 +675,22 @@ role="doc-noteref"><sup>2</sup></a> More precisely, radix sort first
 sorts the integers by their least significant <code>d</code> bits, then
 their next significant <code>d</code> bits, and so on until, in the last
 pass, the integers are sorted by their most significant <code>d</code>
-bits. <code>[listing: ods/Algorithms.radixSort(a)]</code> (In this code,
-the expression <code>(a[i]&gt;&gt;d*p)&amp;((1&lt;&lt;d)-1)</code> extracts the integer whose binary
-representation is given by bits <span
+bits. <pre class="listing"><code class="language-python">def radix_sort(a):
+    for p in range(w//d):
+        c = new_zero_array(1&lt;&lt;d)
+        b = new_array(len(a))
+        for i in range(len(a)):
+            bits = (a[i] &gt;&gt; d*p)&amp;((1&lt;&lt;d)-1) 
+            c[bits] += 1 
+        for i in range(1, 1&lt;&lt;d):
+            c[i] += c[i-1]
+        for i in range(len(a)-1, -1, -1):
+            bits = (a[i] &gt;&gt; d*p)&amp;((1&lt;&lt;d)-1)
+            c[bits] -=1
+            b[c[bits]] = a[i] 
+        a = b
+    return b</code></pre> (In this code, the expression <code>(a[i]&gt;&gt;d*p)&amp;((1&lt;&lt;d)-1)</code> extracts
+the integer whose binary representation is given by bits <span
 class="math inline">\((<code>p</code>+1)<code>d</code>-1,\ldots,<code>p</code><code>d</code>\)</span>
 of <code>a[i]</code>.) An example of the steps of this algorithm is shown in
 .</p>

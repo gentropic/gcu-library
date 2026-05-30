@@ -814,17 +814,26 @@ be easy enough to read for anyone who has any programming experience in
 any of the most common programming languages of the last 40 years. To
 get an idea of what the pseudocode in this book looks like, here is a
 function that computes the average of an array, <code>a</code>:
-<code>[listing: ods/Algorithms.average(a)]</code> As this code
-illustrates, assigning to a variable is done using the <span
-class="math inline">\(\gets\)</span> notation. We use the convention
-that the length of an array, <code>a</code>, is denoted by <code>len(a)</code> and
-array indices start at zero, so that <code>range(len(a))</code> are the valid indices
-for <code>a</code>. To shorten code, and sometimes make it easier to read,
-our pseudocode allows for (sub)array assignments. The following two
-functions are equivalent:
-<code>[listing: ods/Algorithms.left_shift_a(a).left_shift_b(a)]</code>
-The following code sets all the values in an array to zero:
-<code>[listing: ods/Algorithms.zero(a)]</code> When analyzing the
+<pre class="listing"><code class="language-python">def average(a):
+    s = 0
+    for i in range(len(a)):
+        s += a[i]
+    return s/len(a)</code></pre> As this code illustrates, assigning to a variable is done
+using the <span class="math inline">\(\gets\)</span> notation. We use
+the convention that the length of an array, <code>a</code>, is denoted by
+<code>len(a)</code> and array indices start at zero, so that <code>range(len(a))</code> are the
+valid indices for <code>a</code>. To shorten code, and sometimes make it
+easier to read, our pseudocode allows for (sub)array assignments. The
+following two functions are equivalent: <pre class="listing"><code class="language-python">def left_shift_a(a):
+    for i in range(len(a)-1):
+        a[i] = a[i+1]
+    a[len(a)-1] = None
+
+def left_shift_b(a):
+    a[0:len(a)-1] = a[1:len(a)]
+    a[len(a)-1] = None</code></pre> The following code
+sets all the values in an array to zero: <pre class="listing"><code class="language-python">def zero(a):
+    a[0:len(a)] = 0</code></pre> When analyzing the
 running time of code like this, we have to be careful; statements like
 <code>a[0:len(a)] = 1</code> or <code>a[1:len(a)] = a[0:len(a)-1]</code> do not run in constant time. They run in
 <span class="math inline">\(O(<code>len(a)</code>)\)</span> time.</p>
