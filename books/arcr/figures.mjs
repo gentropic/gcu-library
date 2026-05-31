@@ -4,8 +4,11 @@
 // render them through the reader's renderMd). This script is their *source*: edit a
 // figure function or a caption in META below, then run
 //
-//     node tools/arcr-figures.mjs            # regenerate + re-embed in place
-//     node tools/arcr-figures.mjs --svg      # also dump previews to tools/.preview/
+//     node books/arcr/figures.mjs            # regenerate + re-embed in place
+//     node books/arcr/figures.mjs --svg      # also dump previews to books/arcr/.preview/
+//
+// This lives beside its book; build-gcudat excludes *.mjs + .preview/ from the pack, so
+// the regenerator ships with the source but never inside the inert .gcudat.
 //
 // It's idempotent and re-runnable: each figure is matched by its (stable) alt text and
 // swapped in place — first run can instead use a `<!--FIG:<key>-->` marker. Figure 4 is
@@ -18,7 +21,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const CHAPTER = path.join(here, '..', 'books', 'arcr', 'chapters', '01-introduction.md');
+const CHAPTER = path.join(here, 'chapters', '01-introduction.md');
 const PREVIEW = process.argv.includes('--svg');
 
 const C = {

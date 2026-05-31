@@ -51,8 +51,13 @@ const out = path.join(distDir, slug + '.gcudat');
 // manifest sits at the pack root. gzip for the html payload.
 // --force-local: GNU tar (msys/git on Windows) otherwise reads the C: in an
 // absolute path as a remote host. Forward-slash the paths for good measure.
+// A .gcudat is inert *content* — keep per-book tooling out of it: helper scripts
+// (*.mjs) and their previews (.preview/) are excluded by default, plus anything in
+// book.json's optional `packIgnore` (so a regenerator can live beside its book).
 const fwd = (p) => p.replace(/\\/g, '/');
-execFileSync('tar', ['--force-local', '-czf', fwd(out), '-C', fwd(bookDir), '.'], { stdio: 'inherit' });
+const ignore = ['*.mjs', '.preview', ...(Array.isArray(book.packIgnore) ? book.packIgnore : [])];
+const exArgs = ignore.map((p) => '--exclude=' + p);
+execFileSync('tar', ['--force-local', ...exArgs, '-czf', fwd(out), '-C', fwd(bookDir), '.'], { stdio: 'inherit' });
 
 const kb = (fs.statSync(out).size / 1024).toFixed(0);
 console.log(`Built ${path.relative(path.resolve(here, '..'), out)} (${kb} KB) — kind=${manifest.kind}, ${book.chapters.length} chapters`);
