@@ -129,7 +129,7 @@ async function convert(b) {
   });
   fs.writeFileSync(path.join(outDir, 'book.json'), JSON.stringify({
     title: b.title, author: AUTHOR, lang: 'en', slug: b.slug, license: 'CC0-1.0',
-    source: 'https://raytracing.github.io', chapters: bookChapters,
+    version: '1.0.1', source: 'https://raytracing.github.io', chapters: bookChapters,
   }, null, 2) + '\n');
   console.log('  wrote', all.length, 'chapters →', outDir);
 }

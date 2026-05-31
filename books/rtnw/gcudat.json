@@ -3,6 +3,7 @@
   "kind": "books",
   "name": "rtnw",
   "title": "Ray Tracing: The Next Week",
+  "version": "1.0.1",
   "license": "CC0-1.0",
   "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
   "index": "book.json"

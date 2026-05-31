@@ -3,6 +3,7 @@
   "kind": "books",
   "name": "rtrol",
   "title": "Ray Tracing: The Rest of Your Life",
+  "version": "1.0.1",
   "license": "CC0-1.0",
   "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
   "index": "book.json"

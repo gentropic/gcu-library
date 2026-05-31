@@ -3,6 +3,7 @@
   "kind": "books",
   "name": "ods",
   "title": "Open Data Structures (Python edition)",
+  "version": "1.0.0",
   "license": "CC BY 2.5",
   "attribution": "Pat Morin",
   "index": "book.json"

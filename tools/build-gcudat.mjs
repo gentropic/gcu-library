@@ -35,6 +35,7 @@ const manifest = {
   kind: 'books',
   name: book.slug || slug,
   title: book.title || slug,
+  version: book.version || '1.0.0',   // self-describing: the pack carries its own version
   license: book.license || '',
   attribution: book.author || '',
   index: 'book.json',

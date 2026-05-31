@@ -96,5 +96,6 @@
       "file": "chapters/15-btree.html",
       "format": "html"
     }
-  ]
+  ],
+  "version": "1.0.0"
 }
