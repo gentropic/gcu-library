@@ -22,6 +22,22 @@
       ]
     },
     {
+      "name": "rtnw",
+      "kind": "gcudat",
+      "datKind": "books",
+      "title": "Ray Tracing: The Next Week",
+      "description": "",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
+      "size": 5423910,
+      "url": "dist/rtnw.gcudat",
+      "integrity": "sha256-XmfmDCQFtRz9ZPy3k/naez7mj+dTrTUTkbNccjtdM4k=",
+      "tags": [
+        "books"
+      ]
+    },
+    {
       "name": "rtow",
       "kind": "gcudat",
       "datKind": "books",
@@ -30,9 +46,25 @@
       "version": "1.0.0",
       "license": "CC0-1.0",
       "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
-      "size": 1498687,
+      "size": 2526283,
       "url": "dist/rtow.gcudat",
-      "integrity": "sha256-g/FF/myR1FBjyPbqTQY3M5jURvFMcUCEsSle2Hi7En8=",
+      "integrity": "sha256-QWaM+bU+Cl/yflhmr1LUtANTfgCJhA86Bv47+D20Cfg=",
+      "tags": [
+        "books"
+      ]
+    },
+    {
+      "name": "rtrol",
+      "kind": "gcudat",
+      "datKind": "books",
+      "title": "Ray Tracing: The Rest of Your Life",
+      "description": "",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
+      "size": 3535511,
+      "url": "dist/rtrol.gcudat",
+      "integrity": "sha256-Nv1Ibg3KHmu3grOfGupgTnPfclvHgRYNjfqK13ds7nk=",
       "tags": [
         "books"
       ]

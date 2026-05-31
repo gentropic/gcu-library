@@ -21,190 +21,206 @@ second approach.
 After main creates a camera and sets default values, it will call the `render()` method. The
 `render()` method will prepare the camera for rendering and then execute the render loop.
 
-<div class='together'>
+
 Here's the skeleton of our new `camera` class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef CAMERA_H
-    #define CAMERA_H
 
-    #include "hittable.h"
+```cpp
+#ifndef CAMERA_H
+#define CAMERA_H
 
-    class camera {
-      public:
-        /* Public Camera Parameters Here */
+#include "hittable.h"
 
-        void render(const hittable& world) {
-            ...
-        }
+class camera {
+  public:
+    /* Public Camera Parameters Here */
 
-      private:
-        /* Private Camera Variables Here */
+    void render(const hittable& world) {
+        ...
+    }
 
-        void initialize() {
-            ...
-        }
+  private:
+    /* Private Camera Variables Here */
 
-        color ray_color(const ray& r, const hittable& world) const {
-            ...
-        }
-    };
+    void initialize() {
+        ...
+    }
 
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-skeleton]: <kbd>[camera.h]</kbd> The camera class skeleton]
+    color ray_color(const ray& r, const hittable& world) const {
+        ...
+    }
+};
 
-</div>
+#endif
+```
 
-<div class='together'>
+
+*Listing — camera.h The camera class skeleton*
+
+
+
+
+
 To begin with, let's fill in the `ray_color()` function from `main.cc`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class camera {
-      ...
 
-      private:
-        ...
+```cpp
+class camera {
+  ...
+
+  private:
+    ...
 
 
-        color ray_color(const ray& r, const hittable& world) const {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            hit_record rec;
+    color ray_color(const ray& r, const hittable& world) const {
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        hit_record rec;
 
-            if (world.hit(r, interval(0, infinity), rec)) {
-                return 0.5 * (rec.normal + color(1,1,1));
-            }
-
-            vec3 unit_direction = unit_vector(r.direction());
-            auto a = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        if (world.hit(r, interval(0, infinity), rec)) {
+            return 0.5 * (rec.normal + color(1,1,1));
         }
-    };
 
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-ray-color]: <kbd>[camera.h]</kbd> The camera::ray_color function]
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
+};
 
-</div>
+#endif
+```
 
-<div class='together'>
+
+*Listing — camera.h The camera::ray_color function*
+
+
+
+
+
 Now we move almost everything from the `main()` function into our new camera class. The only thing
 remaining in the `main()` function is the world construction. Here's the camera class with newly
 migrated code:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class camera {
-      public:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double aspect_ratio = 1.0;  // Ratio of image width over height
-        int    image_width  = 100;  // Rendered image width in pixel count
 
-        void render(const hittable& world) {
-            initialize();
+```cpp
+class camera {
+  public:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    double aspect_ratio = 1.0;  // Ratio of image width over height
+    int    image_width  = 100;  // Rendered image width in pixel count
 
-            std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    void render(const hittable& world) {
+        initialize();
 
-            for (int j = 0; j < image_height; j++) {
-                std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                for (int i = 0; i < image_width; i++) {
-                    auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-                    auto ray_direction = pixel_center - center;
-                    ray r(center, ray_direction);
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-                    color pixel_color = ray_color(r, world);
-                    write_color(std::cout, pixel_color);
-                }
+        for (int j = 0; j < image_height; j++) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+            for (int i = 0; i < image_width; i++) {
+                auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+                auto ray_direction = pixel_center - center;
+                ray r(center, ray_direction);
+
+                color pixel_color = ray_color(r, world);
+                write_color(std::cout, pixel_color);
             }
-
-            std::clog << "\rDone.                 \n";
         }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-      private:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int    image_height;   // Rendered image height
-        point3 center;         // Camera center
-        point3 pixel00_loc;    // Location of pixel 0, 0
-        vec3   pixel_delta_u;  // Offset to pixel to the right
-        vec3   pixel_delta_v;  // Offset to pixel below
+        std::clog << "\rDone.                 \n";
+    }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        void initialize() {
-            image_height = int(image_width / aspect_ratio);
-            image_height = (image_height < 1) ? 1 : image_height;
+  private:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    int    image_height;   // Rendered image height
+    point3 center;         // Camera center
+    point3 pixel00_loc;    // Location of pixel 0, 0
+    vec3   pixel_delta_u;  // Offset to pixel to the right
+    vec3   pixel_delta_v;  // Offset to pixel below
 
-            center = point3(0, 0, 0);
+    void initialize() {
+        image_height = int(image_width / aspect_ratio);
+        image_height = (image_height < 1) ? 1 : image_height;
 
-            // Determine viewport dimensions.
-            auto focal_length = 1.0;
-            auto viewport_height = 2.0;
-            auto viewport_width = viewport_height * (double(image_width)/image_height);
+        center = point3(0, 0, 0);
 
-            // Calculate the vectors across the horizontal and down the vertical viewport edges.
-            auto viewport_u = vec3(viewport_width, 0, 0);
-            auto viewport_v = vec3(0, -viewport_height, 0);
+        // Determine viewport dimensions.
+        auto focal_length = 1.0;
+        auto viewport_height = 2.0;
+        auto viewport_width = viewport_height * (double(image_width)/image_height);
 
-            // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-            pixel_delta_u = viewport_u / image_width;
-            pixel_delta_v = viewport_v / image_height;
+        // Calculate the vectors across the horizontal and down the vertical viewport edges.
+        auto viewport_u = vec3(viewport_width, 0, 0);
+        auto viewport_v = vec3(0, -viewport_height, 0);
 
-            // Calculate the location of the upper left pixel.
-            auto viewport_upper_left =
-                center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
-            pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-        }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+        pixel_delta_u = viewport_u / image_width;
+        pixel_delta_v = viewport_v / image_height;
 
-        color ray_color(const ray& r, const hittable& world) const {
-            ...
-        }
-    };
+        // Calculate the location of the upper left pixel.
+        auto viewport_upper_left =
+            center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+        pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+    }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-working]: <kbd>[camera.h]</kbd> The working camera class]
-
-</div>
-
-<div class='together'>
-And here's the much reduced main:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "camera.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "hittable.h"
-    #include "hittable_list.h"
-    #include "sphere.h"
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
-    color ray_color(const ray& r, const hittable& world) {
+    color ray_color(const ray& r, const hittable& world) const {
         ...
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+};
 
-    int main() {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hittable_list world;
+#endif
+```
 
-        world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
-        world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
-        camera cam;
+*Listing — camera.h The working camera class*
 
-        cam.aspect_ratio = 16.0 / 9.0;
-        cam.image_width  = 400;
 
-        cam.render(world);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-with-new-camera]: <kbd>[main.cc]</kbd> The new main, using the new camera]
 
-</div>
+
+
+And here's the much reduced main:
+
+
+```cpp
+#include "rtweekend.h"
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+#include "camera.h"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+#include "hittable.h"
+#include "hittable_list.h"
+#include "sphere.h"
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+color ray_color(const ray& r, const hittable& world) {
+    ...
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+int main() {
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    hittable_list world;
+
+    world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
+
+    camera cam;
+
+    cam.aspect_ratio = 16.0 / 9.0;
+    cam.image_width  = 400;
+
+    cam.render(world);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+}
+```
+
+
+*Listing — main.cc The new main, using the new camera*
+
+
+
 
 Running this newly refactored program should give us the same rendered image as before.

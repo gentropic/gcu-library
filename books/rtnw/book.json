@@ -1,0 +1,82 @@
+{
+  "title": "Ray Tracing: The Next Week",
+  "author": "Peter Shirley, Trevor David Black, Steve Hollasch",
+  "lang": "en",
+  "slug": "rtnw",
+  "license": "CC0-1.0",
+  "source": "https://raytracing.github.io",
+  "chapters": [
+    {
+      "id": "c1",
+      "title": "About",
+      "file": "chapters/01-about.md",
+      "format": "md"
+    },
+    {
+      "id": "c2",
+      "title": "Overview",
+      "file": "chapters/02-overview.md",
+      "format": "md"
+    },
+    {
+      "id": "c3",
+      "title": "Motion Blur",
+      "file": "chapters/03-motion-blur.md",
+      "format": "md"
+    },
+    {
+      "id": "c4",
+      "title": "Bounding Volume Hierarchies",
+      "file": "chapters/04-bounding-volume-hierarchies.md",
+      "format": "md"
+    },
+    {
+      "id": "c5",
+      "title": "Texture Mapping",
+      "file": "chapters/05-texture-mapping.md",
+      "format": "md"
+    },
+    {
+      "id": "c6",
+      "title": "Perlin Noise",
+      "file": "chapters/06-perlin-noise.md",
+      "format": "md"
+    },
+    {
+      "id": "c7",
+      "title": "Quadrilaterals",
+      "file": "chapters/07-quadrilaterals.md",
+      "format": "md"
+    },
+    {
+      "id": "c8",
+      "title": "Lights",
+      "file": "chapters/08-lights.md",
+      "format": "md"
+    },
+    {
+      "id": "c9",
+      "title": "Instances",
+      "file": "chapters/09-instances.md",
+      "format": "md"
+    },
+    {
+      "id": "c10",
+      "title": "Volumes",
+      "file": "chapters/10-volumes.md",
+      "format": "md"
+    },
+    {
+      "id": "c11",
+      "title": "A Scene Testing All New Features",
+      "file": "chapters/11-a-scene-testing-all-new-features.md",
+      "format": "md"
+    },
+    {
+      "id": "c12",
+      "title": "Citing This Book",
+      "file": "chapters/12-citing-this-book.md",
+      "format": "md"
+    }
+  ]
+}

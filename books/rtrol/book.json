@@ -1,0 +1,100 @@
+{
+  "title": "Ray Tracing: The Rest of Your Life",
+  "author": "Peter Shirley, Trevor David Black, Steve Hollasch",
+  "lang": "en",
+  "slug": "rtrol",
+  "license": "CC0-1.0",
+  "source": "https://raytracing.github.io",
+  "chapters": [
+    {
+      "id": "c1",
+      "title": "About",
+      "file": "chapters/01-about.md",
+      "format": "md"
+    },
+    {
+      "id": "c2",
+      "title": "Overview",
+      "file": "chapters/02-overview.md",
+      "format": "md"
+    },
+    {
+      "id": "c3",
+      "title": "A Simple Monte Carlo Program",
+      "file": "chapters/03-a-simple-monte-carlo-program.md",
+      "format": "md"
+    },
+    {
+      "id": "c4",
+      "title": "One Dimensional Monte Carlo Integration",
+      "file": "chapters/04-one-dimensional-monte-carlo-inte.md",
+      "format": "md"
+    },
+    {
+      "id": "c5",
+      "title": "Monte Carlo Integration on the Sphere of Directions",
+      "file": "chapters/05-monte-carlo-integration-on-the-s.md",
+      "format": "md"
+    },
+    {
+      "id": "c6",
+      "title": "Light Scattering",
+      "file": "chapters/06-light-scattering.md",
+      "format": "md"
+    },
+    {
+      "id": "c7",
+      "title": "Playing with Importance Sampling",
+      "file": "chapters/07-playing-with-importance-sampling.md",
+      "format": "md"
+    },
+    {
+      "id": "c8",
+      "title": "Generating Random Directions",
+      "file": "chapters/08-generating-random-directions.md",
+      "format": "md"
+    },
+    {
+      "id": "c9",
+      "title": "Orthonormal Bases",
+      "file": "chapters/09-orthonormal-bases.md",
+      "format": "md"
+    },
+    {
+      "id": "c10",
+      "title": "Sampling Lights Directly",
+      "file": "chapters/10-sampling-lights-directly.md",
+      "format": "md"
+    },
+    {
+      "id": "c11",
+      "title": "Mixture Densities",
+      "file": "chapters/11-mixture-densities.md",
+      "format": "md"
+    },
+    {
+      "id": "c12",
+      "title": "Some Architectural Decisions",
+      "file": "chapters/12-some-architectural-decisions.md",
+      "format": "md"
+    },
+    {
+      "id": "c13",
+      "title": "Cleaning Up PDF Management",
+      "file": "chapters/13-cleaning-up-pdf-management.md",
+      "format": "md"
+    },
+    {
+      "id": "c14",
+      "title": "The Rest of Your Life",
+      "file": "chapters/14-the-rest-of-your-life.md",
+      "format": "md"
+    },
+    {
+      "id": "c15",
+      "title": "Citing This Book",
+      "file": "chapters/15-citing-this-book.md",
+      "format": "md"
+    }
+  ]
+}
