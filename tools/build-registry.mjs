@@ -20,16 +20,24 @@ function sri(bytes) {
   return 'sha256-' + crypto.createHash('sha256').update(bytes).digest('base64');
 }
 
-// Map each books/<name>/gcudat.json by its `name` for metadata lookup.
+// Map each pack's <root>/<name>/gcudat.json by its `name` for metadata lookup.
+// Kind-agnostic: scan every top-level content root (books/, and future
+// datasets/, manuals/, … — anything that isn't tooling/build output), so new
+// kinds register with no change here. The gcudat.json itself names its kind.
+const SKIP_ROOTS = new Set(['dist', 'tools', 'covers', '.cache', '.git', 'node_modules']);
 const meta = {};
-for (const entry of fs.readdirSync(booksDir, { withFileTypes: true })) {
-  if (!entry.isDirectory()) continue;
-  const gj = path.join(booksDir, entry.name, 'gcudat.json');
-  if (!fs.existsSync(gj)) continue;
-  try {
-    const g = JSON.parse(fs.readFileSync(gj, 'utf8'));
-    if (g && g.name) meta[g.name] = g;
-  } catch (e) { console.warn('skip', gj, e.message); }
+for (const rootEntry of fs.readdirSync(root, { withFileTypes: true })) {
+  if (!rootEntry.isDirectory() || SKIP_ROOTS.has(rootEntry.name)) continue;
+  const rootDir = path.join(root, rootEntry.name);
+  for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const gj = path.join(rootDir, entry.name, 'gcudat.json');
+    if (!fs.existsSync(gj)) continue;
+    try {
+      const g = JSON.parse(fs.readFileSync(gj, 'utf8'));
+      if (g && g.name) meta[g.name] = g;
+    } catch (e) { console.warn('skip', gj, e.message); }
+  }
 }
 
 const entries = [];

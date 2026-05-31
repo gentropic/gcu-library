@@ -3,49 +3,82 @@
 Prepared **books and reference content** for the GCU reader (Auditable Works'
 book surface), plus the conversion tooling that produces them. Kept out of the
 `auditable` repo so that one stays lean — heavy, externally-sourced, license-laden
-content lives here and ships to the reader as **content-packs**.
+content lives here and ships to the reader as **content-packs** (`.gcudat`),
+discoverable + installable through the **Browse Library** registry.
+
+- **Authoring content?** → **[`AUTHORING.md`](AUTHORING.md)** (pack format,
+  conversion, build, versioning, licensing).
+- **Standing up a registry?** → **[`REGISTRY.md`](REGISTRY.md)**.
+- This repo is the **default registry source** — `registry.json` at the root,
+  served via `raw.githubusercontent.com/gentropic/gcu-library/main/registry.json`.
 
 ## Layout
 
 ```
-tools/                 conversion tooling (source → reader book)
-  ods-convert.mjs      Open Data Structures LaTeX → book.json + HTML chapters
-books/
-  <slug>/
-    book.json          reader manifest (title/author/license/chapters)
-    CREDITS.md         attribution + license for the source work
-    chapters/*.html    converted chapters (reflowable; math as \(…\)/$$…$$ for KaTeX)
+registry.json          the catalog (built; served as the default source)
+dist/<slug>.gcudat      built content-packs — DELIVERABLES, committed (the
+                        registry serves them by URL; do not gitignore)
+tools/                  conversion + build tooling
+  ods-convert.mjs       Open Data Structures LaTeX → book dir
+  ray-convert.mjs       Ray Tracing series (markdeep) → book dirs
+  build-gcudat.mjs      a pack dir → dist/<slug>.gcudat (+ writes gcudat.json)
+  build-registry.mjs    every dist/*.gcudat → registry.json (size + SRI)
+books/<slug>/           book content packs
+  book.json             reader manifest (spine + metadata + version)
+  gcudat.json           pack manifest (written by build-gcudat; self-describing)
+  chapters/*.md|html    chapters (reflowable; math as TeX for KaTeX; images inline)
+  CREDITS.md            source attribution + license
 ```
 
 A **book** is the reader's content model: a `book.json` (chapter spine +
-metadata) with chapters as `{ file, format: 'md' | 'html' }`. The reader keeps
-math as TeX delimiters (`\(…\)`, `\[…\]`, `$$…$$`) and renders it with KaTeX
-(MathML output). See the auditable repo's book-reader surface.
+metadata) with chapters as `{ file, format: 'md' | 'html' | 'pdf' }`. Math stays
+in TeX delimiters (`\(…\)`, `\[…\]`, `$$…$$`) and renders with KaTeX (MathML).
+
+## Organization
+
+Content is **kind-named top-level dirs**: `books/` today; `datasets/`,
+`manuals/`, … as content diversifies. Each pack dir is **self-describing** via
+its `gcudat.json` `kind`, so `build-registry.mjs` scans every content root and
+registers any kind with no code change. (`build-gcudat`/consumer handlers are
+the only kind-aware pieces — see `AUTHORING.md` § *Adding a new kind*.)
+
+Discovery is **metadata-driven**, not folder-driven — the registry entry carries:
+
+- **`datKind`** — `books` | `geodata` | `data` | … — drives the Library's icon
+  and the per-kind filter.
+- **`tags`** — free-form, searchable/filterable in the Library + `pkg search`.
+  Keep them short and reusable (e.g. `tutorial`, `graphics`, `geostatistics`,
+  `reference`, `textbook`). Prefer an existing tag over a near-synonym.
+
+So you rarely *need* new folders — a new book just goes in `books/` with good
+`tags`. New folders are for genuinely new **kinds**.
 
 ## Books
 
 ### `ods` — Open Data Structures (Pat Morin, CC BY 2.5)
+LaTeX source (`opendatastructures.org`, clone at `../ods`) via
+`tools/ods-convert.mjs`. Prose + KaTeX math + real Python listings + figures
+(`.ipe` → PNG, inlined). Regenerate: `node tools/ods-convert.mjs`.
 
-Converted from the LaTeX source (`opendatastructures.org`, clone expected at
-`../ods` relative to this repo) via `tools/ods-convert.mjs`.
+### Ray Tracing series (Shirley/Black/Hollasch, CC0)
+`rtow` / `rtnw` / `rtrol` from the markdeep sources via `tools/ray-convert.mjs`.
+Prose + KaTeX math + `cpp` code blocks + inlined figures.
 
-- **v1 (current):** prose + math + section structure + inline code. The
-  language-neutral (pseudocode) prose edition; C++/Java-specific prose dropped.
-- **stubbed, pending:** code listings (`\codeimport{…}` → `[listing: label]`
-  placeholders; resolve from `../ods/python` source next) and figures.
+## Build & publish (quick reference)
 
-Regenerate: `node tools/ods-convert.mjs` (needs `pandoc` on PATH + `../ods`).
+```sh
+node tools/build-gcudat.mjs <slug>   # pack dir → dist/<slug>.gcudat
+node tools/build-registry.mjs        # → registry.json (size + SRI)
+git add books/<slug> dist/<slug>.gcudat registry.json && git commit && git push
+```
 
-## Distribution
-
-Books here are intended to ship as **content-packs** — a ZIP of pure data
-(`content.json` manifest + the book files + license), installed into the
-reader's `/usr/share/books` or `/home/.books`. The pack format + builder land
-here; the consumer lives in `auditable`. (Until then, a book dir can be loaded
-into the reader directly.)
+Bump `book.json`'s `version` when content changes → the reader shows **Update ↑**.
+Full details in [`AUTHORING.md`](AUTHORING.md).
 
 ## Licenses
 
-Every book carries its source work's license + attribution in
-`books/<slug>/CREDITS.md`, and `book.json`'s `license` field. Conversion
-(LaTeX → HTML) is a format change, not a modification of the work.
+Every pack carries its source work's license + attribution in
+`books/<slug>/CREDITS.md` and `book.json`'s `license`. Conversion (LaTeX /
+markdeep / EPUB → HTML) is a format change, not a modification of the work.
+**Verify the license before adding content.** `*-NC` packs show a
+non-commercial badge in the Library.
