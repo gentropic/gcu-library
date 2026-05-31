@@ -1,0 +1,106 @@
+{
+  "title": "Ray Tracing in One Weekend",
+  "author": "Peter Shirley, Trevor David Black, Steve Hollasch",
+  "lang": "en",
+  "slug": "rtow",
+  "license": "CC0-1.0",
+  "source": "https://raytracing.github.io",
+  "chapters": [
+    {
+      "id": "c1",
+      "title": "About",
+      "file": "chapters/01-about.md",
+      "format": "md"
+    },
+    {
+      "id": "c2",
+      "title": "Overview",
+      "file": "chapters/02-overview.md",
+      "format": "md"
+    },
+    {
+      "id": "c3",
+      "title": "Output an Image",
+      "file": "chapters/03-output-an-image.md",
+      "format": "md"
+    },
+    {
+      "id": "c4",
+      "title": "The vec3 Class",
+      "file": "chapters/04-the-vec3-class.md",
+      "format": "md"
+    },
+    {
+      "id": "c5",
+      "title": "Rays, a Simple Camera, and Background",
+      "file": "chapters/05-rays-a-simple-camera-and-backgro.md",
+      "format": "md"
+    },
+    {
+      "id": "c6",
+      "title": "Adding a Sphere",
+      "file": "chapters/06-adding-a-sphere.md",
+      "format": "md"
+    },
+    {
+      "id": "c7",
+      "title": "Surface Normals and Multiple Objects",
+      "file": "chapters/07-surface-normals-and-multiple-obj.md",
+      "format": "md"
+    },
+    {
+      "id": "c8",
+      "title": "Moving Camera Code Into Its Own Class",
+      "file": "chapters/08-moving-camera-code-into-its-own-.md",
+      "format": "md"
+    },
+    {
+      "id": "c9",
+      "title": "Antialiasing",
+      "file": "chapters/09-antialiasing.md",
+      "format": "md"
+    },
+    {
+      "id": "c10",
+      "title": "Diffuse Materials",
+      "file": "chapters/10-diffuse-materials.md",
+      "format": "md"
+    },
+    {
+      "id": "c11",
+      "title": "Metal",
+      "file": "chapters/11-metal.md",
+      "format": "md"
+    },
+    {
+      "id": "c12",
+      "title": "Dielectrics",
+      "file": "chapters/12-dielectrics.md",
+      "format": "md"
+    },
+    {
+      "id": "c13",
+      "title": "Positionable Camera",
+      "file": "chapters/13-positionable-camera.md",
+      "format": "md"
+    },
+    {
+      "id": "c14",
+      "title": "Defocus Blur",
+      "file": "chapters/14-defocus-blur.md",
+      "format": "md"
+    },
+    {
+      "id": "c15",
+      "title": "Where Next?",
+      "file": "chapters/15-where-next.md",
+      "format": "md"
+    },
+    {
+      "id": "c16",
+      "title": "Citing This Book",
+      "file": "chapters/16-citing-this-book.md",
+      "format": "md"
+    }
+  ]
+}

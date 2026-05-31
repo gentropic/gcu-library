@@ -1,0 +1,9 @@
+{
+  "gcudat": 1,
+  "kind": "books",
+  "name": "rtow",
+  "title": "Ray Tracing in One Weekend",
+  "license": "CC0-1.0",
+  "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
+  "index": "book.json"
+}

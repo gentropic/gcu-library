@@ -1,3 +1,4 @@
-dist/
+dist/*
+!dist/*.gcudat
 node_modules/
 .cache/

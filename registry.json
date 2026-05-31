@@ -3,7 +3,7 @@
   "name": "GCU Library",
   "description": "Prepared books and data packs from the Geoscientific Chaos Union.",
   "homepage": "https://github.com/gentropic/gcu-library",
-  "updated": "2026-05-30",
+  "updated": "2026-05-31",
   "entries": [
     {
       "name": "ods",
@@ -17,6 +17,22 @@
       "size": 1916645,
       "url": "dist/ods.gcudat",
       "integrity": "sha256-yBGi0r9LEfV9cJqunpDVeeZVOKSCh4Y0hdNjs1DIGx0=",
+      "tags": [
+        "books"
+      ]
+    },
+    {
+      "name": "rtow",
+      "kind": "gcudat",
+      "datKind": "books",
+      "title": "Ray Tracing in One Weekend",
+      "description": "",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
+      "size": 1498687,
+      "url": "dist/rtow.gcudat",
+      "integrity": "sha256-g/FF/myR1FBjyPbqTQY3M5jURvFMcUCEsSle2Hi7En8=",
       "tags": [
         "books"
       ]
