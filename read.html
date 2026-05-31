@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCU Reader</title>
+<style>
+  :root {
+    --bg:#15191c; --surface:#1b2024; --raised:#222a2f; --bright:#2a343a;
+    --border:#33414a; --fg:#e6edf0; --soft:#8aa0ab; --muted:#b9c7cf;
+    --action:#e07b39; --go:#5bb98c; --warn:#d9a441; --info:#4ea3c9;
+    --selected:#8c7bd9; --error:#d96b6b; --success:#5bb98c;
+    --reader-size:18px; --reader-width:720px;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--fg); font:15px/1.6 'Barlow',system-ui,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden; }
+  a { color:var(--action); text-decoration:none; }
+
+  .bar { flex:none; display:flex; align-items:center; gap:10px; padding:8px 14px;
+    border-bottom:1px solid var(--border); background:var(--raised); }
+  .bar button, .bar a.btn { background:var(--bright); color:var(--fg); border:1px solid var(--border);
+    border-radius:5px; padding:5px 10px; cursor:pointer; font:inherit; white-space:nowrap; }
+  .bar button:disabled { opacity:.4; cursor:default; }
+  .bar .title { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar .crumb { color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar .spacer { flex:1; }
+
+  .stage { flex:1; display:flex; min-height:0; position:relative; }
+  .nav { flex:none; width:280px; overflow:auto; border-right:1px solid var(--border);
+    background:var(--surface); padding:10px 0; }
+  .nav .bk { padding:8px 16px; border-bottom:1px solid var(--border); margin-bottom:6px; }
+  .nav .bk .bt { font-weight:600; } .nav .bk .ba { color:var(--soft); font-size:13px; }
+  .nav .chap { padding:6px 16px; cursor:pointer; color:var(--muted); font-size:14px; }
+  .nav .chap:hover { background:var(--bright); }
+  .nav .chap.active { color:var(--action); border-left:2px solid var(--action); padding-left:14px; }
+  .content { flex:1; overflow:auto; }
+  .reading { max-width:var(--reader-width); margin:0 auto; padding:34px 28px 80px; font-size:var(--reader-size); }
+  body.font-serif .reading { font-family:Georgia,'Times New Roman',serif; }
+  body.font-sans .reading  { font-family:'Barlow',system-ui,sans-serif; }
+  body.font-mono .reading  { font-family:ui-monospace,'Space Mono',monospace; }
+  .reading h1,.reading h2,.reading h3 { line-height:1.25; }
+  .reading img { max-width:100%; height:auto; }
+  .reading pre { background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:12px 14px; overflow:auto; font-size:.82em; }
+  .reading code { font-family:ui-monospace,'Space Mono',monospace; }
+  .reading :not(pre) > code { background:var(--surface); border:1px solid var(--border);
+    border-radius:3px; padding:.5px 5px; font-size:.86em; }
+  .reading .tok-comment { color:var(--soft); font-style:italic; }
+  .reading .tok-string  { color:var(--success); }
+  .reading .tok-number  { color:var(--warn); }
+  .reading .tok-keyword { color:var(--info); }
+  .reading .tok-builtin { color:var(--selected); }
+  .reading .tok-tag     { color:var(--error); }
+  .reading .tok-attr    { color:var(--warn); }
+  .reading .tok-punct   { color:var(--muted); }
+  .err { padding:24px; color:var(--error); }
+
+  /* settings popover */
+  .pop { position:absolute; top:6px; right:12px; z-index:20; display:none; flex-direction:column; gap:9px;
+    background:var(--raised); border:1px solid var(--border); border-radius:7px; padding:13px; width:230px; }
+  .pop.open { display:flex; }
+  .pop .seg { display:flex; gap:6px; }
+  .pop .seg button { flex:1; }
+  .pop .seg button.active { border-color:var(--action); color:var(--action); }
+  .pop label { font-size:12px; color:var(--soft); }
+  .pop input[type=range] { width:100%; }
+
+  /* search overlay */
+  .ovl { position:absolute; inset:0; z-index:30; display:none; background:rgba(0,0,0,.5); }
+  .ovl.open { display:block; }
+  .ovl .panel { max-width:640px; margin:48px auto; background:var(--raised); border:1px solid var(--border);
+    border-radius:9px; overflow:hidden; max-height:75vh; display:flex; flex-direction:column; }
+  .ovl input { border:0; border-bottom:1px solid var(--border); background:var(--surface); color:var(--fg);
+    padding:13px 16px; font:16px 'Barlow',sans-serif; outline:none; }
+  .hits { overflow:auto; }
+  .hit { padding:10px 16px; cursor:pointer; border-bottom:1px solid var(--border); }
+  .hit:hover { background:var(--bright); }
+  .hit .c { color:var(--soft); font-size:11px; } .hit .h { font-weight:600; }
+  .hit .s { color:var(--muted); font-size:13px; margin-top:3px; }
+  .hit .s mark { background:var(--action); color:var(--bg); }
+  .empty { padding:18px 16px; color:var(--soft); font-style:italic; }
+
+  .backdrop { position:absolute; inset:0; z-index:10; display:none; }
+  @media (max-width:780px) {
+    .nav { position:absolute; z-index:15; height:100%; transform:translateX(-100%); transition:transform .2s; }
+    body.nav-open .nav { transform:none; }
+    body.nav-open .backdrop { display:block; }
+  }
+</style>
+</head>
+<body class="font-serif">
+<div class="bar">
+  <button id="navToggle" title="Contents">☰</button>
+  <a class="btn" href="index.html" title="Back to the library">← Library</a>
+  <span class="title" id="title">Reader</span>
+  <span class="crumb" id="crumb"></span>
+  <span class="spacer"></span>
+  <button id="searchBtn" title="Search">⌕</button>
+  <button id="setBtn" title="Reading settings">Aa</button>
+  <button id="prevBtn" title="Previous">‹</button>
+  <button id="nextBtn" title="Next">›</button>
+</div>
+<div class="stage">
+  <nav class="nav" id="nav"></nav>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="content" id="contentScroll"><div class="reading" id="content"></div></div>
+  <div class="pop" id="pop">
+    <div class="seg" id="fontSeg">
+      <button data-font="serif">Serif</button><button data-font="sans">Sans</button><button data-font="mono">Mono</button>
+    </div>
+    <label>Text size <input type="range" id="sizeRange" min="14" max="24" step="1"></label>
+    <label>Column width <input type="range" id="widthRange" min="560" max="980" step="20"></label>
+  </div>
+  <div class="ovl" id="ovl">
+    <div class="panel">
+      <input id="searchInput" type="search" placeholder="Search this book…" autocomplete="off">
+      <div class="hits" id="hits"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { renderMd, slugify } from './reader/lib/markdown.js';
+import { highlightCode, scrollToAnchor, decorateHeadings, rewireLinks, splitByHeadings } from './reader/lib/docview.js';
+import { Librarian } from './reader/lib/librarian.js';
+import { renderToString } from './reader/lib/katex.js';
+import { createReader } from './reader/lib/reader-core.js';
+
+const $ = (id) => document.getElementById(id);
+const slug = new URLSearchParams(location.search).get('book');
+if (!slug) { document.body.innerHTML = '<div class="err">No book specified. <a href="index.html">Back to the library</a>.</div>'; throw new Error('no book'); }
+
+// fetch-backed VFS: reader-core hands us '/'-rooted paths (resolveInBook) and
+// plain ones (book.json); strip the leading slash and resolve against this
+// page's directory so it works under a project Pages path.
+const PAGE_BASE = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
+const url = (p) => PAGE_BASE + String(p).replace(/^\//, '');
+const readFile  = async (p) => { const r = await fetch(url(p)); if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); };
+const readBytes = async (p) => { const r = await fetch(url(p)); if (!r.ok) throw new Error('HTTP ' + r.status); return new Uint8Array(await r.arrayBuffer()); };
+
+const stateKey = 'gcu-reader:' + slug;
+const loadState = () => { try { return JSON.parse(localStorage.getItem(stateKey)) || {}; } catch { return {}; } };
+const saveState = (s) => { try { localStorage.setItem(stateKey, JSON.stringify(s)); } catch { /* quota / private mode */ } };
+
+let reader = null;
+
+function applySettings() {
+  const s = reader.settings;
+  document.body.classList.remove('font-serif', 'font-sans', 'font-mono');
+  document.body.classList.add('font-' + s.font);
+  document.documentElement.style.setProperty('--reader-size', s.size + 'px');
+  document.documentElement.style.setProperty('--reader-width', s.width + 'px');
+  for (const b of $('fontSeg').children) b.classList.toggle('active', b.dataset.font === s.font);
+  $('sizeRange').value = s.size; $('widthRange').value = s.width;
+}
+function renderNav() {
+  const el = $('nav'); el.innerHTML = '';
+  const bk = document.createElement('div'); bk.className = 'bk';
+  const t = document.createElement('div'); t.className = 'bt'; t.textContent = reader.book.title || slug; bk.appendChild(t);
+  if (reader.book.author) { const a = document.createElement('div'); a.className = 'ba'; a.textContent = reader.book.author; bk.appendChild(a); }
+  el.appendChild(bk);
+  reader.chapters.forEach((c, i) => {
+    const d = document.createElement('div'); d.className = 'chap' + (i === reader.index ? ' active' : '');
+    d.textContent = c.title || ('Chapter ' + (i + 1)); d.dataset.idx = i;
+    d.addEventListener('click', () => { reader.loadChapter(i); setNav(false); });
+    el.appendChild(d);
+  });
+}
+const setNav = (open) => document.body.classList.toggle('nav-open', open);
+function updateButtons() { $('prevBtn').disabled = reader.index <= 0; $('nextBtn').disabled = reader.index >= reader.chapters.length - 1; }
+
+function runSearch() {
+  const q = $('searchInput').value, box = $('hits');
+  if (!q.trim()) { box.innerHTML = ''; return; }
+  const hits = reader.search(q);
+  box.innerHTML = '';
+  if (!hits.length) { box.innerHTML = '<div class="empty">no matches.</div>'; return; }
+  for (const h of hits) {
+    const row = document.createElement('div'); row.className = 'hit';
+    row.innerHTML = '<div class="c">' + (h.doc.fileTitle || '') + '</div><div class="h">' + (h.doc.heading || h.doc.fileTitle || '') + '</div>' + (h.snippet ? '<div class="s">' + h.snippet + '</div>' : '');
+    row.addEventListener('click', async () => { $('ovl').classList.remove('open'); await reader.loadChapter(h.doc.chapterIndex, h.doc.anchor || null); });
+    box.appendChild(row);
+  }
+}
+
+(async () => {
+  reader = createReader({
+    contentEl: $('content'),
+    readFile, readBytes,
+    loadPdfEngine: () => null,   // standalone v1: no PDF engine (books are md/html)
+    loadState, saveState,
+    libs: { renderMd, slugify, decorateHeadings, highlightCode, rewireLinks, scrollToAnchor, splitByHeadings, Librarian, renderToString },
+    on: {
+      ready: (book) => { $('title').textContent = book.title || slug; document.title = (book.title || slug) + ' — GCU Reader'; applySettings(); renderNav(); },
+      chapterChange: ({ index, chapter }) => {
+        $('crumb').textContent = chapter.title ? '· ' + chapter.title : '';
+        for (const d of $('nav').querySelectorAll('.chap')) d.classList.toggle('active', +d.dataset.idx === index);
+        updateButtons();
+      },
+      settingsChange: () => applySettings(),
+    },
+  });
+
+  try { await reader.open('books/' + slug); }
+  catch (e) { document.body.innerHTML = '<div class="err">Couldn\'t open “' + slug + '” — ' + (e.message || e) + '. <a href="index.html">Back to the library</a>.</div>'; return; }
+
+  $('navToggle').addEventListener('click', () => setNav(!document.body.classList.contains('nav-open')));
+  $('backdrop').addEventListener('click', () => setNav(false));
+  $('prevBtn').addEventListener('click', () => reader.prev());
+  $('nextBtn').addEventListener('click', () => reader.next());
+  $('setBtn').addEventListener('click', () => $('pop').classList.toggle('open'));
+  document.addEventListener('click', (e) => { if (!$('pop').contains(e.target) && e.target !== $('setBtn')) $('pop').classList.remove('open'); });
+  for (const b of $('fontSeg').children) b.addEventListener('click', () => reader.setSettings({ font: b.dataset.font }));
+  $('sizeRange').addEventListener('input', () => reader.setSettings({ size: +$('sizeRange').value }));
+  $('widthRange').addEventListener('input', () => reader.setSettings({ width: +$('widthRange').value }));
+  $('searchBtn').addEventListener('click', async () => {
+    $('ovl').classList.add('open'); $('searchInput').focus();
+    $('hits').innerHTML = '<div class="empty">indexing…</div>';
+    try { await reader.buildIndex(); $('hits').innerHTML = ''; if ($('searchInput').value.trim()) runSearch(); }
+    catch { $('hits').innerHTML = '<div class="empty">search unavailable.</div>'; }
+  });
+  $('ovl').addEventListener('click', (e) => { if (e.target === $('ovl')) $('ovl').classList.remove('open'); });
+  $('searchInput').addEventListener('input', runSearch);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { $('ovl').classList.remove('open'); $('pop').classList.remove('open'); }
+    else if ((e.key === 'ArrowRight') && !$('ovl').classList.contains('open')) reader.next();
+    else if ((e.key === 'ArrowLeft') && !$('ovl').classList.contains('open')) reader.prev();
+  });
+})();
+</script>
+</body>
+</html>

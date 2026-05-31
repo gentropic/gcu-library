@@ -11,6 +11,9 @@ discoverable + installable through the **Browse Library** registry.
 - **Standing up a registry?** → **[`REGISTRY.md`](REGISTRY.md)**.
 - This repo is the **default registry source** — `registry.json` at the root,
   served via `raw.githubusercontent.com/gentropic/gcu-library/main/registry.json`.
+- **Web reader** — the books are also browsable + readable in the browser at the
+  GitHub Pages site (`index.html` catalog → `read.html?book=<slug>` reader), no
+  install needed. See [Web site](#web-site-github-pages).
 
 ## Layout
 
@@ -75,11 +78,39 @@ engine. No converter needed.
 ```sh
 node tools/build-gcudat.mjs <slug>   # pack dir → dist/<slug>.gcudat
 node tools/build-registry.mjs        # → registry.json (size + SRI)
-git add books/<slug> dist/<slug>.gcudat registry.json && git commit && git push
+node tools/build-catalog.mjs         # → index.html (the Pages catalog)
+git add books/<slug> dist/<slug>.gcudat registry.json index.html
+git commit && git push
 ```
 
 Bump `book.json`'s `version` when content changes → the reader shows **Update ↑**.
 Full details in [`AUTHORING.md`](AUTHORING.md).
+
+## Web site (GitHub Pages)
+
+The repo doubles as a static site served from its root: an `index.html` catalog
+(generated from `registry.json`) linking to a standalone in-browser reader,
+`read.html?book=<slug>`. No install, no Works — just the books on the web, with
+chapter nav, reading settings, KaTeX math, syntax-highlighted code, inlined
+figures, and per-book search.
+
+```
+index.html              catalog — `node tools/build-catalog.mjs` (from registry.json)
+read.html               standalone reader (fetch-backed @gcu/reader-core)
+reader/lib/*.js          VENDORED reader engine — `node tools/sync-reader-libs.mjs`
+                         (copies reader-core/docview/librarian/katex/markdown from ../auditable)
+```
+
+The reader is `@gcu/reader-core` with `readFile`→`fetch` and reading-state in
+`localStorage` — the same engine the Works reader uses. Its deps are standalone
+ES modules vendored under `reader/lib/` (zero build step); **re-run
+`sync-reader-libs.mjs` when the engine changes upstream**, then commit the
+refreshed `reader/lib/`.
+
+**Enabling Pages:** repo Settings → Pages → deploy from `main` / `/` (root).
+Lives at `https://gentropic.github.io/gcu-library/`. (Serving from root is
+deliberate — the reader fetches `books/<slug>/…` and `dist/*.gcudat` as
+same-origin siblings.)
 
 ## Licenses
 

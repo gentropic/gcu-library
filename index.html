@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCU Library</title>
+<style>
+  :root {
+    --bg:#15191c; --surface:#1b2024; --raised:#222a2f; --bright:#2a343a;
+    --border:#33414a; --fg:#e6edf0; --soft:#8aa0ab; --muted:#b9c7cf;
+    --action:#e07b39; --go:#5bb98c; --warn:#d9a441;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.6 'Barlow',system-ui,-apple-system,sans-serif; }
+  a { color:var(--action); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  header { padding:34px 24px 18px; border-bottom:1px solid var(--border); }
+  header .wrap { max-width:1040px; margin:0 auto; }
+  h1 { margin:0; font:600 26px ui-monospace,'Space Mono',monospace; letter-spacing:2px; }
+  header p { margin:6px 0 0; color:var(--soft); }
+  main { max-width:1040px; margin:0 auto; padding:22px 24px 40px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+  .card { display:flex; gap:14px; padding:15px; border:1px solid var(--border); border-radius:8px; background:var(--raised); }
+  .cover { flex:none; width:64px; height:84px; border-radius:4px; background:var(--bright);
+    display:grid; place-items:center; color:var(--soft); font-size:30px; overflow:hidden; }
+  .cover img { width:100%; height:100%; object-fit:cover; }
+  .body { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .body h2 { margin:0; font-size:17px; line-height:1.25; }
+  .badges { margin:5px 0; }
+  .badge { font:10px ui-monospace,monospace; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--action); border:1px solid var(--border); border-radius:3px; padding:1px 6px; margin-right:5px; }
+  .badge.nc { color:var(--warn); border-color:var(--warn); }
+  .meta { color:var(--soft); font-size:12px; }
+  .desc { color:var(--muted); font-size:13.5px; margin:7px 0 0;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
+  .tags { color:var(--soft); font:11px ui-monospace,monospace; margin-top:6px; }
+  .act { margin-top:auto; padding-top:11px; display:flex; gap:14px; align-items:center; }
+  .read { font-weight:600; }
+  .dl { color:var(--soft); font-size:12px; }
+  footer { max-width:1040px; margin:0 auto; padding:18px 24px 48px; color:var(--soft); font-size:13px;
+    border-top:1px solid var(--border); }
+  footer code { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:1px 6px;
+    font-size:12px; color:var(--muted); user-select:all; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>GCU Library</h1>
+  <p>Prepared books and data packs from the Geoscientific Chaos Union. · updated 2026-05-31</p>
+</div></header>
+<main>
+  <div class="grid">
+    <article class="card">
+    <div class="cover">▤</div>
+    <div class="body">
+      <h2>arcr / gewgaw — The Micro-Game DSL Manual</h2>
+      <div class="badges"><span class="badge">books</span></div>
+      <div class="meta">CC0-1.0 · Geoscientific Chaos Union · 19 KB · v1.0.0</div>
+      <p class="desc">A tiny, sandboxed DSL for one-screen arcade micro-games small enough to fit in a QR code — written for (and by) language models. The gewgaw reference engine, an example-first cookbook, and the normative spec.</p>
+      <div class="tags">#reference #tutorial #game-dev #dsl</div>
+      <div class="act">
+        <a class="read" href="read.html?book=arcr">Read ▸</a>
+        <a class="dl" href="dist/arcr.gcudat" download>Download .gcudat</a>
+      </div>
+    </div>
+  </article>
+    <article class="card">
+    <div class="cover">▤</div>
+    <div class="body">
+      <h2>Open Data Structures (Python edition)</h2>
+      <div class="badges"><span class="badge">books</span></div>
+      <div class="meta">CC BY 2.5 · Pat Morin · 1.8 MB · v1.0.0</div>
+      
+      <div class="tags">#books</div>
+      <div class="act">
+        <a class="read" href="read.html?book=ods">Read ▸</a>
+        <a class="dl" href="dist/ods.gcudat" download>Download .gcudat</a>
+      </div>
+    </div>
+  </article>
+    <article class="card">
+    <div class="cover">▤</div>
+    <div class="body">
+      <h2>Ray Tracing: The Next Week</h2>
+      <div class="badges"><span class="badge">books</span></div>
+      <div class="meta">CC0-1.0 · Peter Shirley, Trevor David Black, Steve Hollasch · 5.2 MB · v1.0.1</div>
+      
+      <div class="tags">#books</div>
+      <div class="act">
+        <a class="read" href="read.html?book=rtnw">Read ▸</a>
+        <a class="dl" href="dist/rtnw.gcudat" download>Download .gcudat</a>
+      </div>
+    </div>
+  </article>
+    <article class="card">
+    <div class="cover">▤</div>
+    <div class="body">
+      <h2>Ray Tracing in One Weekend</h2>
+      <div class="badges"><span class="badge">books</span></div>
+      <div class="meta">CC0-1.0 · Peter Shirley, Trevor David Black, Steve Hollasch · 2.4 MB · v1.0.1</div>
+      
+      <div class="tags">#books</div>
+      <div class="act">
+        <a class="read" href="read.html?book=rtow">Read ▸</a>
+        <a class="dl" href="dist/rtow.gcudat" download>Download .gcudat</a>
+      </div>
+    </div>
+  </article>
+    <article class="card">
+    <div class="cover">▤</div>
+    <div class="body">
+      <h2>Ray Tracing: The Rest of Your Life</h2>
+      <div class="badges"><span class="badge">books</span></div>
+      <div class="meta">CC0-1.0 · Peter Shirley, Trevor David Black, Steve Hollasch · 3.4 MB · v1.0.1</div>
+      
+      <div class="tags">#books</div>
+      <div class="act">
+        <a class="read" href="read.html?book=rtrol">Read ▸</a>
+        <a class="dl" href="dist/rtrol.gcudat" download>Download .gcudat</a>
+      </div>
+    </div>
+  </article>
+  </div>
+</main>
+<footer>
+  Read in the browser, or install into <strong>Auditable Works</strong> — Tools → Library →
+  <em>+ Add source</em> → <code>https://raw.githubusercontent.com/gentropic/gcu-library/main/registry.json</code> &nbsp;·&nbsp;
+  <a href="AUTHORING.md">contribute a book</a> ·
+  <a href="https://github.com/gentropic/gcu-library">source</a>
+</footer>
+</body>
+</html>
