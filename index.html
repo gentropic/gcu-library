@@ -13,6 +13,11 @@
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--fg);
     font:15px/1.6 'Barlow',system-ui,-apple-system,sans-serif; }
+  * { scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  *::-webkit-scrollbar { width:10px; height:10px; }
+  *::-webkit-scrollbar-thumb { background:var(--border); border-radius:5px; border:2px solid var(--bg); }
+  *::-webkit-scrollbar-thumb:hover { background:var(--bright); }
+  *::-webkit-scrollbar-track { background:transparent; }
   a { color:var(--action); text-decoration:none; }
   a:hover { text-decoration:underline; }
   header { padding:34px 24px 18px; border-bottom:1px solid var(--border); }
