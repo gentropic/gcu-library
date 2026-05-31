@@ -1,0 +1,60 @@
+{
+  "title": "The Elements of Style",
+  "author": "William Strunk Jr.",
+  "lang": "en",
+  "slug": "elements-of-style",
+  "version": "1.0.0",
+  "license": "Public Domain",
+  "description": "The classic concise guide to English usage and composition (1918, original Strunk edition).",
+  "tags": [
+    "reference",
+    "style",
+    "writing",
+    "english"
+  ],
+  "source": "https://www.gutenberg.org/ebooks/37134",
+  "chapters": [
+    {
+      "id": "c1",
+      "title": "I. INTRODUCTORY",
+      "file": "chapters/01-introductory.html",
+      "format": "html"
+    },
+    {
+      "id": "c2",
+      "title": "II. ELEMENTARY RULES OF USAGE",
+      "file": "chapters/02-elementary-rules-of-usage.html",
+      "format": "html"
+    },
+    {
+      "id": "c3",
+      "title": "III. ELEMENTARY PRINCIPLES OF COMPOSITION",
+      "file": "chapters/03-elementary-principles-of-composi.html",
+      "format": "html"
+    },
+    {
+      "id": "c4",
+      "title": "IV. A FEW MATTERS OF FORM",
+      "file": "chapters/04-a-few-matters-of-form.html",
+      "format": "html"
+    },
+    {
+      "id": "c5",
+      "title": "V. WORDS AND EXPRESSIONS COMMONLY MISUSED",
+      "file": "chapters/05-words-and-expressions-commonly-m.html",
+      "format": "html"
+    },
+    {
+      "id": "c6",
+      "title": "VI. SPELLING",
+      "file": "chapters/06-spelling.html",
+      "format": "html"
+    },
+    {
+      "id": "c7",
+      "title": "VII. EXERCISES ON CHAPTERS II AND III",
+      "file": "chapters/07-exercises-on-chapters-ii-and-iii.html",
+      "format": "html"
+    }
+  ]
+}

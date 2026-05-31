@@ -25,6 +25,25 @@
       ]
     },
     {
+      "name": "elements-of-style",
+      "kind": "gcudat",
+      "datKind": "books",
+      "title": "The Elements of Style",
+      "description": "The classic concise guide to English usage and composition (1918, original Strunk edition).",
+      "version": "1.0.0",
+      "license": "Public Domain",
+      "attribution": "William Strunk Jr.",
+      "size": 35833,
+      "url": "dist/elements-of-style.gcudat",
+      "integrity": "sha256-qGr+bfJfY9MB01ZHIGf1YDo7yAh2V+uGM3FRdhcQ5f0=",
+      "tags": [
+        "reference",
+        "style",
+        "writing",
+        "english"
+      ]
+    },
+    {
       "name": "ods",
       "kind": "gcudat",
       "datKind": "books",

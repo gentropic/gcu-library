@@ -1,0 +1,17 @@
+{
+  "gcudat": 1,
+  "kind": "books",
+  "name": "elements-of-style",
+  "title": "The Elements of Style",
+  "version": "1.0.0",
+  "license": "Public Domain",
+  "attribution": "William Strunk Jr.",
+  "index": "book.json",
+  "description": "The classic concise guide to English usage and composition (1918, original Strunk edition).",
+  "tags": [
+    "reference",
+    "style",
+    "writing",
+    "english"
+  ]
+}

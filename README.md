@@ -74,6 +74,13 @@ Plain Markdown from the cradle repo (`../cradle`: `COOKBOOK-arcr.md` +
 arcr — a tiny, sandboxed DSL for QR-sized arcade micro-games — and its gewgaw
 engine. No converter needed.
 
+### `elements-of-style` — The Elements of Style (William Strunk Jr., Public Domain)
+The classic concise English style guide. The **original 1918 Strunk-only**
+edition (US public domain; the later Strunk & White revision is still
+copyrighted and NOT included), from Project Gutenberg #37134 via
+`tools/strunk-convert.mjs` (HTML → html chapters; kept as HTML to preserve the
+italic examples + rule structure). The library's first `reference` pack.
+
 ## Build & publish (quick reference)
 
 ```sh
