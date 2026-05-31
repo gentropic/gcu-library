@@ -26,6 +26,7 @@ tools/                  conversion + build tooling
   ray-convert.mjs       Ray Tracing series (markdeep) → book dirs
   build-gcudat.mjs      a pack dir → dist/<slug>.gcudat (+ writes gcudat.json)
   build-registry.mjs    every dist/*.gcudat → registry.json (size + SRI)
+  arcr-figures.mjs      (re)generate the arcr manual's inline SVG figures
 books/<slug>/           book content packs
   book.json             reader manifest (spine + metadata + version)
   gcudat.json           pack manifest (written by build-gcudat; self-describing)
