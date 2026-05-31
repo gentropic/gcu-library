@@ -6,6 +6,25 @@
   "updated": "2026-05-31",
   "entries": [
     {
+      "name": "arcr",
+      "kind": "gcudat",
+      "datKind": "books",
+      "title": "arcr / gewgaw — The Micro-Game DSL Manual",
+      "description": "A tiny, sandboxed DSL for one-screen arcade micro-games small enough to fit in a QR code — written for (and by) language models. The gewgaw reference engine, an example-first cookbook, and the normative spec.",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "attribution": "Geoscientific Chaos Union",
+      "size": 19608,
+      "url": "dist/arcr.gcudat",
+      "integrity": "sha256-V+9PUthVHX5AmEpQacyoP4cMuYf/w6XUvHGTTH3/WWM=",
+      "tags": [
+        "reference",
+        "tutorial",
+        "game-dev",
+        "dsl"
+      ]
+    },
+    {
       "name": "ods",
       "kind": "gcudat",
       "datKind": "books",

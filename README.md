@@ -64,6 +64,12 @@ LaTeX source (`opendatastructures.org`, clone at `../ods`) via
 `rtow` / `rtnw` / `rtrol` from the markdeep sources via `tools/ray-convert.mjs`.
 Prose + KaTeX math + `cpp` code blocks + inlined figures.
 
+### `arcr` — arcr / gewgaw micro-game DSL manual (GCU, CC0)
+Plain Markdown from the cradle repo (`../cradle`: `COOKBOOK-arcr.md` +
+`SPEC-arcr.md`) plus a written intro. The authoring guide and normative spec for
+arcr — a tiny, sandboxed DSL for QR-sized arcade micro-games — and its gewgaw
+engine. No converter needed.
+
 ## Build & publish (quick reference)
 
 ```sh

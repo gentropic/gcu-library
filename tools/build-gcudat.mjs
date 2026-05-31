@@ -40,6 +40,9 @@ const manifest = {
   attribution: book.author || '',
   index: 'book.json',
 };
+// optional discovery metadata → flows into the registry entry (build-registry reads these)
+if (book.description) manifest.description = book.description;
+if (Array.isArray(book.tags)) manifest.tags = book.tags;
 fs.writeFileSync(path.join(bookDir, 'gcudat.json'), JSON.stringify(manifest, null, 2) + '\n');
 
 fs.mkdirSync(distDir, { recursive: true });

@@ -1,0 +1,16 @@
+{
+  "title": "arcr / gewgaw — The Micro-Game DSL Manual",
+  "author": "Geoscientific Chaos Union",
+  "lang": "en",
+  "slug": "arcr",
+  "license": "CC0-1.0",
+  "version": "1.0.0",
+  "source": "https://github.com/gentropic/cradle",
+  "description": "A tiny, sandboxed DSL for one-screen arcade micro-games small enough to fit in a QR code — written for (and by) language models. The gewgaw reference engine, an example-first cookbook, and the normative spec.",
+  "tags": ["reference", "tutorial", "game-dev", "dsl"],
+  "chapters": [
+    { "id": "c1", "title": "Introduction", "file": "chapters/01-introduction.md", "format": "md" },
+    { "id": "c2", "title": "Cookbook", "file": "chapters/02-cookbook.md", "format": "md" },
+    { "id": "c3", "title": "Specification", "file": "chapters/03-specification.md", "format": "md" }
+  ]
+}
