@@ -51,11 +51,17 @@ async function convert(b) {
   body = body.replace(/^[ \t]*<\/?div[^>]*>[ \t]*$/gm, '').trim();
 
   // 1) Code fences FIRST (protect from math/setext): ~~~~ <lang> … ~~~~.
+  // Markdeep marks added/highlighted lines as CONSECUTIVE fenced segments
+  // (`~~~ C++` / `~~~ C++ highlight`, no blank line between) — only the FINAL
+  // terminator is a bare `~~~`. So this match spans the whole listing with the
+  // internal segment fences captured as content; strip those internal fence
+  // lines to collapse the listing into one clean block.
   const code = [];
   body = body.replace(/^[ \t]*~~~+[ \t]*([^\n]*)\n([\s\S]*?)\n[ \t]*~~~+[ \t]*$/gm, (_, lang, src) => {
     const ph = '@@CODE' + code.length + '@@';
     const info = langOf(lang);
-    code.push('```' + info + '\n' + dedent(src) + '\n```');
+    const merged = src.replace(/^[ \t]*~~~+[^\n]*$/gm, '').replace(/\n{3,}/g, '\n\n');
+    code.push('```' + info + '\n' + dedent(merged) + '\n```');
     return '\n' + ph + '\n';
   });
 

@@ -32,9 +32,9 @@ Let’s adjust some parameters for the Cornell box:
 ```cpp
 int main() {
     ...
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.samples_per_pixel = 1000;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     ...
 }
 ```
@@ -67,13 +67,11 @@ class material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
     const {
         return 0;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 
 class lambertian : public material {
@@ -86,14 +84,11 @@ class lambertian : public material {
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
     const override {
         auto cos_theta = dot(rec.normal, unit_vector(scattered.direction()));
         return cos_theta < 0 ? 0 : cos_theta/pi;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
     shared_ptr<texture> tex;
@@ -133,14 +128,11 @@ class camera {
         if (!rec.mat->scatter(r, rec, attenuation, scattered))
             return color_from_emission;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
         double pdf_value = scattering_pdf;
 
         color color_from_scatter =
             (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_value;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return color_from_emission + color_from_scatter;
     }
@@ -192,9 +184,8 @@ class camera {
             return color_from_emission;
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         double pdf_value = 1 / (2*pi);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         color color_from_scatter =
             (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_value;
@@ -216,14 +207,13 @@ Make sure to return the PDF to the scattering PDF.
 
 
 ```cpp
-        ...
+...
 
-        double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double pdf_value = scattering_pdf;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
-        ...
+double pdf_value = scattering_pdf;
+
+...
 ```
 
 
@@ -253,9 +243,8 @@ class lambertian : public material {
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         auto scatter_direction = random_on_hemisphere(rec.normal);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Catch degenerate scatter direction
         if (scatter_direction.near_zero())
@@ -268,9 +257,9 @@ class lambertian : public material {
 
     double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
     const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         return 1 / (2*pi);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
     ...

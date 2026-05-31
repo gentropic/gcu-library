@@ -124,7 +124,6 @@ class onb {
     vec3 axis[3];
 };
 
-
 #endif
 ```
 
@@ -138,23 +137,20 @@ We can rewrite our Lambertian material using this to get:
 
 ```cpp
 #include "hittable.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include "onb.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "texture.h"
 
 class material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual bool scatter(
         const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
     ) const {
         return false;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 };
@@ -163,8 +159,6 @@ class lambertian : public material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(
         const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
     ) const override {
@@ -172,11 +166,11 @@ class lambertian : public material {
         auto scatter_direction = uvw.transform(random_cosine_direction());
 
         scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         attenuation = tex->value(rec.u, rec.v, rec.p);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         pdf = dot(uvw.w(), scattered.direction()) / pi;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         return true;
     }
 
@@ -187,12 +181,10 @@ class metal : public material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(
         const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
     ) const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     }
 };
@@ -201,12 +193,10 @@ class dielectric : public material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(
         const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
     ) const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     }
 };
@@ -219,12 +209,10 @@ class isotropic : public material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(
         const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
     ) const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     }
 };
@@ -250,21 +238,18 @@ class camera {
 
         ray scattered;
         color attenuation;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         double pdf_value;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             return color_from_emission;
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         pdf_value = scattering_pdf;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
     }
@@ -301,19 +286,16 @@ class isotropic : public material {
     ) const override {
         scattered = ray(rec.p, random_unit_vector(), r_in.time());
         attenuation = tex->value(rec.u, rec.v, rec.p);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         pdf = 1 / (4 * pi);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         return true;
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
     const override {
         return 1 / (4 * pi);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
     shared_ptr<texture> tex;

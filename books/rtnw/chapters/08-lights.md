@@ -16,8 +16,6 @@ class dielectric : public material {
     ...
 }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 class diffuse_light : public material {
   public:
     diffuse_light(shared_ptr<texture> tex) : tex(tex) {}
@@ -46,12 +44,9 @@ class material {
   public:
     virtual ~material() = default;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual color emitted(double u, double v, const point3& p) const {
         return color(0,0,0);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     virtual bool scatter(
         const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
@@ -81,9 +76,8 @@ class camera {
     int    image_width       = 100;  // Rendered image width in pixel count
     int    samples_per_pixel = 10;   // Count of random samples for each pixel
     int    max_depth         = 10;   // Maximum number of ray bounces into scene
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     color  background;               // Scene background color
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 
@@ -96,8 +90,6 @@ class camera {
 
         hit_record rec;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, interval(0.001, infinity), rec))
             return background;
@@ -112,7 +104,7 @@ class camera {
         color color_from_scatter = attenuation * ray_color(scattered, depth-1, world);
 
         return color_from_emission + color_from_scatter;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 };
 ```
@@ -134,9 +126,9 @@ void bouncing_spheres() {
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
     cam.max_depth         = 20;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.background        = color(0.70, 0.80, 1.00);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     ...
 }
 
@@ -148,9 +140,9 @@ void checkered_spheres() {
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
     cam.max_depth         = 50;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.background        = color(0.70, 0.80, 1.00);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     ...
 }
 
@@ -162,9 +154,9 @@ void earth() {
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
     cam.max_depth         = 50;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.background        = color(0.70, 0.80, 1.00);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     ...
 }
 
@@ -176,9 +168,9 @@ void perlin_spheres() {
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
     cam.max_depth         = 50;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.background        = color(0.70, 0.80, 1.00);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     ...
 }
 
@@ -190,9 +182,9 @@ void quads() {
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
     cam.max_depth         = 50;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.background        = color(0.70, 0.80, 1.00);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     ...
 }
 ```
@@ -241,20 +233,19 @@ void simple_light() {
 
     cam.render(world);
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 int main() {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     switch (6) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         case 1:  bouncing_spheres();   break;
         case 2:  checkered_spheres();  break;
         case 3:  earth();              break;
         case 4:  perlin_spheres();     break;
         case 5:  quads();              break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         case 6:  simple_light();       break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 }
 ```
@@ -279,9 +270,9 @@ Fool around with making some spheres lights too.
 void simple_light() {
     ...
     auto difflight = make_shared<diffuse_light>(color(4,4,4));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     world.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     world.add(make_shared<quad>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), difflight));
     ...
 }
@@ -332,21 +323,20 @@ void cornell_box() {
 
     cam.render(world);
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 int main() {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     switch (7) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         case 1:  bouncing_spheres();   break;
         case 2:  checkered_spheres();  break;
         case 3:  earth();              break;
         case 4:  perlin_spheres();     break;
         case 5:  quads();              break;
         case 6:  simple_light();       break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         case 7:  cornell_box();        break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 }
 ```

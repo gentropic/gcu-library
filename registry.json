@@ -14,9 +14,9 @@
       "version": "1.0.0",
       "license": "CC BY 2.5",
       "attribution": "Pat Morin",
-      "size": 1916645,
+      "size": 1916646,
       "url": "dist/ods.gcudat",
-      "integrity": "sha256-yBGi0r9LEfV9cJqunpDVeeZVOKSCh4Y0hdNjs1DIGx0=",
+      "integrity": "sha256-nd88ZGKlS/SyKLF+j8kejtH21IaDSKVJnU86Mjnw590=",
       "tags": [
         "books"
       ]
@@ -30,9 +30,9 @@
       "version": "1.0.0",
       "license": "CC0-1.0",
       "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
-      "size": 5423910,
+      "size": 5422849,
       "url": "dist/rtnw.gcudat",
-      "integrity": "sha256-XmfmDCQFtRz9ZPy3k/naez7mj+dTrTUTkbNccjtdM4k=",
+      "integrity": "sha256-IbMODXnAaCAoMvQMhWMhzve7jhzLhdmcltQd+t1YXSc=",
       "tags": [
         "books"
       ]
@@ -46,9 +46,9 @@
       "version": "1.0.0",
       "license": "CC0-1.0",
       "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
-      "size": 2526283,
+      "size": 2524970,
       "url": "dist/rtow.gcudat",
-      "integrity": "sha256-QWaM+bU+Cl/yflhmr1LUtANTfgCJhA86Bv47+D20Cfg=",
+      "integrity": "sha256-CToD69PEiTnb3GnQh7tlatQygPhcxE6pd7DggHz2y9c=",
       "tags": [
         "books"
       ]
@@ -62,9 +62,9 @@
       "version": "1.0.0",
       "license": "CC0-1.0",
       "attribution": "Peter Shirley, Trevor David Black, Steve Hollasch",
-      "size": 3535511,
+      "size": 3534512,
       "url": "dist/rtrol.gcudat",
-      "integrity": "sha256-Nv1Ibg3KHmu3grOfGupgTnPfclvHgRYNjfqK13ds7nk=",
+      "integrity": "sha256-/fyVgcXULMd4nQRcnx8Nmf6htdX5n8RFMTLjlgKs6N8=",
       "tags": [
         "books"
       ]

@@ -72,8 +72,6 @@ class camera {
         if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
             return color_from_emission;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto on_light = point3(random_double(213,343), 554, random_double(227,332));
         auto to_light = on_light - rec.p;
         auto distance_squared = to_light.length_squared();
@@ -91,7 +89,6 @@ class camera {
         scattered = ray(rec.p, to_light, r.time());
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         color color_from_scatter =
             (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_value;
@@ -113,9 +110,9 @@ int main() {
     ...
     cam.aspect_ratio      = 1.0;
     cam.image_width       = 600;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.samples_per_pixel = 10;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     cam.max_depth         = 50;
     cam.background        = color(0,0,0);
     ...
@@ -145,12 +142,10 @@ class material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual color emitted(
         const ray& r_in, const hit_record& rec, double u, double v, const point3& p
     ) const {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         return color(0,0,0);
     }
     ...
@@ -160,15 +155,12 @@ class diffuse_light : public material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color emitted(const ray& r_in, const hit_record& rec, double u, double v, const point3& p)
     const override {
         if (!rec.front_face)
             return color(0,0,0);
         return tex->value(u, v, p);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 };
@@ -187,10 +179,7 @@ class camera {
     color ray_color(const ray& r, int depth, const hittable& world) const {
         ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
     }

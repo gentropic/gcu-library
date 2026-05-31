@@ -66,7 +66,6 @@ class vec3 {
 // point3 is just an alias for vec3, but useful for geometric clarity in the code.
 using point3 = vec3;
 
-
 // Vector Utility Functions
 
 inline std::ostream& operator<<(std::ostream& out, const vec3& v) {
@@ -169,7 +168,6 @@ Now we can change our main to use both of these:
 ```cpp
 #include "color.h"
 #include "vec3.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 #include <iostream>
 
@@ -187,10 +185,10 @@ int main() {
     for (int j = 0; j < image_height; j++) {
         std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
         for (int i = 0; i < image_width; i++) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
             auto pixel_color = color(double(i)/(image_width-1), double(j)/(image_height-1), 0);
             write_color(std::cout, pixel_color);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         }
     }
 

@@ -76,8 +76,6 @@ inline vec3 unit_vector(const vec3& u) {
     return v / v.length();
 }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline vec3 random_in_unit_disk() {
     while (true) {
         auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
@@ -85,7 +83,6 @@ inline vec3 random_in_unit_disk() {
             return p;
     }
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 ...
 ```
@@ -110,11 +107,8 @@ class camera {
     point3 lookat   = point3(0,0,-1);  // Point camera is looking at
     vec3   vup      = vec3(0,1,0);     // Camera-relative "up" direction
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double defocus_angle = 0;  // Variation angle of rays through each pixel
     double focus_dist = 10;    // Distance from camera lookfrom point to plane of perfect focus
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 
@@ -126,10 +120,9 @@ class camera {
     vec3   pixel_delta_u;        // Offset to pixel to the right
     vec3   pixel_delta_v;        // Offset to pixel below
     vec3   u, v, w;              // Camera frame basis vectors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     vec3   defocus_disk_u;       // Defocus disk horizontal radius
     vec3   defocus_disk_v;       // Defocus disk vertical radius
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     void initialize() {
         image_height = int(image_width / aspect_ratio);
@@ -140,14 +133,14 @@ class camera {
         center = lookfrom;
 
         // Determine viewport dimensions.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+
         auto focal_length = (lookfrom - lookat).length();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         auto theta = degrees_to_radians(vfov);
         auto h = std::tan(theta/2);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         auto viewport_height = 2 * h * focus_dist;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         auto viewport_width = viewport_height * (double(image_width)/image_height);
 
         // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
@@ -164,35 +157,30 @@ class camera {
         pixel_delta_v = viewport_v / image_height;
 
         // Calculate the location of the upper left pixel.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         auto viewport_upper_left = center - (focus_dist * w) - viewport_u/2 - viewport_v/2;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Calculate the camera defocus disk basis vectors.
         auto defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle / 2));
         defocus_disk_u = u * defocus_radius;
         defocus_disk_v = v * defocus_radius;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
     ray get_ray(int i, int j) const {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         // Construct a camera ray originating from the defocus disk and directed at a randomly
         // sampled point around the pixel location i, j.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         auto offset = sample_square();
         auto pixel_sample = pixel00_loc
                           + ((i + offset.x()) * pixel_delta_u)
                           + ((j + offset.y()) * pixel_delta_v);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         auto ray_direction = pixel_sample - ray_origin;
 
         return ray(ray_origin, ray_direction);
@@ -202,14 +190,11 @@ class camera {
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     point3 defocus_disk_sample() const {
         // Returns a random point in the camera defocus disk.
         auto p = random_in_unit_disk();
         return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     color ray_color(const ray& r, int depth, const hittable& world) const {
         ...
@@ -241,11 +226,8 @@ int main() {
     cam.lookat   = point3(0,0,-1);
     cam.vup      = vec3(0,1,0);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     cam.defocus_angle = 10.0;
     cam.focus_dist    = 3.4;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     cam.render(world);
 }

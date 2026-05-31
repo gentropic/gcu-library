@@ -5,16 +5,13 @@ create a function that returns a box, by creating a `hittable_list` of six recta
 
 ```cpp
 #include "hittable.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include "hittable_list.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 class quad : public hittable {
     ...
 };
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline shared_ptr<hittable_list> box(const point3& a, const point3& b, shared_ptr<material> mat)
 {
     // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
@@ -58,11 +55,8 @@ void cornell_box() {
     world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white));
     world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     world.add(box(point3(130, 0, 65), point3(295, 165, 230), white));
     world.add(box(point3(265, 0, 295), point3(430, 330, 460), white));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     camera cam;
     ...
@@ -111,8 +105,6 @@ class hittable {
     ...
 };
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 class translate : public hittable {
   public:
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -146,29 +138,25 @@ class translate : public hittable {
 ```cpp
 class translate : public hittable {
   public:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     translate(shared_ptr<hittable> object, const vec3& offset)
       : object(object), offset(offset)
     {
         bbox = object->bounding_box() + offset;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     aabb bounding_box() const override { return bbox; }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
     shared_ptr<hittable> object;
     vec3 offset;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     aabb bbox;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -191,8 +179,6 @@ class aabb {
 const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
 const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 aabb operator+(const aabb& bbox, const vec3& offset) {
     return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
 }
@@ -218,8 +204,6 @@ class interval {
 const interval interval::empty    = interval(+infinity, -infinity);
 const interval interval::universe = interval(-infinity, +infinity);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 interval operator+(const interval& ival, double displacement) {
     return interval(ival.min + displacement, ival.max + displacement);
 }
@@ -304,8 +288,6 @@ class translate : public hittable {
     ...
 };
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 class rotate_y : public hittable {
   public:
 
@@ -364,7 +346,7 @@ class rotate_y : public hittable {
 ```cpp
 class rotate_y : public hittable {
   public:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     rotate_y(shared_ptr<hittable> object, double angle) : object(object) {
         auto radians = degrees_to_radians(angle);
         sin_theta = std::sin(radians);
@@ -396,14 +378,11 @@ class rotate_y : public hittable {
 
         bbox = aabb(min, max);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     aabb bounding_box() const override { return bbox; }
 
   private:
@@ -411,7 +390,7 @@ class rotate_y : public hittable {
     double sin_theta;
     double cos_theta;
     aabb bbox;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -430,8 +409,6 @@ void cornell_box() {
     ...
     world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265,0,295));
@@ -441,7 +418,6 @@ void cornell_box() {
     box2 = make_shared<rotate_y>(box2, -18);
     box2 = make_shared<translate>(box2, vec3(130,0,65));
     world.add(box2);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     camera cam;
     ...

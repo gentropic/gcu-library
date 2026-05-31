@@ -111,8 +111,6 @@ class diffuse_light : public material {
     ...
 };
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 class isotropic : public material {
   public:
     isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
@@ -155,9 +153,9 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 ```cpp
 #include "bvh.h"
 #include "camera.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include "constant_medium.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "hittable.h"
 #include "hittable_list.h"
 #include "material.h"
@@ -167,8 +165,6 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
 ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 void cornell_smoke() {
     hittable_list world;
 
@@ -212,12 +208,11 @@ void cornell_smoke() {
 
     cam.render(world);
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 int main() {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     switch (8) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         case 1:  bouncing_spheres();   break;
         case 2:  checkered_spheres();  break;
         case 3:  earth();              break;
@@ -225,9 +220,9 @@ int main() {
         case 5:  quads();              break;
         case 6:  simple_light();       break;
         case 7:  cornell_box();        break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         case 8:  cornell_smoke();      break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 }
 ```

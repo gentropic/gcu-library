@@ -71,9 +71,8 @@ class camera {
   private:
     ...
 
-
     color ray_color(const ray& r, const hittable& world) const {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         hit_record rec;
 
         if (world.hit(r, interval(0, infinity), rec)) {
@@ -83,7 +82,7 @@ class camera {
         vec3 unit_direction = unit_vector(r.direction());
         auto a = 0.5*(unit_direction.y() + 1.0);
         return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 };
 
@@ -105,7 +104,7 @@ migrated code:
 ```cpp
 class camera {
   public:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     double aspect_ratio = 1.0;  // Ratio of image width over height
     int    image_width  = 100;  // Rendered image width in pixel count
 
@@ -128,10 +127,9 @@ class camera {
 
         std::clog << "\rDone.                 \n";
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     int    image_height;   // Rendered image height
     point3 center;         // Camera center
     point3 pixel00_loc;    // Location of pixel 0, 0
@@ -162,7 +160,6 @@ class camera {
             center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
         pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     color ray_color(const ray& r, const hittable& world) const {
         ...
@@ -185,23 +182,18 @@ And here's the much reduced main:
 ```cpp
 #include "rtweekend.h"
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 #include "camera.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "hittable.h"
 #include "hittable_list.h"
 #include "sphere.h"
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
 color ray_color(const ray& r, const hittable& world) {
     ...
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 int main() {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     hittable_list world;
 
     world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
@@ -213,7 +205,7 @@ int main() {
     cam.image_width  = 400;
 
     cam.render(world);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 }
 ```
 

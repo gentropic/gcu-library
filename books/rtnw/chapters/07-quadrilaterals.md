@@ -43,13 +43,11 @@ class aabb {
   public:
     ...
     aabb(const interval& x, const interval& y, const interval& z)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
       : x(x), y(y), z(z)
     {
         pad_to_minimums();
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
 
     aabb(const point3& a, const point3& b) {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
@@ -59,16 +57,12 @@ class aabb {
         y = interval(std::fmin(a[1],b[1]), std::fmax(a[1],b[1]));
         z = interval(std::fmin(a[2],b[2]), std::fmax(a[2],b[2]));
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         pad_to_minimums();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
     ...
     static const aabb empty, universe;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
   private:
 
     void pad_to_minimums() {
@@ -79,7 +73,7 @@ class aabb {
         if (y.size() < delta) y = y.expand(delta);
         if (z.size() < delta) z = z.expand(delta);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -231,11 +225,10 @@ class quad : public hittable {
     quad(const point3& Q, const vec3& u, const vec3& v, shared_ptr<material> mat)
       : Q(Q), u(u), v(v), mat(mat)
     {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         auto n = cross(u, v);
         normal = unit_vector(n);
         D = dot(normal, Q);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         set_bounding_box();
     }
@@ -246,10 +239,10 @@ class quad : public hittable {
     vec3 u, v;
     shared_ptr<material> mat;
     aabb bbox;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     vec3 normal;
     double D;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -271,7 +264,7 @@ class quad : public hittable {
     ...
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         auto denom = dot(normal, r.direction());
 
         // No hit if the ray is parallel to the plane.
@@ -291,7 +284,7 @@ class quad : public hittable {
         rec.set_face_normal(r, normal);
 
         return true;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
     ...
@@ -358,9 +351,8 @@ class quad : public hittable {
         auto n = cross(u, v);
         normal = unit_vector(n);
         D = dot(normal, Q);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         w = n / dot(n,n);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         set_bounding_box();
     }
@@ -370,9 +362,9 @@ class quad : public hittable {
   private:
     point3 Q;
     vec3 u, v;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     vec3 w;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     shared_ptr<material> mat;
     aabb bbox;
     vec3 normal;
@@ -505,12 +497,10 @@ class quad : public hittable {
         if (!ray_t.contains(t))
             return false;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Determine if the hit point lies within the planar shape using its plane coordinates.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         auto intersection = r.at(t);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         vec3 planar_hitpt_vector = intersection - Q;
         auto alpha = dot(w, cross(planar_hitpt_vector, v));
         auto beta = dot(w, cross(u, planar_hitpt_vector));
@@ -519,7 +509,7 @@ class quad : public hittable {
             return false;
 
         // Ray hits the 2D shape; set the rest of the hit record and return true.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         rec.t = t;
         rec.p = intersection;
         rec.mat = mat;
@@ -528,8 +518,6 @@ class quad : public hittable {
         return true;
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual bool is_interior(double a, double b, hit_record& rec) const {
         interval unit_interval = interval(0, 1);
         // Given the hit point in plane coordinates, return false if it is outside the
@@ -542,7 +530,6 @@ class quad : public hittable {
         rec.v = b;
         return true;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
     point3 Q;
@@ -571,16 +558,14 @@ And now we add a new scene to demonstrate our new `quad` primitive:
 #include "hittable.h"
 #include "hittable_list.h"
 #include "material.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include "quad.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "sphere.h"
 #include "texture.h"
 
 ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 void quads() {
     hittable_list world;
 
@@ -614,19 +599,18 @@ void quads() {
 
     cam.render(world);
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 int main() {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     switch (5) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         case 1:  bouncing_spheres();   break;
         case 2:  checkered_spheres();  break;
         case 3:  earth();              break;
         case 4:  perlin_spheres();     break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         case 5:  quads();              break;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 }
 ```

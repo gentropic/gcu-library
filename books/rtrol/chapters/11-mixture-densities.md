@@ -33,7 +33,6 @@ works, and for `pdf` this implies:
 
 #include "onb.h"
 
-
 class pdf {
   public:
     virtual ~pdf() {}
@@ -112,9 +111,9 @@ We can try this cosine PDF in the `ray_color()` function:
 
 ```cpp
 #include "hittable.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include "pdf.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "material.h"
 
 class camera {
@@ -140,12 +139,9 @@ class camera {
         if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
             return color_from_emission;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         cosine_pdf surface_pdf(rec.normal);
         scattered = ray(rec.p, surface_pdf.generate(), r.time());
         pdf_value = surface_pdf.value(scattered.direction());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
@@ -172,9 +168,9 @@ int main() {
     ...
     cam.aspect_ratio      = 1.0;
     cam.image_width       = 600;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.samples_per_pixel = 1000;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     cam.max_depth         = 50;
     cam.background        = color(0,0,0);
     ...
@@ -202,13 +198,11 @@ Now we can try sampling directions toward a `hittable`, like the light.
 
 ```cpp
 #include "hittable_list.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "onb.h"
 
 ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 class hittable_pdf : public pdf {
   public:
     hittable_pdf(const hittable& objects, const point3& origin)
@@ -251,8 +245,6 @@ class hittable {
 
     virtual aabb bounding_box() const = 0;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual double pdf_value(const point3& origin, const vec3& direction) const {
         return 0.0;
     }
@@ -260,7 +252,7 @@ class hittable {
     virtual vec3 random(const point3& origin) const {
         return vec3(1,0,0);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -283,18 +275,13 @@ class quad : public hittable {
         D = dot(normal, Q);
         w = n / dot(n,n);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         area = n.length();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         set_bounding_box();
     }
 
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double pdf_value(const point3& origin, const vec3& direction) const override {
         hit_record rec;
         if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
@@ -310,7 +297,6 @@ class quad : public hittable {
         auto p = Q + (random_double() * u) + (random_double() * v);
         return p - origin;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
     point3 Q;
@@ -320,9 +306,9 @@ class quad : public hittable {
     aabb bbox;
     vec3 normal;
     double D;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     double area;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -346,10 +332,8 @@ class camera {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     void render(const hittable& world, const hittable& lights) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         initialize();
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -361,9 +345,9 @@ class camera {
                 for (int s_j = 0; s_j < sqrt_spp; s_j++) {
                     for (int s_i = 0; s_i < sqrt_spp; s_i++) {
                         ray r = get_ray(i, j, s_i, s_j);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
                         pixel_color += ray_color(r, max_depth, world, lights);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                     }
                 }
                 write_color(std::cout, pixel_samples_scale * pixel_color);
@@ -377,11 +361,9 @@ class camera {
   private:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
     const {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
 
         ray scattered;
@@ -392,20 +374,14 @@ class camera {
         if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
             return color_from_emission;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_pdf light_pdf(lights, rec.p);
         scattered = ray(rec.p, light_pdf.generate(), r.time());
         pdf_value = light_pdf.value(scattered.direction());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color sample_color = ray_color(scattered, depth-1, world, lights);
         color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_value;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return color_from_emission + color_from_scatter;
     }
@@ -432,29 +408,24 @@ int main() {
     box2 = make_shared<translate>(box2, vec3(130,0,65));
     world.add(box2);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     // Light Sources
     auto empty_material = shared_ptr<material>();
     quad lights(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), empty_material);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     camera cam;
 
     cam.aspect_ratio      = 1.0;
     cam.image_width       = 600;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.samples_per_pixel = 10;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     cam.max_depth         = 50;
     cam.background        = color(0,0,0);
 
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     cam.render(world, lights);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 }
 ```
 
@@ -576,15 +547,12 @@ class camera {
         if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
             return color_from_emission;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto p0 = make_shared<hittable_pdf>(lights, rec.p);
         auto p1 = make_shared<cosine_pdf>(rec.normal);
         mixture_pdf mixed_pdf(p0, p1);
 
         scattered = ray(rec.p, mixed_pdf.generate(), r.time());
         pdf_value = mixed_pdf.value(scattered.direction());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 

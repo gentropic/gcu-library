@@ -28,8 +28,6 @@ We can redesign `material` and stuff all the new arguments into a class like we 
 #include "onb.h"
 #include "texture.h"
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 class scatter_record {
   public:
     color attenuation;
@@ -37,18 +35,14 @@ class scatter_record {
     bool skip_pdf;
     ray skip_pdf_ray;
 };
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 class material {
   public:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const {
         return false;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 };
@@ -66,11 +60,11 @@ The `lambertian` material becomes simpler:
 
 ```cpp
 #include "hittable.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+
 #include "onb.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include "pdf.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "texture.h"
 
 ...
@@ -80,22 +74,19 @@ class lambertian : public material {
     lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
     lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
         srec.attenuation = tex->value(rec.u, rec.v, rec.p);
         srec.pdf_ptr = make_shared<cosine_pdf>(rec.normal);
         srec.skip_pdf = false;
         return true;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
     const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         auto cos_theta = dot(rec.normal, unit_vector(scattered.direction()));
         return cos_theta < 0 ? 0 : cos_theta/pi;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
   private:
@@ -119,13 +110,11 @@ class isotropic : public material {
     isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
     isotropic(shared_ptr<texture> tex) : tex(tex) {}
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
         srec.attenuation = tex->value(rec.u, rec.v, rec.p);
         srec.pdf_ptr = make_shared<sphere_pdf>();
         srec.skip_pdf = false;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         return true;
     }
 
@@ -167,34 +156,26 @@ class camera {
         if (!world.hit(r, interval(0.001, infinity), rec))
             return background;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scatter_record srec;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (!rec.mat->scatter(r, rec, srec))
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             return color_from_emission;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
         mixture_pdf p(light_ptr, srec.pdf_ptr);
 
         ray scattered = ray(rec.p, p.generate(), r.time());
         auto pdf_value = p.value(scattered.direction());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
         color sample_color = ray_color(scattered, depth-1, world, lights);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         color color_from_scatter =
             (srec.attenuation * scattering_pdf * sample_color) / pdf_value;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return color_from_emission + color_from_scatter;
     }
@@ -219,22 +200,18 @@ class metal : public material {
   public:
     metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         vec3 reflected = reflect(r_in.direction(), rec.normal);
         reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         srec.attenuation = albedo;
         srec.pdf_ptr = nullptr;
         srec.skip_pdf = true;
         srec.skip_pdf_ray = ray(rec.p, reflected, r_in.time());
 
         return true;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
   private:
@@ -246,13 +223,11 @@ class dielectric : public material {
   public:
     dielectric(double refraction_index) : refraction_index(refraction_index) {}
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
         srec.attenuation = color(1.0, 1.0, 1.0);
         srec.pdf_ptr = nullptr;
         srec.skip_pdf = true;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
         vec3 unit_direction = unit_vector(r_in.direction());
@@ -267,10 +242,8 @@ class dielectric : public material {
         else
             direction = refract(unit_direction, rec.normal, ri);
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         srec.skip_pdf_ray = ray(rec.p, direction, r_in.time());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         return true;
     }
 
@@ -302,12 +275,9 @@ class camera {
         if (!rec.mat->scatter(r, rec, srec))
             return color_from_emission;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (srec.skip_pdf) {
             return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1, world, lights);
         }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
         mixture_pdf p(light_ptr, srec.pdf_ptr);
@@ -336,10 +306,10 @@ int main() {
     world.add(make_shared<quad>(point3(213,554,227), vec3(130,0,0), vec3(0,0,105), light));
 
     // Box 1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     shared_ptr<material> aluminum = make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
     shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), aluminum);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265,0,295));
     world.add(box1);
@@ -444,9 +414,8 @@ The sphere class needs the two PDF-related functions:
 
 ```cpp
 #include "hittable.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include "onb.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 class sphere : public hittable {
   public:
@@ -454,8 +423,6 @@ class sphere : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double pdf_value(const point3& origin, const vec3& direction) const override {
         // This method only works for stationary spheres.
 
@@ -476,13 +443,10 @@ class sphere : public hittable {
         onb uvw(direction);
         return uvw.transform(random_to_sphere(radius, distance_squared));
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     static vec3 random_to_sphere(double radius, double distance_squared) {
         auto r1 = random_double();
         auto r2 = random_double();
@@ -494,7 +458,7 @@ class sphere : public hittable {
 
         return vec3(x, y, z);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -513,8 +477,6 @@ int main() {
     // Light
     world.add(make_shared<quad>(point3(213,554,227), vec3(130,0,0), vec3(0,0,105), light));
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     // Box
     shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
     box1 = make_shared<rotate_y>(box1, 15);
@@ -524,7 +486,6 @@ int main() {
     // Glass Sphere
     auto glass = make_shared<dielectric>(1.5);
     world.add(make_shared<sphere>(point3(190,90,190), 90, glass));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     // Light Sources
     auto empty_material = shared_ptr<material>();
@@ -564,8 +525,6 @@ class hittable_list : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double pdf_value(const point3& origin, const vec3& direction) const override {
         auto weight = 1.0 / objects.size();
         auto sum = 0.0;
@@ -580,7 +539,6 @@ class hittable_list : public hittable {
         auto int_size = int(objects.size());
         return objects[random_int(0, int_size-1)]->random(origin);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 };
@@ -600,12 +558,11 @@ int main() {
 
     // Light Sources
     auto empty_material = shared_ptr<material>();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     hittable_list lights;
     lights.add(
         make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), empty_material));
     lights.add(make_shared<sphere>(point3(190, 90, 190), 90, empty_material));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 }
@@ -654,13 +611,10 @@ void write_color(std::ostream& out, const color& pixel_color) {
     auto g = pixel_color.y();
     auto b = pixel_color.z();
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     // Replace NaN components with zero.
     if (r != r) r = 0.0;
     if (g != g) g = 0.0;
     if (b != b) b = 0.0;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     // Apply a linear to gamma transform for gamma 2
     r = linear_to_gamma(r);

@@ -209,13 +209,10 @@ class interval {
         return x;
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     interval expand(double delta) const {
         auto padding = delta/2;
         return interval(min - padding, max + padding);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     static const interval empty, universe;
 };
@@ -313,7 +310,6 @@ entire range of motion, from time=0 to time=1.
 
 ```cpp
 #include "aabb.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 class material;
 
@@ -325,10 +321,8 @@ class hittable {
 
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     virtual aabb bounding_box() const = 0;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -344,28 +338,23 @@ class sphere : public hittable {
   public:
     // Stationary Sphere
     sphere(const point3& static_center, double radius, shared_ptr<material> mat)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
       : center(static_center, vec3(0,0,0)), radius(std::fmax(0,radius)), mat(mat)
     {
         auto rvec = vec3(radius, radius, radius);
         bbox = aabb(static_center - rvec, static_center + rvec);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     aabb bounding_box() const override { return bbox; }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
   private:
     ray center;
     double radius;
     shared_ptr<material> mat;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     aabb bbox;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 };
@@ -388,7 +377,7 @@ class sphere : public hittable {
     // Moving Sphere
     sphere(const point3& center1, const point3& center2, double radius,
            shared_ptr<material> mat)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
       : center(center1, center2 - center1), radius(std::fmax(0,radius)), mat(mat)
     {
         auto rvec = vec3(radius, radius, radius);
@@ -396,7 +385,6 @@ class sphere : public hittable {
         aabb box2(center.at(1) - rvec, center.at(1) + rvec);
         bbox = aabb(box1, box2);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 };
@@ -420,14 +408,11 @@ class interval {
 
     interval(double _min, double _max) : min(_min), max(_max) {}
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     interval(const interval& a, const interval& b) {
         // Create the interval tightly enclosing the two input intervals.
         min = a.min <= b.min ? a.min : b.min;
         max = a.max >= b.max ? a.max : b.max;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     double size() const {
     ...
@@ -452,14 +437,11 @@ class aabb {
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     aabb(const aabb& box0, const aabb& box1) {
         x = interval(box0.x, box1.x);
         y = interval(box0.y, box1.y);
         z = interval(box0.z, box1.z);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 };
@@ -479,7 +461,7 @@ bounding box incrementally as each new child is added.
 
 ```cpp
 #include "aabb.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "hittable.h"
 
 #include <vector>
@@ -491,22 +473,20 @@ class hittable_list : public hittable {
     ...
     void add(shared_ptr<hittable> object) {
         objects.push_back(object);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         bbox = aabb(bbox, object->bounding_box());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     aabb bounding_box() const override { return bbox; }
 
   private:
     aabb bbox;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -600,17 +580,14 @@ we haven't yet defined.
 #include "hittable.h"
 #include "hittable_list.h"
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 #include <algorithm>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 class bvh_node : public hittable {
   public:
     ...
 
     bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         int axis = random_int(0,2);
 
         auto comparator = (axis == 0) ? box_x_compare
@@ -633,7 +610,7 @@ class bvh_node : public hittable {
         }
 
         bbox = aabb(left->bounding_box(), right->bounding_box());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
     ...
@@ -656,13 +633,10 @@ inline double random_double(double min, double max) {
     return min + (max-min)*random_double();
 }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline int random_int(int min, int max) {
     // Returns a random integer in [min,max].
     return int(random_double(min, max+1));
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 ...
 ```
@@ -694,8 +668,6 @@ class bvh_node : public hittable {
     shared_ptr<hittable> right;
     aabb bbox;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     static bool box_compare(
         const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
     ) {
@@ -715,7 +687,7 @@ class bvh_node : public hittable {
     static bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
         return box_compare(a, b, 2);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -729,10 +701,8 @@ At this point, we're ready to use our new BVH code. Let's use it on our random s
 ```cpp
 #include "rtweekend.h"
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 #include "bvh.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "camera.h"
 #include "hittable.h"
 #include "hittable_list.h"
@@ -748,10 +718,7 @@ int main() {
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     world = hittable_list(make_shared<bvh_node>(world));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     camera cam;
 
@@ -789,14 +756,13 @@ class bvh_node : public hittable {
   public:
     ...
     bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         // Build the bounding box of the span of source objects.
         bbox = aabb::empty;
         for (size_t object_index=start; object_index < end; object_index++)
             bbox = aabb(bbox, objects[object_index]->bounding_box());
 
         int axis = bbox.longest_axis();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         auto comparator = (axis == 0) ? box_x_compare
                         : (axis == 1) ? box_y_compare
@@ -804,10 +770,8 @@ class bvh_node : public hittable {
 
         ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
         bbox = aabb(left->bounding_box(), right->bounding_box());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
     ...
@@ -829,8 +793,6 @@ class aabb {
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     int longest_axis() const {
         // Returns the index of the longest axis of the bounding box.
 
@@ -841,11 +803,9 @@ class aabb {
     }
 
     static const aabb empty, universe;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
 const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
 ```

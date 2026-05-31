@@ -41,9 +41,9 @@ as desired with the following code snippet, added to `rtweekend.h`:
 
 ```cpp
 #include <cmath>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 #include <cstdlib>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -55,8 +55,6 @@ inline double degrees_to_radians(double degrees) {
     return degrees * pi / 180.0;
 }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline double random_double() {
     // Returns a random real in [0,1).
     return std::rand() / (RAND_MAX + 1.0);
@@ -80,28 +78,20 @@ want to use this, you can obtain a random number with the conditions we need as 
 ```cpp
 ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 #include <random>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 ...
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline double random_double() {
     static std::uniform_real_distribution<double> distribution(0.0, 1.0);
     static std::mt19937 generator;
     return distribution(generator);
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 inline double random_double(double min, double max) {
     // Returns a random real in [min,max).
     return min + (max-min)*random_double();
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
 
 ...
 ```
@@ -131,14 +121,12 @@ class interval {
         return min < x && x < max;
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double clamp(double x) const {
         if (x < min) return min;
         if (x > max) return max;
         return x;
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     ...
 };
 ```
@@ -152,7 +140,7 @@ Here's the updated `write_color()` function that incorporates the interval clamp
 
 ```cpp
 #include "interval.h"
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 #include "vec3.h"
 
 using color = vec3;
@@ -163,12 +151,11 @@ void write_color(std::ostream& out, const color& pixel_color) {
     auto b = pixel_color.z();
 
     // Translate the [0,1] component values to the byte range [0,255].
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     static const interval intensity(0.000, 0.999);
     int rbyte = int(256 * intensity.clamp(r));
     int gbyte = int(256 * intensity.clamp(g));
     int bbyte = int(256 * intensity.clamp(b));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     // Write out the pixel color components.
     out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
@@ -191,9 +178,8 @@ class camera {
   public:
     double aspect_ratio      = 1.0;  // Ratio of image width over height
     int    image_width       = 100;  // Rendered image width in pixel count
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     int    samples_per_pixel = 10;   // Count of random samples for each pixel
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     void render(const hittable& world) {
         initialize();
@@ -203,14 +189,14 @@ class camera {
         for (int j = 0; j < image_height; j++) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; i++) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; sample++) {
                     ray r = get_ray(i, j);
                     pixel_color += ray_color(r, world);
                 }
                 write_color(std::cout, pixel_samples_scale * pixel_color);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             }
         }
 
@@ -219,9 +205,9 @@ class camera {
     ...
   private:
     int    image_height;         // Rendered image height
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     point3 center;               // Camera center
     point3 pixel00_loc;          // Location of pixel 0, 0
     vec3   pixel_delta_u;        // Offset to pixel to the right
@@ -231,17 +217,12 @@ class camera {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         pixel_samples_scale = 1.0 / samples_per_pixel;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         center = point3(0, 0, 0);
         ...
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     ray get_ray(int i, int j) const {
         // Construct a camera ray originating from the origin and directed at randomly sampled
         // point around the pixel location i, j.
@@ -261,7 +242,6 @@ class camera {
         // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
         return vec3(random_double() - 0.5, random_double() - 0.5, 0);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     color ray_color(const ray& r, const hittable& world) const {
         ...
@@ -294,9 +274,8 @@ int main() {
 
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 400;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.samples_per_pixel = 100;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     cam.render(world);
 }

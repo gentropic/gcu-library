@@ -89,8 +89,6 @@ inline vec3 reflect(const vec3& v, const vec3& n) {
     return v - 2*dot(v,n)*n;
 }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
     auto cos_theta = std::fmin(dot(-uv, n), 1.0);
     vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);
@@ -116,8 +114,6 @@ class metal : public material {
     ...
 };
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 class dielectric : public material {
   public:
     dielectric(double refraction_index) : refraction_index(refraction_index) {}
@@ -155,9 +151,9 @@ an index of refraction of approximately 1.5.
 ```cpp
 auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
 auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 auto material_left   = make_shared<dielectric>(1.50);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
 ```
 
@@ -259,7 +255,7 @@ class dielectric : public material {
         double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
         vec3 unit_direction = unit_vector(r_in.direction());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
         double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
 
@@ -272,7 +268,7 @@ class dielectric : public material {
             direction = refract(unit_direction, rec.normal, ri);
 
         scattered = ray(rec.p, direction);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         return true;
     }
 
@@ -312,9 +308,9 @@ sphere material's index of refraction to
 ```cpp
 auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
 auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 auto material_left   = make_shared<dielectric>(1.00 / 1.33);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
 ```
 
@@ -356,10 +352,8 @@ class dielectric : public material {
         bool cannot_refract = ri * sin_theta > 1.0;
         vec3 direction;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (cannot_refract || reflectance(cos_theta, ri) > random_double())
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             direction = reflect(unit_direction, rec.normal);
         else
             direction = refract(unit_direction, rec.normal, ri);
@@ -373,15 +367,13 @@ class dielectric : public material {
     // the refractive index of the enclosing media
     double refraction_index;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     static double reflectance(double cosine, double refraction_index) {
         // Use Schlick's approximation for reflectance.
         auto r0 = (1 - refraction_index) / (1 + refraction_index);
         r0 = r0*r0;
         return r0 + (1-r0)*std::pow((1 - cosine),5);
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -416,18 +408,18 @@ Here's the code:
 ...
 auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
 auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 auto material_left   = make_shared<dielectric>(1.50);
 auto material_bubble = make_shared<dielectric>(1.00 / 1.50);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
 
 world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
 world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.2),   0.5, material_center));
 world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
 world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.4, material_bubble));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
 ...
 ```

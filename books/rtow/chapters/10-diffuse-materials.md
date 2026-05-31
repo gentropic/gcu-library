@@ -38,8 +38,6 @@ class vec3 {
         return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
     }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     static vec3 random() {
         return vec3(random_double(), random_double(), random_double());
     }
@@ -47,7 +45,7 @@ class vec3 {
     static vec3 random(double min, double max) {
         return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
     }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -89,8 +87,6 @@ inline vec3 unit_vector(const vec3& v) {
     return v / v.length();
 }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline vec3 random_unit_vector() {
     while (true) {
         auto p = vec3::random(-1,1);
@@ -122,9 +118,9 @@ inline vec3 random_unit_vector() {
     while (true) {
         auto p = vec3::random(-1,1);
         auto lensq = p.length_squared();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         if (1e-160 < lensq && lensq <= 1)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             return p / sqrt(lensq);
     }
 }
@@ -160,8 +156,6 @@ inline vec3 random_unit_vector() {
     }
 }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 inline vec3 random_on_hemisphere(const vec3& normal) {
     vec3 on_unit_sphere = random_unit_vector();
     if (dot(on_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
@@ -192,10 +186,10 @@ class camera {
         hit_record rec;
 
         if (world.hit(r, interval(0, infinity), rec)) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
             vec3 direction = random_on_hemisphere(rec.normal);
             return 0.5 * ray_color(ray(rec.p, direction), world);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         }
 
         vec3 unit_direction = unit_vector(r.direction());
@@ -230,9 +224,8 @@ class camera {
     double aspect_ratio      = 1.0;  // Ratio of image width over height
     int    image_width       = 100;  // Rendered image width in pixel count
     int    samples_per_pixel = 10;   // Count of random samples for each pixel
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     int    max_depth         = 10;   // Maximum number of ray bounces into scene
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     void render(const hittable& world) {
         initialize();
@@ -245,9 +238,9 @@ class camera {
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; sample++) {
                     ray r = get_ray(i, j);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
                     pixel_color += ray_color(r, max_depth, world);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 }
                 write_color(std::cout, pixel_samples_scale * pixel_color);
             }
@@ -258,20 +251,19 @@ class camera {
     ...
   private:
     ...
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     color ray_color(const ray& r, int depth, const hittable& world) const {
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
             return color(0,0,0);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         hit_record rec;
 
         if (world.hit(r, interval(0, infinity), rec)) {
             vec3 direction = random_on_hemisphere(rec.normal);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
             return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         }
 
         vec3 unit_direction = unit_vector(r.direction());
@@ -298,9 +290,8 @@ int main() {
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.max_depth         = 50;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     cam.render(world);
 }
@@ -344,10 +335,8 @@ class camera {
 
         hit_record rec;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (world.hit(r, interval(0.001, infinity), rec)) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             vec3 direction = random_on_hemisphere(rec.normal);
             return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
         }
@@ -416,9 +405,9 @@ class camera {
         hit_record rec;
 
         if (world.hit(r, interval(0.001, infinity), rec)) {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
             vec3 direction = rec.normal + random_unit_vector();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
         }
 
@@ -480,9 +469,9 @@ class camera {
 
         if (world.hit(r, interval(0.001, infinity), rec)) {
             vec3 direction = rec.normal + random_unit_vector();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
             return 0.1 * ray_color(ray(rec.p, direction), depth-1, world);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         }
 
         vec3 unit_direction = unit_vector(r.direction());
@@ -530,20 +519,16 @@ inline double linear_to_gamma(double linear_component)
 
     return 0;
 }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 void write_color(std::ostream& out, const color& pixel_color) {
     auto r = pixel_color.x();
     auto g = pixel_color.y();
     auto b = pixel_color.z();
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     // Apply a linear to gamma transform for gamma 2
     r = linear_to_gamma(r);
     g = linear_to_gamma(g);
     b = linear_to_gamma(b);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     // Translate the [0,1] component values to the byte range [0,255].
     static const interval intensity(0.000, 0.999);

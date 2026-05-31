@@ -27,22 +27,16 @@ class ray {
   public:
     ray() {}
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     ray(const point3& origin, const vec3& direction, double time)
       : orig(origin), dir(direction), tm(time) {}
 
     ray(const point3& origin, const vec3& direction)
       : ray(origin, direction, 0) {}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     const point3& origin() const  { return orig; }
     const vec3& direction() const { return dir; }
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double time() const { return tm; }
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     point3 at(double t) const {
         return orig + t*dir;
@@ -51,9 +45,9 @@ class ray {
   private:
     point3 orig;
     vec3 dir;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     double tm;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 };
 ```
 
@@ -114,11 +108,11 @@ class camera {
 
         auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
         auto ray_direction = pixel_sample - ray_origin;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         auto ray_time = random_double();
 
         return ray(ray_origin, ray_direction, ray_time);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     }
 
     ...
@@ -141,7 +135,7 @@ position at time=1.
 ```cpp
 class sphere : public hittable {
   public:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     // Stationary Sphere
     sphere(const point3& static_center, double radius, shared_ptr<material> mat)
       : center(static_center, vec3(0,0,0)), radius(std::fmax(0,radius)), mat(mat) {}
@@ -150,14 +144,13 @@ class sphere : public hittable {
     sphere(const point3& center1, const point3& center2, double radius,
            shared_ptr<material> mat)
       : center(center1, center2 - center1), radius(std::fmax(0,radius)), mat(mat) {}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
 
   private:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     ray center;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     double radius;
     shared_ptr<material> mat;
 
@@ -179,10 +172,10 @@ class sphere : public hittable {
   public:
     ...
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         point3 current_center = center.at(r.time());
         vec3 oc = current_center - r.origin();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         auto a = r.direction().length_squared();
         auto h = dot(r.direction(), oc);
         auto c = oc.length_squared() - radius*radius;
@@ -191,9 +184,9 @@ class sphere : public hittable {
 
         rec.t = root;
         rec.p = r.at(rec.t);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         vec3 outward_normal = (rec.p - current_center) / radius;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         rec.set_face_normal(r, outward_normal);
         get_sphere_uv(outward_normal, rec.u, rec.v);
         rec.mat = mat;
@@ -227,10 +220,8 @@ class lambertian : public material {
         if (scatter_direction.near_zero())
             scatter_direction = rec.normal;
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scattered = ray(rec.p, scatter_direction, r_in.time());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         attenuation = albedo;
         return true;
     }
@@ -243,9 +234,9 @@ class metal : public material {
     const override {
         vec3 reflected = reflect(r_in.direction(), rec.normal);
         reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         scattered = ray(rec.p, reflected, r_in.time());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         attenuation = albedo;
 
         return (dot(scattered.direction(), rec.normal) > 0);
@@ -258,9 +249,9 @@ class dielectric : public material {
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
         ...
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
         scattered = ray(rec.p, direction, r_in.time());
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         return true;
     }
     ...
@@ -297,10 +288,10 @@ int main() {
                     // diffuse
                     auto albedo = color::random() * color::random();
                     sphere_material = make_shared<lambertian>(albedo);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
                     auto center2 = center + vec3(0, random_double(0,.5), 0);
                     world.add(make_shared<sphere>(center, center2, 0.2, sphere_material));
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 } else if (choose_mat < 0.95) {
                 ...
     }
@@ -309,10 +300,10 @@ int main() {
     camera cam;
 
     cam.aspect_ratio      = 16.0 / 9.0;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     cam.max_depth         = 50;
 
     cam.vfov     = 20;
