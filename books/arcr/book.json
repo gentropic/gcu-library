@@ -4,7 +4,7 @@
   "lang": "en",
   "slug": "arcr",
   "license": "CC0-1.0",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "source": "https://github.com/gentropic/cradle",
   "description": "A tiny, sandboxed DSL for one-screen arcade micro-games small enough to fit in a QR code — written for (and by) language models. The gewgaw reference engine, an example-first cookbook, and the normative spec.",
   "tags": ["reference", "tutorial", "game-dev", "dsl"],

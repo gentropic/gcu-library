@@ -3,7 +3,7 @@
   "kind": "books",
   "name": "arcr",
   "title": "arcr / gewgaw — The Micro-Game DSL Manual",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "CC0-1.0",
   "attribution": "Geoscientific Chaos Union",
   "index": "book.json",
