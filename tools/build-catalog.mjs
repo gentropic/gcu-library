@@ -14,13 +14,26 @@ import { fileURLToPath } from 'url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const reg = JSON.parse(fs.readFileSync(path.join(root, 'registry.json'), 'utf8'));
 const SOURCE_URL = 'https://raw.githubusercontent.com/gentropic/gcu-library/main/registry.json';
+const WORKS_URL = 'https://gentropic.org/works/';   // the published Auditable Works PWA
+
+// "Open in Works" deep-links are capsule registry-pointers (QR / share form).
+// Encoded at build time via @gcu/capsule from the sibling auditable repo; if
+// it's not present (e.g. CI without the sibling), the buttons are skipped.
+let capsule = null;
+try { capsule = await import('../../auditable/ext/capsule/index.js'); }
+catch { console.warn('  (no ../auditable/ext/capsule — "Open in Works" links skipped)'); }
+async function worksLink(name) {
+  if (!capsule) return null;
+  const cap = await capsule.encodeInlineI(JSON.stringify({ v: 1, install: { source: SOURCE_URL, name } }));
+  return WORKS_URL + '#capsule=' + encodeURIComponent(capsule.fragmentEncode(cap));
+}
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const isNC = (l) => /\bNC\b|non-?commercial/i.test(String(l || ''));
 const fmtSize = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
 const ICON = { books: '▤', geodata: '◴', data: '◳' };
 
-const card = (e) => {
+const card = (e, worksHref) => {
   const readable = e.kind === 'gcudat' && (e.datKind === 'books' || !e.datKind);
   const cover = e.cover
     ? `<img src="${esc(/^https?:/.test(e.cover) ? e.cover : e.cover)}" alt="">`
@@ -35,11 +48,16 @@ const card = (e) => {
       ${e.tags && e.tags.length ? `<div class="tags">${e.tags.map((t) => '#' + esc(t)).join(' ')}</div>` : ''}
       <div class="act">
         ${readable ? `<a class="read" href="read.html?book=${encodeURIComponent(e.name)}">Read ▸</a>` : ''}
-        <a class="dl" href="${esc(e.url)}" download>Download .gcudat</a>
+        ${worksHref ? `<a class="works" href="${esc(worksHref)}" title="Install into Auditable Works">Open in Works ▸</a>` : ''}
+        <a class="dl" href="${esc(e.url)}" download>Download</a>
       </div>
     </div>
   </article>`;
 };
+
+// pre-encode the per-entry capsule deep-links (async)
+const works = {};
+for (const e of reg.entries) works[e.name] = await worksLink(e.name);
 
 const html = `<!doctype html>
 <html lang="en" data-theme="dark">
@@ -85,6 +103,7 @@ const html = `<!doctype html>
   .tags { color:var(--soft); font:11px ui-monospace,monospace; margin-top:6px; }
   .act { margin-top:auto; padding-top:11px; display:flex; gap:14px; align-items:center; }
   .read { font-weight:600; }
+  .works { font-weight:600; color:var(--go); }
   .dl { color:var(--soft); font-size:12px; }
   footer { max-width:1040px; margin:0 auto; padding:18px 24px 48px; color:var(--soft); font-size:13px;
     border-top:1px solid var(--border); }
@@ -99,7 +118,7 @@ const html = `<!doctype html>
 </div></header>
 <main>
   <div class="grid">
-    ${reg.entries.map(card).join('\n    ')}
+    ${reg.entries.map((e) => card(e, works[e.name])).join('\n    ')}
   </div>
 </main>
 <footer>
