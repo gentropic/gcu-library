@@ -1,0 +1,30 @@
+{
+  "dataset": 1,
+  "name": "factbook",
+  "title": "CIA World Factbook",
+  "version": "1.0.0",
+  "license": "CC0-1.0",
+  "attribution": "US Central Intelligence Agency — public domain",
+  "source": "https://github.com/factbook/factbook.json",
+  "description": "Per-country reference data from the CIA World Factbook — population, area, GDP, capital, government, coordinates, and a background blurb for 254 countries and entities.",
+  "tags": [
+    "reference",
+    "dataset",
+    "geography",
+    "countries"
+  ],
+  "records": "records.json",
+  "count": 254,
+  "fields": [
+    "id",
+    "name",
+    "region",
+    "capital",
+    "government",
+    "area_km2",
+    "population",
+    "coordinates",
+    "gdp_ppp_usd",
+    "background"
+  ]
+}

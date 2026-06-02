@@ -3,7 +3,7 @@
   "name": "GCU Library",
   "description": "Prepared books and data packs from the Geoscientific Chaos Union.",
   "homepage": "https://github.com/gentropic/gcu-library",
-  "updated": "2026-05-31",
+  "updated": "2026-06-02",
   "entries": [
     {
       "name": "arcr",
@@ -41,6 +41,25 @@
         "style",
         "writing",
         "english"
+      ]
+    },
+    {
+      "name": "factbook",
+      "kind": "gcudat",
+      "datKind": "data",
+      "title": "CIA World Factbook",
+      "description": "Per-country reference data from the CIA World Factbook — population, area, GDP, capital, government, coordinates, and a background blurb for 254 countries and entities.",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "attribution": "US Central Intelligence Agency — public domain",
+      "size": 181587,
+      "url": "dist/factbook.gcudat",
+      "integrity": "sha256-3uAcbeAKZmSPUemrPRo84Tp97KF8fI9M5VvIWTlC1eE=",
+      "tags": [
+        "reference",
+        "dataset",
+        "geography",
+        "countries"
       ]
     },
     {

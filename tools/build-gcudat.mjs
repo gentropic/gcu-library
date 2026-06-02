@@ -21,28 +21,44 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const slug = process.argv[2];
 if (!slug) { console.error('usage: node tools/build-gcudat.mjs <slug>'); process.exit(1); }
 
-const bookDir = path.resolve(here, '../books', slug);
 const distDir = path.resolve(here, '../dist');
-const bookJsonPath = path.join(bookDir, 'book.json');
-if (!fs.existsSync(bookJsonPath)) { console.error('no book.json at', bookDir); process.exit(1); }
 
-const book = JSON.parse(fs.readFileSync(bookJsonPath, 'utf8'));
+// Locate the source dir across content roots and pick its kind by index file:
+//   books/<slug>/book.json    → kind=books  (reader content)
+//   data/<slug>/dataset.json  → kind=data   (datasets; std.data)
+// build-registry.mjs scans all roots, so adding a kind is just a new root here.
+const KINDS = [
+  { root: 'books', index: 'book.json',    kind: 'books' },
+  { root: 'data',  index: 'dataset.json', kind: 'data' },
+];
+let src = null;
+for (const k of KINDS) {
+  const dir = path.resolve(here, '..', k.root, slug);
+  if (fs.existsSync(path.join(dir, k.index))) { src = { ...k, dir }; break; }
+}
+if (!src) {
+  console.error('no source for "' + slug + '" — expected books/<slug>/book.json or data/<slug>/dataset.json');
+  process.exit(1);
+}
+
+const bookDir = src.dir;   // (name kept; it's the pack source dir for any kind)
+const meta = JSON.parse(fs.readFileSync(path.join(bookDir, src.index), 'utf8'));
 
 // The gcudat manifest: version key (the sniff target) + kind (the router) +
 // metadata + the kind-specific entry pointer. No code, ever.
 const manifest = {
   gcudat: 1,
-  kind: 'books',
-  name: book.slug || slug,
-  title: book.title || slug,
-  version: book.version || '1.0.0',   // self-describing: the pack carries its own version
-  license: book.license || '',
-  attribution: book.author || '',
-  index: 'book.json',
+  kind: src.kind,
+  name: meta.slug || meta.name || slug,
+  title: meta.title || slug,
+  version: meta.version || '1.0.0',   // self-describing: the pack carries its own version
+  license: meta.license || '',
+  attribution: meta.author || meta.attribution || '',
+  index: src.index,
 };
 // optional discovery metadata → flows into the registry entry (build-registry reads these)
-if (book.description) manifest.description = book.description;
-if (Array.isArray(book.tags)) manifest.tags = book.tags;
+if (meta.description) manifest.description = meta.description;
+if (Array.isArray(meta.tags)) manifest.tags = meta.tags;
 fs.writeFileSync(path.join(bookDir, 'gcudat.json'), JSON.stringify(manifest, null, 2) + '\n');
 
 fs.mkdirSync(distDir, { recursive: true });
@@ -55,9 +71,11 @@ const out = path.join(distDir, slug + '.gcudat');
 // (*.mjs) and their previews (.preview/) are excluded by default, plus anything in
 // book.json's optional `packIgnore` (so a regenerator can live beside its book).
 const fwd = (p) => p.replace(/\\/g, '/');
-const ignore = ['*.mjs', '.preview', ...(Array.isArray(book.packIgnore) ? book.packIgnore : [])];
+const ignore = ['*.mjs', '.preview', ...(Array.isArray(meta.packIgnore) ? meta.packIgnore : [])];
 const exArgs = ignore.map((p) => '--exclude=' + p);
 execFileSync('tar', ['--force-local', ...exArgs, '-czf', fwd(out), '-C', fwd(bookDir), '.'], { stdio: 'inherit' });
 
 const kb = (fs.statSync(out).size / 1024).toFixed(0);
-console.log(`Built ${path.relative(path.resolve(here, '..'), out)} (${kb} KB) — kind=${manifest.kind}, ${book.chapters.length} chapters`);
+const detail = src.kind === 'books' ? `${(meta.chapters || []).length} chapters`
+  : src.kind === 'data' ? `${meta.count || '?'} records` : '';
+console.log(`Built ${path.relative(path.resolve(here, '..'), out)} (${kb} KB) — kind=${manifest.kind}, ${detail}`);
