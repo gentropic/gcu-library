@@ -1,0 +1,1541 @@
+{
+  "title": "CIA World Factbook",
+  "slug": "factbook",
+  "version": "1.0.0",
+  "license": "CC0-1.0",
+  "author": "US Central Intelligence Agency — public domain",
+  "source": "https://github.com/factbook/factbook.json",
+  "description": "Per-country reference data from the CIA World Factbook — population, area, GDP, capital, government, coordinates, and a background blurb for 254 countries and entities.",
+  "tags": [
+    "reference",
+    "dataset",
+    "geography",
+    "countries"
+  ],
+  "chapters": [
+    {
+      "id": "af",
+      "title": "Afghanistan",
+      "file": "chapters/af.html",
+      "format": "html"
+    },
+    {
+      "id": "ax",
+      "title": "Akrotiri",
+      "file": "chapters/ax.html",
+      "format": "html"
+    },
+    {
+      "id": "al",
+      "title": "Albania",
+      "file": "chapters/al.html",
+      "format": "html"
+    },
+    {
+      "id": "ag",
+      "title": "Algeria",
+      "file": "chapters/ag.html",
+      "format": "html"
+    },
+    {
+      "id": "aq",
+      "title": "American Samoa",
+      "file": "chapters/aq.html",
+      "format": "html"
+    },
+    {
+      "id": "an",
+      "title": "Andorra",
+      "file": "chapters/an.html",
+      "format": "html"
+    },
+    {
+      "id": "ao",
+      "title": "Angola",
+      "file": "chapters/ao.html",
+      "format": "html"
+    },
+    {
+      "id": "av",
+      "title": "Anguilla",
+      "file": "chapters/av.html",
+      "format": "html"
+    },
+    {
+      "id": "ay",
+      "title": "Antarctica",
+      "file": "chapters/ay.html",
+      "format": "html"
+    },
+    {
+      "id": "ac",
+      "title": "Antigua and Barbuda",
+      "file": "chapters/ac.html",
+      "format": "html"
+    },
+    {
+      "id": "ar",
+      "title": "Argentina",
+      "file": "chapters/ar.html",
+      "format": "html"
+    },
+    {
+      "id": "am",
+      "title": "Armenia",
+      "file": "chapters/am.html",
+      "format": "html"
+    },
+    {
+      "id": "aa",
+      "title": "Aruba",
+      "file": "chapters/aa.html",
+      "format": "html"
+    },
+    {
+      "id": "at",
+      "title": "Ashmore and Cartier Islands",
+      "file": "chapters/at.html",
+      "format": "html"
+    },
+    {
+      "id": "as",
+      "title": "Australia",
+      "file": "chapters/as.html",
+      "format": "html"
+    },
+    {
+      "id": "au",
+      "title": "Austria",
+      "file": "chapters/au.html",
+      "format": "html"
+    },
+    {
+      "id": "aj",
+      "title": "Azerbaijan",
+      "file": "chapters/aj.html",
+      "format": "html"
+    },
+    {
+      "id": "ba",
+      "title": "Bahrain",
+      "file": "chapters/ba.html",
+      "format": "html"
+    },
+    {
+      "id": "um",
+      "title": "Baker Island, Howland Island, Jarvis Island, Johnston Atoll, Kingman Reef, Midway Islands, Palmyra Atoll",
+      "file": "chapters/um.html",
+      "format": "html"
+    },
+    {
+      "id": "bg",
+      "title": "Bangladesh",
+      "file": "chapters/bg.html",
+      "format": "html"
+    },
+    {
+      "id": "bb",
+      "title": "Barbados",
+      "file": "chapters/bb.html",
+      "format": "html"
+    },
+    {
+      "id": "bo",
+      "title": "Belarus",
+      "file": "chapters/bo.html",
+      "format": "html"
+    },
+    {
+      "id": "be",
+      "title": "Belgium",
+      "file": "chapters/be.html",
+      "format": "html"
+    },
+    {
+      "id": "bh",
+      "title": "Belize",
+      "file": "chapters/bh.html",
+      "format": "html"
+    },
+    {
+      "id": "bn",
+      "title": "Benin",
+      "file": "chapters/bn.html",
+      "format": "html"
+    },
+    {
+      "id": "bd",
+      "title": "Bermuda",
+      "file": "chapters/bd.html",
+      "format": "html"
+    },
+    {
+      "id": "bt",
+      "title": "Bhutan",
+      "file": "chapters/bt.html",
+      "format": "html"
+    },
+    {
+      "id": "bl",
+      "title": "Bolivia",
+      "file": "chapters/bl.html",
+      "format": "html"
+    },
+    {
+      "id": "bk",
+      "title": "Bosnia and Herzegovina",
+      "file": "chapters/bk.html",
+      "format": "html"
+    },
+    {
+      "id": "bc",
+      "title": "Botswana",
+      "file": "chapters/bc.html",
+      "format": "html"
+    },
+    {
+      "id": "bv",
+      "title": "Bouvet Island",
+      "file": "chapters/bv.html",
+      "format": "html"
+    },
+    {
+      "id": "br",
+      "title": "Brazil",
+      "file": "chapters/br.html",
+      "format": "html"
+    },
+    {
+      "id": "vi",
+      "title": "British Virgin Islands",
+      "file": "chapters/vi.html",
+      "format": "html"
+    },
+    {
+      "id": "bx",
+      "title": "Brunei",
+      "file": "chapters/bx.html",
+      "format": "html"
+    },
+    {
+      "id": "bu",
+      "title": "Bulgaria",
+      "file": "chapters/bu.html",
+      "format": "html"
+    },
+    {
+      "id": "uv",
+      "title": "Burkina Faso",
+      "file": "chapters/uv.html",
+      "format": "html"
+    },
+    {
+      "id": "bm",
+      "title": "Burma",
+      "file": "chapters/bm.html",
+      "format": "html"
+    },
+    {
+      "id": "by",
+      "title": "Burundi",
+      "file": "chapters/by.html",
+      "format": "html"
+    },
+    {
+      "id": "cv",
+      "title": "Cabo Verde",
+      "file": "chapters/cv.html",
+      "format": "html"
+    },
+    {
+      "id": "cb",
+      "title": "Cambodia",
+      "file": "chapters/cb.html",
+      "format": "html"
+    },
+    {
+      "id": "cm",
+      "title": "Cameroon",
+      "file": "chapters/cm.html",
+      "format": "html"
+    },
+    {
+      "id": "ca",
+      "title": "Canada",
+      "file": "chapters/ca.html",
+      "format": "html"
+    },
+    {
+      "id": "cj",
+      "title": "Cayman Islands",
+      "file": "chapters/cj.html",
+      "format": "html"
+    },
+    {
+      "id": "cd",
+      "title": "Chad",
+      "file": "chapters/cd.html",
+      "format": "html"
+    },
+    {
+      "id": "ci",
+      "title": "Chile",
+      "file": "chapters/ci.html",
+      "format": "html"
+    },
+    {
+      "id": "ch",
+      "title": "China",
+      "file": "chapters/ch.html",
+      "format": "html"
+    },
+    {
+      "id": "kt",
+      "title": "Christmas Island",
+      "file": "chapters/kt.html",
+      "format": "html"
+    },
+    {
+      "id": "ip",
+      "title": "Clipperton Island",
+      "file": "chapters/ip.html",
+      "format": "html"
+    },
+    {
+      "id": "ck",
+      "title": "Cocos (Keeling) Islands",
+      "file": "chapters/ck.html",
+      "format": "html"
+    },
+    {
+      "id": "co",
+      "title": "Colombia",
+      "file": "chapters/co.html",
+      "format": "html"
+    },
+    {
+      "id": "cn",
+      "title": "Comoros",
+      "file": "chapters/cn.html",
+      "format": "html"
+    },
+    {
+      "id": "cf",
+      "title": "Congo (Brazzaville)",
+      "file": "chapters/cf.html",
+      "format": "html"
+    },
+    {
+      "id": "cw",
+      "title": "Cook Islands",
+      "file": "chapters/cw.html",
+      "format": "html"
+    },
+    {
+      "id": "cr",
+      "title": "Coral Sea Islands",
+      "file": "chapters/cr.html",
+      "format": "html"
+    },
+    {
+      "id": "cs",
+      "title": "Costa Rica",
+      "file": "chapters/cs.html",
+      "format": "html"
+    },
+    {
+      "id": "iv",
+      "title": "Côte d'Ivoire",
+      "file": "chapters/iv.html",
+      "format": "html"
+    },
+    {
+      "id": "hr",
+      "title": "Croatia",
+      "file": "chapters/hr.html",
+      "format": "html"
+    },
+    {
+      "id": "cu",
+      "title": "Cuba",
+      "file": "chapters/cu.html",
+      "format": "html"
+    },
+    {
+      "id": "uc",
+      "title": "Curacao",
+      "file": "chapters/uc.html",
+      "format": "html"
+    },
+    {
+      "id": "cy",
+      "title": "Cyprus",
+      "file": "chapters/cy.html",
+      "format": "html"
+    },
+    {
+      "id": "ez",
+      "title": "Czechia",
+      "file": "chapters/ez.html",
+      "format": "html"
+    },
+    {
+      "id": "da",
+      "title": "Denmark",
+      "file": "chapters/da.html",
+      "format": "html"
+    },
+    {
+      "id": "dx",
+      "title": "Dhekelia",
+      "file": "chapters/dx.html",
+      "format": "html"
+    },
+    {
+      "id": "dj",
+      "title": "Djibouti",
+      "file": "chapters/dj.html",
+      "format": "html"
+    },
+    {
+      "id": "do",
+      "title": "Dominica",
+      "file": "chapters/do.html",
+      "format": "html"
+    },
+    {
+      "id": "cg",
+      "title": "DRC",
+      "file": "chapters/cg.html",
+      "format": "html"
+    },
+    {
+      "id": "ec",
+      "title": "Ecuador",
+      "file": "chapters/ec.html",
+      "format": "html"
+    },
+    {
+      "id": "eg",
+      "title": "Egypt",
+      "file": "chapters/eg.html",
+      "format": "html"
+    },
+    {
+      "id": "es",
+      "title": "El Salvador",
+      "file": "chapters/es.html",
+      "format": "html"
+    },
+    {
+      "id": "ek",
+      "title": "Equatorial Guinea",
+      "file": "chapters/ek.html",
+      "format": "html"
+    },
+    {
+      "id": "er",
+      "title": "Eritrea",
+      "file": "chapters/er.html",
+      "format": "html"
+    },
+    {
+      "id": "en",
+      "title": "Estonia",
+      "file": "chapters/en.html",
+      "format": "html"
+    },
+    {
+      "id": "wz",
+      "title": "Eswatini",
+      "file": "chapters/wz.html",
+      "format": "html"
+    },
+    {
+      "id": "et",
+      "title": "Ethiopia",
+      "file": "chapters/et.html",
+      "format": "html"
+    },
+    {
+      "id": "fk",
+      "title": "Falkland Islands (Islas Malvinas)",
+      "file": "chapters/fk.html",
+      "format": "html"
+    },
+    {
+      "id": "fo",
+      "title": "Faroe Islands",
+      "file": "chapters/fo.html",
+      "format": "html"
+    },
+    {
+      "id": "fj",
+      "title": "Fiji",
+      "file": "chapters/fj.html",
+      "format": "html"
+    },
+    {
+      "id": "fi",
+      "title": "Finland",
+      "file": "chapters/fi.html",
+      "format": "html"
+    },
+    {
+      "id": "fr",
+      "title": "France",
+      "file": "chapters/fr.html",
+      "format": "html"
+    },
+    {
+      "id": "fp",
+      "title": "French Polynesia",
+      "file": "chapters/fp.html",
+      "format": "html"
+    },
+    {
+      "id": "fs",
+      "title": "French Southern and Antarctic Lands",
+      "file": "chapters/fs.html",
+      "format": "html"
+    },
+    {
+      "id": "gb",
+      "title": "Gabon",
+      "file": "chapters/gb.html",
+      "format": "html"
+    },
+    {
+      "id": "gz",
+      "title": "Gaza, Gaza Strip",
+      "file": "chapters/gz.html",
+      "format": "html"
+    },
+    {
+      "id": "gg",
+      "title": "Georgia",
+      "file": "chapters/gg.html",
+      "format": "html"
+    },
+    {
+      "id": "gm",
+      "title": "Germany",
+      "file": "chapters/gm.html",
+      "format": "html"
+    },
+    {
+      "id": "gh",
+      "title": "Ghana",
+      "file": "chapters/gh.html",
+      "format": "html"
+    },
+    {
+      "id": "gi",
+      "title": "Gibraltar",
+      "file": "chapters/gi.html",
+      "format": "html"
+    },
+    {
+      "id": "gr",
+      "title": "Greece",
+      "file": "chapters/gr.html",
+      "format": "html"
+    },
+    {
+      "id": "gl",
+      "title": "Greenland",
+      "file": "chapters/gl.html",
+      "format": "html"
+    },
+    {
+      "id": "gj",
+      "title": "Grenada",
+      "file": "chapters/gj.html",
+      "format": "html"
+    },
+    {
+      "id": "gq",
+      "title": "Guam",
+      "file": "chapters/gq.html",
+      "format": "html"
+    },
+    {
+      "id": "gt",
+      "title": "Guatemala",
+      "file": "chapters/gt.html",
+      "format": "html"
+    },
+    {
+      "id": "gk",
+      "title": "Guernsey",
+      "file": "chapters/gk.html",
+      "format": "html"
+    },
+    {
+      "id": "gv",
+      "title": "Guinea",
+      "file": "chapters/gv.html",
+      "format": "html"
+    },
+    {
+      "id": "pu",
+      "title": "Guinea-Bissau",
+      "file": "chapters/pu.html",
+      "format": "html"
+    },
+    {
+      "id": "gy",
+      "title": "Guyana",
+      "file": "chapters/gy.html",
+      "format": "html"
+    },
+    {
+      "id": "ha",
+      "title": "Haiti",
+      "file": "chapters/ha.html",
+      "format": "html"
+    },
+    {
+      "id": "hm",
+      "title": "Heard Island and McDonald Islands",
+      "file": "chapters/hm.html",
+      "format": "html"
+    },
+    {
+      "id": "vt",
+      "title": "Holy See (Vatican City)",
+      "file": "chapters/vt.html",
+      "format": "html"
+    },
+    {
+      "id": "ho",
+      "title": "Honduras",
+      "file": "chapters/ho.html",
+      "format": "html"
+    },
+    {
+      "id": "hk",
+      "title": "Hong Kong",
+      "file": "chapters/hk.html",
+      "format": "html"
+    },
+    {
+      "id": "hu",
+      "title": "Hungary",
+      "file": "chapters/hu.html",
+      "format": "html"
+    },
+    {
+      "id": "ic",
+      "title": "Iceland",
+      "file": "chapters/ic.html",
+      "format": "html"
+    },
+    {
+      "id": "in",
+      "title": "India",
+      "file": "chapters/in.html",
+      "format": "html"
+    },
+    {
+      "id": "id",
+      "title": "Indonesia",
+      "file": "chapters/id.html",
+      "format": "html"
+    },
+    {
+      "id": "ir",
+      "title": "Iran",
+      "file": "chapters/ir.html",
+      "format": "html"
+    },
+    {
+      "id": "iz",
+      "title": "Iraq",
+      "file": "chapters/iz.html",
+      "format": "html"
+    },
+    {
+      "id": "ei",
+      "title": "Ireland",
+      "file": "chapters/ei.html",
+      "format": "html"
+    },
+    {
+      "id": "im",
+      "title": "Isle of Man",
+      "file": "chapters/im.html",
+      "format": "html"
+    },
+    {
+      "id": "is",
+      "title": "Israel",
+      "file": "chapters/is.html",
+      "format": "html"
+    },
+    {
+      "id": "it",
+      "title": "Italy",
+      "file": "chapters/it.html",
+      "format": "html"
+    },
+    {
+      "id": "jm",
+      "title": "Jamaica",
+      "file": "chapters/jm.html",
+      "format": "html"
+    },
+    {
+      "id": "jn",
+      "title": "Jan Mayen",
+      "file": "chapters/jn.html",
+      "format": "html"
+    },
+    {
+      "id": "ja",
+      "title": "Japan",
+      "file": "chapters/ja.html",
+      "format": "html"
+    },
+    {
+      "id": "je",
+      "title": "Jersey",
+      "file": "chapters/je.html",
+      "format": "html"
+    },
+    {
+      "id": "jo",
+      "title": "Jordan",
+      "file": "chapters/jo.html",
+      "format": "html"
+    },
+    {
+      "id": "kz",
+      "title": "Kazakhstan",
+      "file": "chapters/kz.html",
+      "format": "html"
+    },
+    {
+      "id": "ke",
+      "title": "Kenya",
+      "file": "chapters/ke.html",
+      "format": "html"
+    },
+    {
+      "id": "kr",
+      "title": "Kiribati",
+      "file": "chapters/kr.html",
+      "format": "html"
+    },
+    {
+      "id": "kv",
+      "title": "Kosovo",
+      "file": "chapters/kv.html",
+      "format": "html"
+    },
+    {
+      "id": "ku",
+      "title": "Kuwait",
+      "file": "chapters/ku.html",
+      "format": "html"
+    },
+    {
+      "id": "kg",
+      "title": "Kyrgyzstan",
+      "file": "chapters/kg.html",
+      "format": "html"
+    },
+    {
+      "id": "la",
+      "title": "Laos",
+      "file": "chapters/la.html",
+      "format": "html"
+    },
+    {
+      "id": "lg",
+      "title": "Latvia",
+      "file": "chapters/lg.html",
+      "format": "html"
+    },
+    {
+      "id": "le",
+      "title": "Lebanon",
+      "file": "chapters/le.html",
+      "format": "html"
+    },
+    {
+      "id": "lt",
+      "title": "Lesotho",
+      "file": "chapters/lt.html",
+      "format": "html"
+    },
+    {
+      "id": "li",
+      "title": "Liberia",
+      "file": "chapters/li.html",
+      "format": "html"
+    },
+    {
+      "id": "ly",
+      "title": "Libya",
+      "file": "chapters/ly.html",
+      "format": "html"
+    },
+    {
+      "id": "ls",
+      "title": "Liechtenstein",
+      "file": "chapters/ls.html",
+      "format": "html"
+    },
+    {
+      "id": "lh",
+      "title": "Lithuania",
+      "file": "chapters/lh.html",
+      "format": "html"
+    },
+    {
+      "id": "lu",
+      "title": "Luxembourg",
+      "file": "chapters/lu.html",
+      "format": "html"
+    },
+    {
+      "id": "mc",
+      "title": "Macau",
+      "file": "chapters/mc.html",
+      "format": "html"
+    },
+    {
+      "id": "ma",
+      "title": "Madagascar",
+      "file": "chapters/ma.html",
+      "format": "html"
+    },
+    {
+      "id": "mi",
+      "title": "Malawi",
+      "file": "chapters/mi.html",
+      "format": "html"
+    },
+    {
+      "id": "my",
+      "title": "Malaysia",
+      "file": "chapters/my.html",
+      "format": "html"
+    },
+    {
+      "id": "mv",
+      "title": "Maldives",
+      "file": "chapters/mv.html",
+      "format": "html"
+    },
+    {
+      "id": "ml",
+      "title": "Mali",
+      "file": "chapters/ml.html",
+      "format": "html"
+    },
+    {
+      "id": "mt",
+      "title": "Malta",
+      "file": "chapters/mt.html",
+      "format": "html"
+    },
+    {
+      "id": "rm",
+      "title": "Marshall Islands",
+      "file": "chapters/rm.html",
+      "format": "html"
+    },
+    {
+      "id": "mr",
+      "title": "Mauritania",
+      "file": "chapters/mr.html",
+      "format": "html"
+    },
+    {
+      "id": "mp",
+      "title": "Mauritius",
+      "file": "chapters/mp.html",
+      "format": "html"
+    },
+    {
+      "id": "mx",
+      "title": "Mexico",
+      "file": "chapters/mx.html",
+      "format": "html"
+    },
+    {
+      "id": "md",
+      "title": "Moldova",
+      "file": "chapters/md.html",
+      "format": "html"
+    },
+    {
+      "id": "mn",
+      "title": "Monaco",
+      "file": "chapters/mn.html",
+      "format": "html"
+    },
+    {
+      "id": "mg",
+      "title": "Mongolia",
+      "file": "chapters/mg.html",
+      "format": "html"
+    },
+    {
+      "id": "mj",
+      "title": "Montenegro",
+      "file": "chapters/mj.html",
+      "format": "html"
+    },
+    {
+      "id": "mh",
+      "title": "Montserrat",
+      "file": "chapters/mh.html",
+      "format": "html"
+    },
+    {
+      "id": "mo",
+      "title": "Morocco",
+      "file": "chapters/mo.html",
+      "format": "html"
+    },
+    {
+      "id": "mz",
+      "title": "Mozambique",
+      "file": "chapters/mz.html",
+      "format": "html"
+    },
+    {
+      "id": "wa",
+      "title": "Namibia",
+      "file": "chapters/wa.html",
+      "format": "html"
+    },
+    {
+      "id": "nr",
+      "title": "Nauru",
+      "file": "chapters/nr.html",
+      "format": "html"
+    },
+    {
+      "id": "bq",
+      "title": "Navassa Island",
+      "file": "chapters/bq.html",
+      "format": "html"
+    },
+    {
+      "id": "np",
+      "title": "Nepal",
+      "file": "chapters/np.html",
+      "format": "html"
+    },
+    {
+      "id": "nl",
+      "title": "Netherlands",
+      "file": "chapters/nl.html",
+      "format": "html"
+    },
+    {
+      "id": "nc",
+      "title": "New Caledonia",
+      "file": "chapters/nc.html",
+      "format": "html"
+    },
+    {
+      "id": "nz",
+      "title": "New Zealand",
+      "file": "chapters/nz.html",
+      "format": "html"
+    },
+    {
+      "id": "nu",
+      "title": "Nicaragua",
+      "file": "chapters/nu.html",
+      "format": "html"
+    },
+    {
+      "id": "ng",
+      "title": "Niger",
+      "file": "chapters/ng.html",
+      "format": "html"
+    },
+    {
+      "id": "ni",
+      "title": "Nigeria",
+      "file": "chapters/ni.html",
+      "format": "html"
+    },
+    {
+      "id": "ne",
+      "title": "Niue",
+      "file": "chapters/ne.html",
+      "format": "html"
+    },
+    {
+      "id": "ct",
+      "title": "none",
+      "file": "chapters/ct.html",
+      "format": "html"
+    },
+    {
+      "id": "sh",
+      "title": "none",
+      "file": "chapters/sh.html",
+      "format": "html"
+    },
+    {
+      "id": "fm",
+      "title": "none",
+      "file": "chapters/fm.html",
+      "format": "html"
+    },
+    {
+      "id": "ae",
+      "title": "none",
+      "file": "chapters/ae.html",
+      "format": "html"
+    },
+    {
+      "id": "io",
+      "title": "none",
+      "file": "chapters/io.html",
+      "format": "html"
+    },
+    {
+      "id": "nf",
+      "title": "Norfolk Island",
+      "file": "chapters/nf.html",
+      "format": "html"
+    },
+    {
+      "id": "kn",
+      "title": "North Korea",
+      "file": "chapters/kn.html",
+      "format": "html"
+    },
+    {
+      "id": "mk",
+      "title": "North Macedonia",
+      "file": "chapters/mk.html",
+      "format": "html"
+    },
+    {
+      "id": "cq",
+      "title": "Northern Mariana Islands",
+      "file": "chapters/cq.html",
+      "format": "html"
+    },
+    {
+      "id": "no",
+      "title": "Norway",
+      "file": "chapters/no.html",
+      "format": "html"
+    },
+    {
+      "id": "mu",
+      "title": "Oman",
+      "file": "chapters/mu.html",
+      "format": "html"
+    },
+    {
+      "id": "pk",
+      "title": "Pakistan",
+      "file": "chapters/pk.html",
+      "format": "html"
+    },
+    {
+      "id": "ps",
+      "title": "Palau",
+      "file": "chapters/ps.html",
+      "format": "html"
+    },
+    {
+      "id": "pm",
+      "title": "Panama",
+      "file": "chapters/pm.html",
+      "format": "html"
+    },
+    {
+      "id": "pp",
+      "title": "Papua New Guinea",
+      "file": "chapters/pp.html",
+      "format": "html"
+    },
+    {
+      "id": "pf",
+      "title": "Paracel Islands",
+      "file": "chapters/pf.html",
+      "format": "html"
+    },
+    {
+      "id": "pa",
+      "title": "Paraguay",
+      "file": "chapters/pa.html",
+      "format": "html"
+    },
+    {
+      "id": "pe",
+      "title": "Peru",
+      "file": "chapters/pe.html",
+      "format": "html"
+    },
+    {
+      "id": "rp",
+      "title": "Philippines",
+      "file": "chapters/rp.html",
+      "format": "html"
+    },
+    {
+      "id": "pc",
+      "title": "Pitcairn Islands",
+      "file": "chapters/pc.html",
+      "format": "html"
+    },
+    {
+      "id": "pl",
+      "title": "Poland",
+      "file": "chapters/pl.html",
+      "format": "html"
+    },
+    {
+      "id": "po",
+      "title": "Portugal",
+      "file": "chapters/po.html",
+      "format": "html"
+    },
+    {
+      "id": "rq",
+      "title": "Puerto Rico",
+      "file": "chapters/rq.html",
+      "format": "html"
+    },
+    {
+      "id": "qa",
+      "title": "Qatar",
+      "file": "chapters/qa.html",
+      "format": "html"
+    },
+    {
+      "id": "ro",
+      "title": "Romania",
+      "file": "chapters/ro.html",
+      "format": "html"
+    },
+    {
+      "id": "rs",
+      "title": "Russia",
+      "file": "chapters/rs.html",
+      "format": "html"
+    },
+    {
+      "id": "rw",
+      "title": "Rwanda",
+      "file": "chapters/rw.html",
+      "format": "html"
+    },
+    {
+      "id": "tb",
+      "title": "Saint Barthelemy",
+      "file": "chapters/tb.html",
+      "format": "html"
+    },
+    {
+      "id": "sc",
+      "title": "Saint Kitts and Nevis",
+      "file": "chapters/sc.html",
+      "format": "html"
+    },
+    {
+      "id": "st",
+      "title": "Saint Lucia",
+      "file": "chapters/st.html",
+      "format": "html"
+    },
+    {
+      "id": "rn",
+      "title": "Saint Martin",
+      "file": "chapters/rn.html",
+      "format": "html"
+    },
+    {
+      "id": "sb",
+      "title": "Saint Pierre and Miquelon",
+      "file": "chapters/sb.html",
+      "format": "html"
+    },
+    {
+      "id": "vc",
+      "title": "Saint Vincent and the Grenadines",
+      "file": "chapters/vc.html",
+      "format": "html"
+    },
+    {
+      "id": "ws",
+      "title": "Samoa",
+      "file": "chapters/ws.html",
+      "format": "html"
+    },
+    {
+      "id": "sm",
+      "title": "San Marino",
+      "file": "chapters/sm.html",
+      "format": "html"
+    },
+    {
+      "id": "tp",
+      "title": "Sao Tome and Principe",
+      "file": "chapters/tp.html",
+      "format": "html"
+    },
+    {
+      "id": "sa",
+      "title": "Saudi Arabia",
+      "file": "chapters/sa.html",
+      "format": "html"
+    },
+    {
+      "id": "sg",
+      "title": "Senegal",
+      "file": "chapters/sg.html",
+      "format": "html"
+    },
+    {
+      "id": "ri",
+      "title": "Serbia",
+      "file": "chapters/ri.html",
+      "format": "html"
+    },
+    {
+      "id": "se",
+      "title": "Seychelles",
+      "file": "chapters/se.html",
+      "format": "html"
+    },
+    {
+      "id": "sl",
+      "title": "Sierra Leone",
+      "file": "chapters/sl.html",
+      "format": "html"
+    },
+    {
+      "id": "sn",
+      "title": "Singapore",
+      "file": "chapters/sn.html",
+      "format": "html"
+    },
+    {
+      "id": "nn",
+      "title": "Sint Maarten",
+      "file": "chapters/nn.html",
+      "format": "html"
+    },
+    {
+      "id": "lo",
+      "title": "Slovakia",
+      "file": "chapters/lo.html",
+      "format": "html"
+    },
+    {
+      "id": "si",
+      "title": "Slovenia",
+      "file": "chapters/si.html",
+      "format": "html"
+    },
+    {
+      "id": "bp",
+      "title": "Solomon Islands",
+      "file": "chapters/bp.html",
+      "format": "html"
+    },
+    {
+      "id": "so",
+      "title": "Somalia",
+      "file": "chapters/so.html",
+      "format": "html"
+    },
+    {
+      "id": "sf",
+      "title": "South Africa",
+      "file": "chapters/sf.html",
+      "format": "html"
+    },
+    {
+      "id": "sx",
+      "title": "South Georgia and South Sandwich Islands",
+      "file": "chapters/sx.html",
+      "format": "html"
+    },
+    {
+      "id": "ks",
+      "title": "South Korea",
+      "file": "chapters/ks.html",
+      "format": "html"
+    },
+    {
+      "id": "od",
+      "title": "South Sudan",
+      "file": "chapters/od.html",
+      "format": "html"
+    },
+    {
+      "id": "sp",
+      "title": "Spain",
+      "file": "chapters/sp.html",
+      "format": "html"
+    },
+    {
+      "id": "pg",
+      "title": "Spratly Islands",
+      "file": "chapters/pg.html",
+      "format": "html"
+    },
+    {
+      "id": "ce",
+      "title": "Sri Lanka",
+      "file": "chapters/ce.html",
+      "format": "html"
+    },
+    {
+      "id": "su",
+      "title": "Sudan",
+      "file": "chapters/su.html",
+      "format": "html"
+    },
+    {
+      "id": "ns",
+      "title": "Suriname",
+      "file": "chapters/ns.html",
+      "format": "html"
+    },
+    {
+      "id": "sv",
+      "title": "Svalbard (sometimes referred to as Spitsbergen, the largest island in the archipelago)",
+      "file": "chapters/sv.html",
+      "format": "html"
+    },
+    {
+      "id": "sw",
+      "title": "Sweden",
+      "file": "chapters/sw.html",
+      "format": "html"
+    },
+    {
+      "id": "sz",
+      "title": "Switzerland",
+      "file": "chapters/sz.html",
+      "format": "html"
+    },
+    {
+      "id": "sy",
+      "title": "Syria",
+      "file": "chapters/sy.html",
+      "format": "html"
+    },
+    {
+      "id": "tw",
+      "title": "Taiwan",
+      "file": "chapters/tw.html",
+      "format": "html"
+    },
+    {
+      "id": "ti",
+      "title": "Tajikistan",
+      "file": "chapters/ti.html",
+      "format": "html"
+    },
+    {
+      "id": "tz",
+      "title": "Tanzania",
+      "file": "chapters/tz.html",
+      "format": "html"
+    },
+    {
+      "id": "th",
+      "title": "Thailand",
+      "file": "chapters/th.html",
+      "format": "html"
+    },
+    {
+      "id": "bf",
+      "title": "The Bahamas",
+      "file": "chapters/bf.html",
+      "format": "html"
+    },
+    {
+      "id": "dr",
+      "title": "The Dominican",
+      "file": "chapters/dr.html",
+      "format": "html"
+    },
+    {
+      "id": "ga",
+      "title": "The Gambia",
+      "file": "chapters/ga.html",
+      "format": "html"
+    },
+    {
+      "id": "tt",
+      "title": "Timor-Leste",
+      "file": "chapters/tt.html",
+      "format": "html"
+    },
+    {
+      "id": "to",
+      "title": "Togo",
+      "file": "chapters/to.html",
+      "format": "html"
+    },
+    {
+      "id": "tl",
+      "title": "Tokelau",
+      "file": "chapters/tl.html",
+      "format": "html"
+    },
+    {
+      "id": "tn",
+      "title": "Tonga",
+      "file": "chapters/tn.html",
+      "format": "html"
+    },
+    {
+      "id": "td",
+      "title": "Trinidad and Tobago",
+      "file": "chapters/td.html",
+      "format": "html"
+    },
+    {
+      "id": "ts",
+      "title": "Tunisia",
+      "file": "chapters/ts.html",
+      "format": "html"
+    },
+    {
+      "id": "tu",
+      "title": "Turkey",
+      "file": "chapters/tu.html",
+      "format": "html"
+    },
+    {
+      "id": "tx",
+      "title": "Turkmenistan",
+      "file": "chapters/tx.html",
+      "format": "html"
+    },
+    {
+      "id": "tk",
+      "title": "Turks and Caicos Islands",
+      "file": "chapters/tk.html",
+      "format": "html"
+    },
+    {
+      "id": "tv",
+      "title": "Tuvalu",
+      "file": "chapters/tv.html",
+      "format": "html"
+    },
+    {
+      "id": "ug",
+      "title": "Uganda",
+      "file": "chapters/ug.html",
+      "format": "html"
+    },
+    {
+      "id": "up",
+      "title": "Ukraine",
+      "file": "chapters/up.html",
+      "format": "html"
+    },
+    {
+      "id": "uk",
+      "title": "United Kingdom",
+      "file": "chapters/uk.html",
+      "format": "html"
+    },
+    {
+      "id": "us",
+      "title": "United States",
+      "file": "chapters/us.html",
+      "format": "html"
+    },
+    {
+      "id": "uy",
+      "title": "Uruguay",
+      "file": "chapters/uy.html",
+      "format": "html"
+    },
+    {
+      "id": "uz",
+      "title": "Uzbekistan",
+      "file": "chapters/uz.html",
+      "format": "html"
+    },
+    {
+      "id": "nh",
+      "title": "Vanuatu",
+      "file": "chapters/nh.html",
+      "format": "html"
+    },
+    {
+      "id": "ve",
+      "title": "Venezuela",
+      "file": "chapters/ve.html",
+      "format": "html"
+    },
+    {
+      "id": "vm",
+      "title": "Vietnam",
+      "file": "chapters/vm.html",
+      "format": "html"
+    },
+    {
+      "id": "vq",
+      "title": "Virgin Islands",
+      "file": "chapters/vq.html",
+      "format": "html"
+    },
+    {
+      "id": "wq",
+      "title": "Wake Island",
+      "file": "chapters/wq.html",
+      "format": "html"
+    },
+    {
+      "id": "wf",
+      "title": "Wallis and Futuna",
+      "file": "chapters/wf.html",
+      "format": "html"
+    },
+    {
+      "id": "we",
+      "title": "West Bank",
+      "file": "chapters/we.html",
+      "format": "html"
+    },
+    {
+      "id": "wi",
+      "title": "Western Sahara",
+      "file": "chapters/wi.html",
+      "format": "html"
+    },
+    {
+      "id": "ym",
+      "title": "Yemen",
+      "file": "chapters/ym.html",
+      "format": "html"
+    },
+    {
+      "id": "za",
+      "title": "Zambia",
+      "file": "chapters/za.html",
+      "format": "html"
+    },
+    {
+      "id": "zi",
+      "title": "Zimbabwe",
+      "file": "chapters/zi.html",
+      "format": "html"
+    }
+  ]
+}

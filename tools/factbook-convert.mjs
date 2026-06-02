@@ -104,6 +104,57 @@ function latestGdp(c) {
   return years.length ? pick(e[years[0]], 'text') : null;
 }
 
+// ── book-view rendering ──
+// The pack is dual-faced: records.json is the lean queryable dataset (scalars),
+// and a book.json + chapters/<id>.html render the FULL source profile as a
+// readable country page (the reader opens any dir with a book.json). One pack,
+// two faces — std.data() reads the data, the reader reads the book.
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const clean = (s) => decodeEntities(String(s).replace(/<\/?(?:p|strong|em|br)\s*\/?>/gi, ' ')).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+// Render one source field: a {text} leaf, or a nest of named sub-fields.
+function renderField(val) {
+  if (val == null) return '';
+  if (typeof val === 'string') return `<p class="note">${esc(clean(val))}</p>`;
+  if (val.text != null && Object.keys(val).length === 1) return `<p>${esc(clean(val.text))}</p>`;
+  let out = '';
+  if (val.text != null) out += `<p>${esc(clean(val.text))}</p>`;
+  const subs = Object.entries(val).filter(([k]) => k !== 'text');
+  if (subs.length) {
+    out += '<dl>';
+    for (const [sub, sv] of subs) {
+      if (sub === 'note') { out += `<dd class="note">${esc(clean(typeof sv === 'string' ? sv : sv.text || ''))}</dd>`; continue; }
+      const t = sv && sv.text != null ? clean(sv.text) : (typeof sv === 'string' ? clean(sv) : '');
+      if (t) out += `<dt>${esc(sub.trim())}</dt><dd>${esc(t)}</dd>`;
+    }
+    out += '</dl>';
+  }
+  return out;
+}
+
+function renderChapter(rec, c) {
+  const facts = [
+    ['Capital', rec.capital], ['Government', rec.government],
+    ['Area', rec.area_km2 != null ? rec.area_km2.toLocaleString() + ' km²' : null],
+    ['Population', rec.population != null ? rec.population.toLocaleString() : null],
+    ['GDP (PPP)', rec.gdp_ppp_usd != null ? '$' + (rec.gdp_ppp_usd / 1e9).toLocaleString() + ' billion' : null],
+    ['Coordinates', rec.coordinates ? rec.coordinates.join(', ') : null],
+  ].filter(([, v]) => v != null);
+  let html = `<h1>${esc(rec.name)}</h1>\n`;
+  html += '<table class="facts">' + facts.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('') + '</table>\n';
+  // Full profile sections, in source order, skipping empty ones.
+  for (const [section, body] of Object.entries(c)) {
+    if (!body || typeof body !== 'object') continue;
+    let inner = '';
+    for (const [field, val] of Object.entries(body)) {
+      const f = renderField(val);
+      if (f) inner += `<h3>${esc(field.trim())}</h3>\n${f}\n`;
+    }
+    if (inner) html += `<h2>${esc(section.trim())}</h2>\n${inner}`;
+  }
+  return html;
+}
+
 function toRecord(id, region, c) {
   // The conventional short form is the country name; entities without one
   // (the World aggregate + the 5 oceans) aren't countries — caller drops them.
@@ -123,7 +174,7 @@ function toRecord(id, region, c) {
   };
 }
 
-const records = [];
+const entries = [];   // { rec, c } — kept paired so chapters render from the full profile
 let skipped = 0;
 const missing = { capital: 0, area_km2: 0, population: 0, coordinates: 0, gdp_ppp_usd: 0 };
 for (const region of REGIONS) {
@@ -136,10 +187,11 @@ for (const region of REGIONS) {
     const rec = toRecord(id, region, c);
     if (!rec) { skipped++; continue; }           // unnamed entity (World / oceans)
     for (const k of Object.keys(missing)) if (rec[k] == null) missing[k]++;
-    records.push(rec);
+    entries.push({ rec, c });
   }
 }
-records.sort((a, b) => a.name.localeCompare(b.name));
+entries.sort((a, b) => a.rec.name.localeCompare(b.rec.name));
+const records = entries.map((e) => e.rec);
 
 const FIELDS = ['id', 'name', 'region', 'capital', 'government', 'area_km2', 'population', 'coordinates', 'gdp_ppp_usd', 'background'];
 const dataset = {
@@ -160,6 +212,25 @@ const dataset = {
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'records.json'), JSON.stringify(records));
 fs.writeFileSync(path.join(OUT, 'dataset.json'), JSON.stringify(dataset, null, 2) + '\n');
+
+// Book-view: one HTML chapter per country (full profile) + a book.json spine.
+// Lets the pack open in the reader; std.data still reads records.json. Stale
+// chapters from a prior run are cleared so renamed/removed entries don't linger.
+const chaptersDir = path.join(OUT, 'chapters');
+fs.rmSync(chaptersDir, { recursive: true, force: true });
+fs.mkdirSync(chaptersDir, { recursive: true });
+const chapters = [];
+for (const { rec, c } of entries) {
+  fs.writeFileSync(path.join(chaptersDir, rec.id + '.html'), renderChapter(rec, c));
+  chapters.push({ id: rec.id, title: rec.name, file: 'chapters/' + rec.id + '.html', format: 'html' });
+}
+const book = {
+  title: dataset.title, slug: 'factbook', version: dataset.version,
+  license: dataset.license, author: dataset.attribution,
+  source: dataset.source, description: dataset.description, tags: dataset.tags,
+  chapters,
+};
+fs.writeFileSync(path.join(OUT, 'book.json'), JSON.stringify(book, null, 2) + '\n');
 fs.writeFileSync(path.join(OUT, 'CREDITS.md'),
   '# CIA World Factbook\n\n'
   + 'Source: The World Factbook, US Central Intelligence Agency.\n'
@@ -167,6 +238,7 @@ fs.writeFileSync(path.join(OUT, 'CREDITS.md'),
   + 'License: **CC0-1.0 / public domain**. US Government works are not subject to\n'
   + 'copyright; the factbook.json project dedicates its datasets to the public domain.\n');
 
-const kb = (fs.statSync(path.join(OUT, 'records.json')).size / 1024).toFixed(0);
-console.log(`Wrote data/factbook/ — ${records.length} records, records.json ${kb} KB (skipped ${skipped} unnamed: World + oceans)`);
+const recKb = (fs.statSync(path.join(OUT, 'records.json')).size / 1024).toFixed(0);
+const chBytes = fs.readdirSync(chaptersDir).reduce((s, f) => s + fs.statSync(path.join(chaptersDir, f)).size, 0);
+console.log(`Wrote data/factbook/ — ${records.length} records (records.json ${recKb} KB) + ${chapters.length} chapters (${(chBytes / 1048576).toFixed(1)} MB); skipped ${skipped} unnamed (World + oceans)`);
 console.log('missing scalars:', Object.entries(missing).map(([k, v]) => `${k}:${v}`).join(' '));
