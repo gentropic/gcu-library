@@ -83,6 +83,26 @@
       "extends": "factbook"
     },
     {
+      "name": "factbook-maps",
+      "kind": "gcudat",
+      "datKind": "data",
+      "title": "CIA World Factbook — maps",
+      "description": "Expansion tier for the factbook pack: a country map and a locator map (WebP) per country. Read with std.data.file(\"factbook\",\"maps/<id>.webp\") or \"locators/<id>.webp\".",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "attribution": "US Central Intelligence Agency — public domain",
+      "size": 5980351,
+      "url": "dist/factbook-maps.gcudat",
+      "integrity": "sha256-0K+hacSUUB5CyHeMWZ/HpqOVeEGuBgy/RYol//wZ/Vs=",
+      "tags": [
+        "reference",
+        "maps",
+        "geography",
+        "countries"
+      ],
+      "extends": "factbook"
+    },
+    {
       "name": "ods",
       "kind": "gcudat",
       "datKind": "books",

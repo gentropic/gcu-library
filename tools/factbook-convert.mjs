@@ -330,6 +330,55 @@ fs.writeFileSync(path.join(FULL, 'CREDITS.md'),
   + 'form https://github.com/factbook/factbook.json. License: **CC0-1.0 / public domain**.\n');
 const fullKb = (fs.statSync(path.join(FULL, 'records.json')).size / 1048576).toFixed(1);
 console.log(`Wrote data/factbook-full/ — ${fullRecords.length} full profiles (records.json ${fullKb} MB), extends factbook`);
+
+// ── expansion tier: factbook-maps (assets) ──
+// Country maps + locator maps (PNG, GEC-coded — same ids as factbook), from
+// the CC0 factbook/media repo. An asset-only tier (no records): read via
+// std.data.file("factbook","maps/<id>.png" | "locators/<id>.png"). The raw PNG
+// dirs are gitignored (the packed .gcudat carries them); re-derive by cloning
+// the media repo into .cache (see header). Skipped if the clone is absent.
+// Re-encoded PNG → WebP via sharp (needs `npm install` here): country maps are
+// detailed (terrain + labels) so they go LOSSLESS (smaller than lossy q90+ AND
+// crisp); locators are flat so q80 is visually lossless + tiny. ~14 MB → ~5.7 MB.
+const MEDIA = path.resolve(here, '../.cache/factbook-media');
+if (!fs.existsSync(MEDIA)) {
+  console.warn('no .cache/factbook-media — factbook-maps tier skipped. Clone it:\n'
+    + '  git clone --depth 1 https://github.com/factbook/media .cache/factbook-media');
+} else {
+  let sharp;
+  try { sharp = (await import('sharp')).default; }
+  catch { console.warn('sharp not installed — factbook-maps tier skipped. In tools/: npm install'); }
+  if (sharp) {
+    const MAPS = path.resolve(here, '../data/factbook-maps');
+    for (const sub of ['maps', 'locators']) fs.rmSync(path.join(MAPS, sub), { recursive: true, force: true });
+    for (const sub of ['maps', 'locators']) fs.mkdirSync(path.join(MAPS, sub), { recursive: true });
+    let nMaps = 0, nLoc = 0;
+    for (const { rec } of entries) {
+      const m = path.join(MEDIA, 'maps', rec.id + '.png');
+      if (fs.existsSync(m)) { await sharp(m).webp({ lossless: true }).toFile(path.join(MAPS, 'maps', rec.id + '.webp')); nMaps++; }
+      const l = path.join(MEDIA, 'locators', rec.id + '.png');
+      if (fs.existsSync(l)) { await sharp(l).webp({ quality: 80 }).toFile(path.join(MAPS, 'locators', rec.id + '.webp')); nLoc++; }
+    }
+    const mapsDataset = {
+      dataset: 1, name: 'factbook-maps', extends: 'factbook',
+      title: 'CIA World Factbook — maps', version: '1.0.0',
+      license: 'CC0-1.0', attribution: 'US Central Intelligence Agency — public domain',
+      source: 'https://github.com/factbook/media',
+      format: 'webp',
+      description: 'Expansion tier for the factbook pack: a country map and a locator map (WebP) per '
+        + 'country. Read with std.data.file("factbook","maps/<id>.webp") or "locators/<id>.webp".',
+      tags: ['reference', 'maps', 'geography', 'countries'],
+      assets: { maps: nMaps, locators: nLoc },
+    };
+    fs.writeFileSync(path.join(MAPS, 'dataset.json'), JSON.stringify(mapsDataset, null, 2) + '\n');
+    fs.writeFileSync(path.join(MAPS, 'CREDITS.md'),
+      '# CIA World Factbook — maps\n\n'
+      + 'Expansion tier for `factbook`. Country + locator maps from the CIA World Factbook,\n'
+      + 'via https://github.com/factbook/media, re-encoded PNG→WebP. License: **CC0-1.0 /\n'
+      + 'public domain**.\n');
+    console.log(`Wrote data/factbook-maps/ — ${nMaps} maps + ${nLoc} locators (WebP), extends factbook`);
+  }
+}
 fs.writeFileSync(path.join(OUT, 'CREDITS.md'),
   '# CIA World Factbook\n\n'
   + 'Source: The World Factbook, US Central Intelligence Agency.\n'

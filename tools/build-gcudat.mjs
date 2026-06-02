@@ -78,5 +78,7 @@ execFileSync('tar', ['--force-local', ...exArgs, '-czf', fwd(out), '-C', fwd(boo
 
 const kb = (fs.statSync(out).size / 1024).toFixed(0);
 const detail = src.kind === 'books' ? `${(meta.chapters || []).length} chapters`
-  : src.kind === 'data' ? `${meta.count || '?'} records` : '';
+  : src.kind === 'data' ? (meta.count != null ? `${meta.count} records`
+    : meta.assets ? `${Object.values(meta.assets).reduce((a, b) => a + b, 0)} assets` : '? records')
+  : '';
 console.log(`Built ${path.relative(path.resolve(here, '..'), out)} (${kb} KB) — kind=${manifest.kind}, ${detail}`);

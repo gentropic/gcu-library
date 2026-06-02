@@ -1,0 +1,8 @@
+{
+  "name": "gcu-library",
+  "private": true,
+  "description": "GCU Library — content-pack build tooling (.gcudat producers).",
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}

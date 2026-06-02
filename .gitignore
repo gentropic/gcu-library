@@ -2,3 +2,8 @@ dist/*
 !dist/*.gcudat
 node_modules/
 .cache/
+
+# factbook-maps raw PNGs — re-derivable from .cache/factbook-media; the packed
+# dist/factbook-maps.gcudat carries them, so they would be committed twice.
+data/factbook-maps/maps/
+data/factbook-maps/locators/

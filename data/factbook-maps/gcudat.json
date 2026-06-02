@@ -1,0 +1,18 @@
+{
+  "gcudat": 1,
+  "kind": "data",
+  "name": "factbook-maps",
+  "title": "CIA World Factbook — maps",
+  "version": "1.0.0",
+  "license": "CC0-1.0",
+  "attribution": "US Central Intelligence Agency — public domain",
+  "index": "dataset.json",
+  "description": "Expansion tier for the factbook pack: a country map and a locator map (WebP) per country. Read with std.data.file(\"factbook\",\"maps/<id>.webp\") or \"locators/<id>.webp\".",
+  "tags": [
+    "reference",
+    "maps",
+    "geography",
+    "countries"
+  ],
+  "extends": "factbook"
+}
