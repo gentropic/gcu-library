@@ -298,6 +298,38 @@ const book = {
   chapters,
 };
 fs.writeFileSync(path.join(OUT, 'book.json'), JSON.stringify(book, null, 2) + '\n');
+
+// ── expansion tier: factbook-full ──
+// The complete nested profile per country, keyed by id, extends the base.
+// std.data merges this under .profile when installed (the heavy, opt-in tier).
+const FULL = path.resolve(here, '../data/factbook-full');
+fs.mkdirSync(FULL, { recursive: true });
+const fullRecords = entries.map(({ rec, c }) => ({ id: rec.id, profile: c }));
+fs.writeFileSync(path.join(FULL, 'records.json'), JSON.stringify(fullRecords));
+const fullDataset = {
+  dataset: 1,
+  name: 'factbook-full',
+  extends: 'factbook',
+  title: 'CIA World Factbook — full profiles',
+  version: '1.0.0',   // the expansion's own first release (independent of the base)
+  license: dataset.license,
+  attribution: dataset.attribution,
+  source: dataset.source,
+  description: 'Expansion tier for the factbook pack: the complete nested CIA World Factbook '
+    + 'profile for every country (all sections). Install alongside factbook and std.data("factbook") '
+    + 'records gain a .profile field with the full data.',
+  tags: ['reference', 'dataset', 'geography', 'countries'],
+  records: 'records.json',
+  count: fullRecords.length,
+  fields: ['id', 'profile'],
+};
+fs.writeFileSync(path.join(FULL, 'dataset.json'), JSON.stringify(fullDataset, null, 2) + '\n');
+fs.writeFileSync(path.join(FULL, 'CREDITS.md'),
+  '# CIA World Factbook — full profiles\n\n'
+  + 'Expansion tier for `factbook`. Source: The World Factbook (US CIA), structured\n'
+  + 'form https://github.com/factbook/factbook.json. License: **CC0-1.0 / public domain**.\n');
+const fullKb = (fs.statSync(path.join(FULL, 'records.json')).size / 1048576).toFixed(1);
+console.log(`Wrote data/factbook-full/ — ${fullRecords.length} full profiles (records.json ${fullKb} MB), extends factbook`);
 fs.writeFileSync(path.join(OUT, 'CREDITS.md'),
   '# CIA World Factbook\n\n'
   + 'Source: The World Factbook, US Central Intelligence Agency.\n'

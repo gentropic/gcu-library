@@ -63,6 +63,26 @@
       ]
     },
     {
+      "name": "factbook-full",
+      "kind": "gcudat",
+      "datKind": "data",
+      "title": "CIA World Factbook — full profiles",
+      "description": "Expansion tier for the factbook pack: the complete nested CIA World Factbook profile for every country (all sections). Install alongside factbook and std.data(\"factbook\") records gain a .profile field with the full data.",
+      "version": "1.0.0",
+      "license": "CC0-1.0",
+      "attribution": "US Central Intelligence Agency — public domain",
+      "size": 2268549,
+      "url": "dist/factbook-full.gcudat",
+      "integrity": "sha256-8ymiSi1PkYm3pcTqudT84qSninn3qE7ezmYGkos6NUk=",
+      "tags": [
+        "reference",
+        "dataset",
+        "geography",
+        "countries"
+      ],
+      "extends": "factbook"
+    },
+    {
       "name": "ods",
       "kind": "gcudat",
       "datKind": "books",

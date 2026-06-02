@@ -59,6 +59,7 @@ const manifest = {
 // optional discovery metadata → flows into the registry entry (build-registry reads these)
 if (meta.description) manifest.description = meta.description;
 if (Array.isArray(meta.tags)) manifest.tags = meta.tags;
+if (meta.extends) manifest.extends = meta.extends;   // expansion tier → base pack
 fs.writeFileSync(path.join(bookDir, 'gcudat.json'), JSON.stringify(manifest, null, 2) + '\n');
 
 fs.mkdirSync(distDir, { recursive: true });

@@ -46,7 +46,7 @@ for (const file of fs.readdirSync(distDir)) {
   const name = file.replace(/\.gcudat$/, '');
   const bytes = fs.readFileSync(path.join(distDir, file));
   const g = meta[name] || {};
-  entries.push({
+  const entry = {
     name,
     kind: 'gcudat',
     datKind: g.kind || 'data',
@@ -59,7 +59,9 @@ for (const file of fs.readdirSync(distDir)) {
     url: 'dist/' + file,
     integrity: sri(bytes),
     tags: Array.isArray(g.tags) ? g.tags : [g.kind || 'data'],
-  });
+  };
+  if (g.extends) entry.extends = g.extends;   // expansion tier → base pack
+  entries.push(entry);
 }
 entries.sort((a, b) => a.name.localeCompare(b.name));
 

@@ -1,0 +1,23 @@
+{
+  "dataset": 1,
+  "name": "factbook-full",
+  "extends": "factbook",
+  "title": "CIA World Factbook — full profiles",
+  "version": "1.0.0",
+  "license": "CC0-1.0",
+  "attribution": "US Central Intelligence Agency — public domain",
+  "source": "https://github.com/factbook/factbook.json",
+  "description": "Expansion tier for the factbook pack: the complete nested CIA World Factbook profile for every country (all sections). Install alongside factbook and std.data(\"factbook\") records gain a .profile field with the full data.",
+  "tags": [
+    "reference",
+    "dataset",
+    "geography",
+    "countries"
+  ],
+  "records": "records.json",
+  "count": 254,
+  "fields": [
+    "id",
+    "profile"
+  ]
+}
