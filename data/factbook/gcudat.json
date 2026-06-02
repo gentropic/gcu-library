@@ -3,7 +3,7 @@
   "kind": "data",
   "name": "factbook",
   "title": "CIA World Factbook",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "CC0-1.0",
   "attribution": "US Central Intelligence Agency — public domain",
   "index": "dataset.json",

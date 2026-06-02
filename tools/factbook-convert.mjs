@@ -37,6 +37,65 @@ const REGIONS = [
   'north-america', 'oceans', 'south-america', 'south-asia', 'world',
 ];
 
+// ── flags ──
+// factbook uses GEC codes; flags are keyed by ISO 3166-1 alpha-2. Map via the
+// FIPS column of datasets/country-codes (GEC ≈ FIPS 10-4), plus overrides where
+// GEC and FIPS disagree. Flag PNGs come from flagcdn.com (public domain,
+// Wikimedia-sourced) at w80 — tiny + uniform (a 182 KB coat-of-arms SVG is a
+// ~900 B PNG), inlined as data: URLs (the reader's sandboxed iframe can't reach
+// VFS paths). Source CSV: curl it into .cache first (see header).
+const CC_CSV = path.resolve(here, '../.cache/country-codes.csv');
+const FLAGS_CACHE = path.resolve(here, '../.cache/flags');
+// Only GEC codes the FIPS column misses for a REAL country (verified). The rest
+// resolve via the CSV; unmapped territories (Gaza, West Bank, Paracel…) have no
+// distinct flag and stay flagless. Overrides win, so keep them correct.
+const GEC_TO_ISO_OVERRIDE = { ri: 'rs', kv: 'xk' };
+
+function parseCsv(txt) {
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < txt.length; i++) {
+    const ch = txt[i];
+    if (q) { if (ch === '"') { if (txt[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(f); f = ''; }
+    else if (ch === '\n') { row.push(f); rows.push(row); row = []; f = ''; }
+    else if (ch !== '\r') f += ch;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+function loadGecToIso() {
+  const map = { ...GEC_TO_ISO_OVERRIDE };
+  if (!fs.existsSync(CC_CSV)) {
+    console.warn('no .cache/country-codes.csv — flags skipped. Fetch it:\n'
+      + '  curl -sL https://raw.githubusercontent.com/datasets/country-codes/master/data/country-codes.csv -o .cache/country-codes.csv');
+    return map;
+  }
+  const rows = parseCsv(fs.readFileSync(CC_CSV, 'utf8'));
+  const fi = rows[0].indexOf('FIPS'), ii = rows[0].indexOf('ISO3166-1-Alpha-2');
+  for (const r of rows.slice(1)) {
+    const fips = (r[fi] || '').trim().toLowerCase(), iso = (r[ii] || '').trim().toLowerCase();
+    if (fips && iso && !(fips in map)) map[fips] = iso;   // overrides win
+  }
+  return map;
+}
+const GEC_TO_ISO = loadGecToIso();
+
+// Fetch-on-miss a flag PNG, return a data: URL (or null). Cached in .cache/flags.
+async function flagDataUrl(iso2) {
+  if (!iso2) return null;
+  const file = path.join(FLAGS_CACHE, iso2 + '.png');
+  if (!fs.existsSync(file)) {
+    try {
+      const res = await fetch(`https://flagcdn.com/w80/${iso2}.png`);
+      if (!res.ok) return null;
+      fs.mkdirSync(FLAGS_CACHE, { recursive: true });
+      fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+    } catch { return null; }
+  }
+  return 'data:image/png;base64,' + fs.readFileSync(file).toString('base64');
+}
+
 // Whitespace-tolerant nested getter — source keys sometimes have stray spaces.
 function pick(obj, ...keys) {
   let cur = obj;
@@ -132,7 +191,7 @@ function renderField(val) {
   return out;
 }
 
-function renderChapter(rec, c) {
+function renderChapter(rec, c, flag) {
   const facts = [
     ['Capital', rec.capital], ['Government', rec.government],
     ['Area', rec.area_km2 != null ? rec.area_km2.toLocaleString() + ' km²' : null],
@@ -140,7 +199,8 @@ function renderChapter(rec, c) {
     ['GDP (PPP)', rec.gdp_ppp_usd != null ? '$' + (rec.gdp_ppp_usd / 1e9).toLocaleString() + ' billion' : null],
     ['Coordinates', rec.coordinates ? rec.coordinates.join(', ') : null],
   ].filter(([, v]) => v != null);
-  let html = `<h1>${esc(rec.name)}</h1>\n`;
+  const flagImg = flag ? `<img src="${flag}" alt="" width="40" style="vertical-align:middle;margin-right:.5em;border:1px solid rgba(128,128,128,.35)"> ` : '';
+  let html = `<h1>${flagImg}${esc(rec.name)}</h1>\n`;
   html += '<table class="facts">' + facts.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('') + '</table>\n';
   // Full profile sections, in source order, skipping empty ones.
   for (const [section, body] of Object.entries(c)) {
@@ -164,6 +224,7 @@ function toRecord(id, region, c) {
     id,
     name,
     region,
+    iso2: GEC_TO_ISO[id] || null,
     capital: text(c, 'Government', 'Capital', 'name'),
     government: text(c, 'Government', 'Government type'),
     area_km2: num(text(c, 'Geography', 'Area', 'total')),
@@ -193,12 +254,12 @@ for (const region of REGIONS) {
 entries.sort((a, b) => a.rec.name.localeCompare(b.rec.name));
 const records = entries.map((e) => e.rec);
 
-const FIELDS = ['id', 'name', 'region', 'capital', 'government', 'area_km2', 'population', 'coordinates', 'gdp_ppp_usd', 'background'];
+const FIELDS = ['id', 'name', 'region', 'iso2', 'capital', 'government', 'area_km2', 'population', 'coordinates', 'gdp_ppp_usd', 'background'];
 const dataset = {
   dataset: 1,
   name: 'factbook',
   title: 'CIA World Factbook',
-  version: '1.0.0',
+  version: '1.1.0',
   license: 'CC0-1.0',
   attribution: 'US Central Intelligence Agency — public domain',
   source: 'https://github.com/factbook/factbook.json',
@@ -219,9 +280,15 @@ fs.writeFileSync(path.join(OUT, 'dataset.json'), JSON.stringify(dataset, null, 2
 const chaptersDir = path.join(OUT, 'chapters');
 fs.rmSync(chaptersDir, { recursive: true, force: true });
 fs.mkdirSync(chaptersDir, { recursive: true });
+// Warm the flag cache in parallel (first run fetches; later runs read .cache).
+const isoNeeded = [...new Set(entries.map((e) => e.rec.iso2).filter(Boolean))];
+await Promise.all(isoNeeded.map((iso) => flagDataUrl(iso)));
+let flagged = 0;
 const chapters = [];
 for (const { rec, c } of entries) {
-  fs.writeFileSync(path.join(chaptersDir, rec.id + '.html'), renderChapter(rec, c));
+  const flag = await flagDataUrl(rec.iso2);
+  if (flag) flagged++;
+  fs.writeFileSync(path.join(chaptersDir, rec.id + '.html'), renderChapter(rec, c, flag));
   chapters.push({ id: rec.id, title: rec.name, file: 'chapters/' + rec.id + '.html', format: 'html' });
 }
 const book = {
@@ -236,9 +303,12 @@ fs.writeFileSync(path.join(OUT, 'CREDITS.md'),
   + 'Source: The World Factbook, US Central Intelligence Agency.\n'
   + 'Structured form: https://github.com/factbook/factbook.json\n\n'
   + 'License: **CC0-1.0 / public domain**. US Government works are not subject to\n'
-  + 'copyright; the factbook.json project dedicates its datasets to the public domain.\n');
+  + 'copyright; the factbook.json project dedicates its datasets to the public domain.\n\n'
+  + '## Flags\n\n'
+  + 'Flag images (book-view chapter headers): https://flagcdn.com (flagpedia.net),\n'
+  + 'based on Wikimedia Commons vector files — public domain, no attribution required.\n');
 
 const recKb = (fs.statSync(path.join(OUT, 'records.json')).size / 1024).toFixed(0);
 const chBytes = fs.readdirSync(chaptersDir).reduce((s, f) => s + fs.statSync(path.join(chaptersDir, f)).size, 0);
-console.log(`Wrote data/factbook/ — ${records.length} records (records.json ${recKb} KB) + ${chapters.length} chapters (${(chBytes / 1048576).toFixed(1)} MB); skipped ${skipped} unnamed (World + oceans)`);
+console.log(`Wrote data/factbook/ — ${records.length} records (records.json ${recKb} KB) + ${chapters.length} chapters (${(chBytes / 1048576).toFixed(1)} MB); ${flagged} flags; skipped ${skipped} unnamed (World + oceans)`);
 console.log('missing scalars:', Object.entries(missing).map(([k, v]) => `${k}:${v}`).join(' '));
